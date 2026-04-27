@@ -21158,6 +21158,7 @@ function projOpenAndGoToMap(id) {
   if (id === activeProjectId) {
     hideProjectsScreen();
     toast('↗ ' + (allProjects.find(p => p.id === id)?.name || 'Projeto'));
+    setTimeout(() => { if (typeof resetCamera === 'function') resetCamera(); }, 150);
     return;
   }
   projOpen(id);
@@ -21249,12 +21250,14 @@ async function projSaveCurrentState() {
 }
 
 // ── Patch save() to also save project data ────────────
+let _projSaveDebounceTimer = null;
 const _origSaveProj = save;
 save = function() {
   if (typeof _t2gImporting !== 'undefined' && _t2gImporting) return;
   _origSaveProj();
-  // Also persist to project store
-  setTimeout(projSaveCurrentState, 50);
+  // Debounce Supabase saves — only call after 2.5s of inactivity
+  clearTimeout(_projSaveDebounceTimer);
+  _projSaveDebounceTimer = setTimeout(projSaveCurrentState, 2500);
 };
 
 // ── HUD badge ─────────────────────────────────────────
