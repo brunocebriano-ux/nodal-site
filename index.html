@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR" class="light">
 <head>
 <meta charset="UTF-8">
@@ -6421,6 +6421,8 @@ async function _activateEditorMode() {
     console.error('[NODAL] erro em _activateEditorMode:', e);
   } finally {
     clearTimeout(_safetyTimer);
+    const _fc = document.getElementById('transition-curtain');
+    if (_fc) { _fc.classList.remove('active'); _fc.classList.add('fade-out'); }
   }
   toast('Bem-vindo! Modo edição ativo.');
 }
@@ -21424,7 +21426,12 @@ const _origEnterViewer = enterViewerMode;
 enterViewerMode = async function() {
   _origEnterViewer();
   await projBoot();
-  if (typeof showProjectsScreen === 'function') showProjectsScreen();
+  if (typeof showProjectsScreen === 'function') {
+    try { await showProjectsScreen(); } catch(e) {
+      const _c = document.getElementById('transition-curtain');
+      if (_c) { _c.classList.remove('active'); _c.classList.add('fade-out'); }
+    }
+  }
 };
 
 const _origTryUnlockProj = tryUnlock;
