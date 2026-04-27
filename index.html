@@ -785,11 +785,11 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   @keyframes lock-pulse { 0%,100%{opacity:0.18} 50%{opacity:0.35} }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
   .lock-title {
-    font-family: var(--lock-title-font, var(--display));
-    font-size: var(--lock-title-size, 26px);
-    font-weight: var(--lock-title-weight, 800);
-    font-style: var(--lock-title-style, normal);
-    color: #ffffff; letter-spacing: 0.01em; line-height: 1.1; text-align: left; margin-bottom: 0;
+    font-family: var(--display) !important;
+    font-size: 40px !important;
+    font-weight: 800 !important;
+    font-style: normal !important;
+    color: #ffffff; letter-spacing: -0.01em; line-height: 1; text-align: left; margin-bottom: 0;
   }
   .lock-sub {
     font-family: var(--lock-sub-font, var(--display));
@@ -7886,17 +7886,23 @@ const camera = new THREE.PerspectiveCamera(58, W() / H(), 0.1, 2000);
 camera.position.set(0, 0, 90);
 
 function resetCamera() {
-  if (!nodes.length) { camera.position.set(0, 0, 90); camera.lookAt(0, 0, 0); spherical.setFromVector3(camera.position); return; }
+  if (!nodes.length) { spherical.theta = 0; spherical.phi = Math.PI/2; spherical.radius = 90; updateCamera(); return; }
+  // Center all nodes at origin so orbit always works
   const cx = nodes.reduce((s,n) => s+(n.x||0), 0) / nodes.length;
   const cy = nodes.reduce((s,n) => s+(n.y||0), 0) / nodes.length;
   const cz = nodes.reduce((s,n) => s+(n.z||0), 0) / nodes.length;
-  const maxD = Math.max(40, ...nodes.map(n => Math.sqrt(Math.pow((n.x||0)-cx,2)+Math.pow((n.y||0)-cy,2)+Math.pow((n.z||0)-cz,2))));
-  const dist = maxD * 2.8;
-  // Move all nodes to origin so orbit stays correct
-  nodes.forEach(n => { n.x -= cx; n.y -= cy; n.z -= cz; if (n.mesh) n.mesh.position.set(n.x, n.y, n.z); });
-  camera.position.set(0, dist * 0.25, dist);
-  camera.lookAt(0, 0, 0);
-  spherical.setFromVector3(camera.position);
+  const maxD = Math.max(20, ...nodes.map(n => Math.sqrt(Math.pow((n.x||0)-cx,2)+Math.pow((n.y||0)-cy,2)+Math.pow((n.z||0)-cz,2))));
+  nodes.forEach(n => {
+    n.x -= cx; n.y -= cy; n.z -= cz;
+    if (n.mesh) n.mesh.position.set(n.x, n.y, n.z);
+  });
+  // Update connection lines after moving nodes
+  connections.forEach(c => { try { updateConnectionLines(c.from); } catch(e) {} });
+  // Set camera via spherical so updateCamera() works correctly
+  spherical.theta = 0;
+  spherical.phi = Math.PI / 2;
+  spherical.radius = Math.max(60, maxD * 3.2);
+  updateCamera();
 }
 
 function resizeRenderer() {
