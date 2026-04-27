@@ -7885,6 +7885,20 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(58, W() / H(), 0.1, 2000);
 camera.position.set(0, 0, 90);
 
+function resetCamera() {
+  if (!nodes.length) { camera.position.set(0, 0, 90); camera.lookAt(0, 0, 0); spherical.setFromVector3(camera.position); return; }
+  const cx = nodes.reduce((s,n) => s+(n.x||0), 0) / nodes.length;
+  const cy = nodes.reduce((s,n) => s+(n.y||0), 0) / nodes.length;
+  const cz = nodes.reduce((s,n) => s+(n.z||0), 0) / nodes.length;
+  const maxD = Math.max(40, ...nodes.map(n => Math.sqrt(Math.pow((n.x||0)-cx,2)+Math.pow((n.y||0)-cy,2)+Math.pow((n.z||0)-cz,2))));
+  const dist = maxD * 2.8;
+  // Move all nodes to origin so orbit stays correct
+  nodes.forEach(n => { n.x -= cx; n.y -= cy; n.z -= cz; if (n.mesh) n.mesh.position.set(n.x, n.y, n.z); });
+  camera.position.set(0, dist * 0.25, dist);
+  camera.lookAt(0, 0, 0);
+  spherical.setFromVector3(camera.position);
+}
+
 function resizeRenderer() {
   renderer.setSize(W(), H());
   camera.aspect = W() / H();
@@ -13688,6 +13702,7 @@ function applyLogoTypography() {
   applyCreditsColor(document.getElementById('rename-credits-color')?.value || creditsColor);
   try {
     localStorage.setItem('neural-logo-typo', JSON.stringify({ titleFont: tf, subFont: sf, creditsColor }));
+    _scheduleSettingsSync();
   } catch(e) {}
 }
 
@@ -14067,6 +14082,7 @@ confirmRename = async function() {
   await _origConfirmRename();
   applyLogoColors();
   try { localStorage.setItem('neural-logo-colors', JSON.stringify({n: logoNameColor, s: logoSubColor})); } catch(e) {}
+  _scheduleSettingsSync();
 };
 
 // Load saved logo colors on start
@@ -21480,7 +21496,8 @@ const _SYNC_KEYS = [
   'neural-v5-settings','neural-glass-settings','neural-lock-design',
   'neural-visitor-btn','neural-projbtn-style',
   'neural-proj-badge-label','neural-proj-badge-emoji',
-  'neural-hover-anim','neural-pres-theme','neural-fonts'
+  'neural-hover-anim','neural-pres-theme','neural-fonts',
+  'neural-logo-colors','neural-logo-typo','neural-typo-global'
 ];
 let _settingsSaveTimer = null;
 function _scheduleSettingsSync() {
@@ -21574,6 +21591,7 @@ async function projBoot() {
       if (_pd.articlesData) Object.keys(_pd.articlesData).forEach(nid => {
         try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(_pd.articlesData[nid])); } catch(e) {}
       });
+      setTimeout(() => { if (typeof resetCamera === 'function') resetCamera(); }, 300);
     }
   }
 }
