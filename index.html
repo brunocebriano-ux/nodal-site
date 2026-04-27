@@ -7895,7 +7895,6 @@ function resetCamera() {
   nodes.forEach(n => {
     n.x -= cx; n.y -= cy; n.z -= cz;
     if (n.mesh) n.mesh.position.set(n.x, n.y, n.z);
-    if (n.labelPos) n.labelPos.set(n.x, n.y + 1.7*(n.size||1) + 0.4, n.z);
   });
   // Update connection lines after moving nodes
   connections.forEach(c => { try { updateConnectionLines(c.from); } catch(e) {} });
@@ -7904,11 +7903,6 @@ function resetCamera() {
   spherical.phi = Math.PI / 2;
   spherical.radius = Math.max(60, maxD * 3.2);
   updateCamera();
-  // Persist centered positions so they load correctly next session
-  if (typeof projSaveCurrentState === 'function' && activeProjectId) {
-    clearTimeout(_projSaveDebounceTimer);
-    setTimeout(projSaveCurrentState, 800);
-  }
 }
 
 function resizeRenderer() {
@@ -8013,29 +8007,19 @@ window.addEventListener('mousemove', e => {
 
   if (isDragging && !connectMode && !dragMode) {
     if (_flyRaf) { cancelAnimationFrame(_flyRaf); _flyRaf = null; }
-    spherical.theta -= (e.clientX - lastMouse.x) * 0.003;
-    spherical.phi = Math.max(0.1, Math.min(Math.PI-0.1, spherical.phi - (e.clientY - lastMouse.y) * 0.003));
+    spherical.theta -= (e.clientX - lastMouse.x) * 0.004;
+    spherical.phi = Math.max(0.1, Math.min(Math.PI-0.1, spherical.phi - (e.clientY - lastMouse.y) * 0.004));
     lastMouse = {x:e.clientX, y:e.clientY};
     updateCamera();
   }
   // Não fazer hover na área do painel lateral
   if (leftPanelNode && e.clientX < 302) return;
-  // Throttle raycasting: hover apenas a cada 40ms para não travar no mousemove
-  if (!_hoverThrottleRaf) {
-    _hoverThrottleRaf = requestAnimationFrame(() => {
-      _hoverThrottleRaf = null;
-      handleHover(_lastMouseEvent);
-      moveHoverPreview(_lastMouseEvent);
-    });
-  }
-  _lastMouseEvent = e;
+  handleHover(e);
+  moveHoverPreview(e);
 });
-let _hoverThrottleRaf = null, _lastMouseEvent = null;
 
 canvas.addEventListener('wheel', e => {
-  // Zoom proporcional — velocidade constante em qualquer distância
-  const factor = e.deltaY > 0 ? 1.08 : 0.93;
-  spherical.radius = Math.max(8, Math.min(500, spherical.radius * factor));
+  spherical.radius = Math.max(8, Math.min(500, spherical.radius + e.deltaY * 0.07));
   updateCamera();
 }, {passive:true});
 
