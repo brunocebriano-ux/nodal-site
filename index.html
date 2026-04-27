@@ -21488,14 +21488,25 @@ async function projBoot() {
   await projLoad();
   projMigrateExistingData();
 
-  // Restore last active project
+  // Restore last active project and load its data into the canvas
   const lastId = localStorage.getItem(PROJ_ACTIVE_KEY);
   if (lastId && allProjects.find(p => p.id === lastId)) {
     activeProjectId = lastId;
     const proj = allProjects.find(p => p.id === lastId);
     updateHudProjBadge(proj);
-    // Data is already loaded by the normal load() function via neural-v3
-    // Just sync the badge
+    // Load actual project data (overrides whatever load()/spawnDefaultNodes put in canvas)
+    const _pd = await projLoadData(lastId);
+    if (_pd && _pd.nodes && _pd.nodes.length > 0) {
+      [...nodes].forEach(nd => { if (nd.mesh) scene.remove(nd.mesh); if (nd.labelEl) nd.labelEl.remove(); });
+      nodes.length = 0;
+      [...connections].forEach(c => { if (c.line) scene.remove(c.line); removeConnParticle(c); });
+      connections.length = 0;
+      let _maxId = 0;
+      _pd.nodes.forEach(nd => { const n = parseInt((nd.id||'').replace('n','')); if (!isNaN(n) && n > _maxId) _maxId = n; addNode(nd); });
+      nodeIdCounter = _maxId + 1;
+      if (_pd.connections) _pd.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
+      if (_pd.projectSub) { projectSub = _pd.projectSub; applyProjectName(); }
+    }
   }
 }
 
