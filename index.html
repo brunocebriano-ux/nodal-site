@@ -16163,7 +16163,9 @@ function _savePanoData(){
   const toSave=Object.assign({},_panoData); delete toSave.bgImage;
   localStorage.setItem('neural-panorama-data',JSON.stringify(toSave));
   if(_panoData.bgImage) localStorage.setItem('neural-panorama-bg',_panoData.bgImage);
-  // Sincroniza com o Supabase sempre que o Panorama for editado
+  // Sync via user_settings (mecanismo já testado e funcional)
+  if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
+  // Sync via proj_data também (salva junto com os nós do projeto)
   if (typeof activeProjectId !== 'undefined' && activeProjectId && typeof projSaveCurrentState === 'function') {
     clearTimeout(window._panoDbTimer);
     window._panoDbTimer = setTimeout(projSaveCurrentState, 2500);
@@ -21560,7 +21562,8 @@ const _SYNC_KEYS = [
   'neural-visitor-btn','neural-projbtn-style',
   'neural-proj-badge-label','neural-proj-badge-emoji',
   'neural-hover-anim','neural-pres-theme','neural-fonts',
-  'neural-logo-colors','neural-logo-typo','neural-typo-global'
+  'neural-logo-colors','neural-logo-typo','neural-typo-global',
+  'neural-panorama-data'
 ];
 let _settingsSaveTimer = null;
 function _scheduleSettingsSync() {
@@ -21587,6 +21590,15 @@ async function _loadSettingsFromCloud() {
     if (typeof loadSavedGlassSettings === 'function') loadSavedGlassSettings();
     if (typeof applyLockDesign === 'function') applyLockDesign();
     if (typeof loadSavedFonts === 'function') loadSavedFonts();
+    // Atualiza _panoData em memória para o Panorama refletir o que veio do Supabase
+    if (data.data['neural-panorama-data'] && typeof _panoData !== 'undefined') {
+      try {
+        const _pd = JSON.parse(data.data['neural-panorama-data']);
+        Object.keys(_panoData).forEach(k => { if (k !== 'bgImage') delete _panoData[k]; });
+        Object.assign(_panoData, _pd);
+        if (!_panoData.items) _panoData.items = [];
+      } catch(e) {}
+    }
   } catch(e) { console.warn('[NODAL] settings load failed:', e.message); }
 }
 
