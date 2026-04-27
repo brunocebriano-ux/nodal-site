@@ -7695,32 +7695,23 @@ async function sendAiMessage() {
   const typingEl = addAiMsg('Pensando…', 'assistant typing');
 
   try {
-    const apiKey = (localStorage.getItem('t2g-apikey') || '').trim();
-    
-    if (!apiKey) {
-      // Sem API key — usar fallback local
-      typingEl.remove();
-      const fallback = localAiFallback(msg);
-      addAiMsg(fallback, 'assistant');
-      aiMessages.push({ role:'assistant', content: fallback });
-      updateAiContext();
-      return;
-    }
+    const userKey = (localStorage.getItem('t2g-apikey') || '').trim();
+    const useProxy = !userKey;
 
     const systemPrompt = buildMapContext();
-    
+
     // Formatar mensagens para o formato do Groq (compatível com OpenAI)
     const groqMessages = [
       { role: 'system', content: systemPrompt },
       ...aiMessages.slice(-12) // manter últimas 12 mensagens
     ];
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqHeaders = { 'Content-Type': 'application/json' };
+    if (!useProxy) groqHeaders['Authorization'] = 'Bearer ' + userKey;
+
+    const response = await fetch(useProxy ? '/api/groq' : 'https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
+      headers: groqHeaders,
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         max_tokens: 2500,
@@ -22844,18 +22835,15 @@ Responda APENAS com JSON válido, sem markdown, sem explicação. Formato exato:
   document.getElementById('t2g-preview').className = 't2g-preview';
 
   try {
-    const apiKey = (localStorage.getItem('t2g-apikey') || '').trim();
-    if (!apiKey) {
-      _t2gSetStatus('⚠ Configure sua Groq API Key em Personalizar → Groq API Key.', 'error');
-      _t2gSetLoading(false); return;
-    }
+    const userKey = (localStorage.getItem('t2g-apikey') || '').trim();
+    const useProxy = !userKey;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const t2gHeaders = { 'Content-Type': 'application/json' };
+    if (!useProxy) t2gHeaders['Authorization'] = 'Bearer ' + userKey;
+
+    const response = await fetch(useProxy ? '/api/groq' : 'https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
+      headers: t2gHeaders,
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         max_tokens: 8000,
