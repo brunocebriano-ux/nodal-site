@@ -16163,6 +16163,11 @@ function _savePanoData(){
   const toSave=Object.assign({},_panoData); delete toSave.bgImage;
   localStorage.setItem('neural-panorama-data',JSON.stringify(toSave));
   if(_panoData.bgImage) localStorage.setItem('neural-panorama-bg',_panoData.bgImage);
+  // Sincroniza com o Supabase sempre que o Panorama for editado
+  if (typeof activeProjectId !== 'undefined' && activeProjectId && typeof projSaveCurrentState === 'function') {
+    clearTimeout(window._panoDbTimer);
+    window._panoDbTimer = setTimeout(projSaveCurrentState, 2500);
+  }
 }
 
 // ── Init ──
@@ -21229,7 +21234,15 @@ async function projOpen(id) {
       try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(data.articlesData[nid])); } catch(e) {}
     });
     if (data.panoramaData && Object.keys(data.panoramaData).length) {
-      try { localStorage.setItem('neural-panorama-data', JSON.stringify(data.panoramaData)); } catch(e) {}
+      try {
+        localStorage.setItem('neural-panorama-data', JSON.stringify(data.panoramaData));
+        // Atualiza o objeto em memória para o Panorama modal refletir imediatamente
+        if (typeof _panoData !== 'undefined') {
+          Object.keys(_panoData).forEach(k => { if (k !== 'bgImage') delete _panoData[k]; });
+          Object.assign(_panoData, data.panoramaData);
+          if (!_panoData.items) _panoData.items = [];
+        }
+      } catch(e) {}
     }
   } else {
     // Empty project — site name is always NODAL, subtitle = project name
