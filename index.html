@@ -8373,6 +8373,7 @@ function addNode(data) {
     richContent: data.richContent || '',
     richMedia: data.richMedia || [],
     date: data.date || '',
+    shape: data.shape || 'sphere',
     x: data.x !== undefined ? data.x : (Math.random()-0.5)*70,
     y: data.y !== undefined ? data.y : (Math.random()-0.5)*70,
     z: data.z !== undefined ? data.z : (Math.random()-0.5)*70,
@@ -21227,6 +21228,9 @@ async function projOpen(id) {
     if (data.articlesData) Object.keys(data.articlesData).forEach(nid => {
       try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(data.articlesData[nid])); } catch(e) {}
     });
+    if (data.panoramaData && Object.keys(data.panoramaData).length) {
+      try { localStorage.setItem('neural-panorama-data', JSON.stringify(data.panoramaData)); } catch(e) {}
+    }
   } else {
     // Empty project — site name is always NODAL, subtitle = project name
     projectName = 'NODAL';
@@ -21261,11 +21265,12 @@ async function projSaveCurrentState() {
       media:n.media, tags:n.tags||[], notes:n.notes||'',
       richNotes:n.richNotes||'', richContent:n.richContent||'',
       richMedia:n.richMedia||[], date:n.date||'',
-      x:n.x, y:n.y, z:n.z
+      shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z
     })),
     connections: connections.map(c => ({id:c.id, from:c.from, to:c.to})),
     projectName: 'NODAL', projectSub,
-    articlesData: _articlesData
+    articlesData: _articlesData,
+    panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })()
   };
 
   proj.nodeCount = nodes.length;
