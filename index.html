@@ -6414,6 +6414,7 @@ async function _activateEditorMode() {
   try {
     console.log('[NODAL] iniciando projBoot...');
     if (typeof projBoot === 'function') await projBoot();
+    await _loadSettingsFromCloud();
     console.log('[NODAL] projBoot ok, iniciando showProjectsScreen...');
     if (typeof showProjectsScreen === 'function') await showProjectsScreen();
     console.log('[NODAL] showProjectsScreen ok');
@@ -11369,7 +11370,7 @@ function renderArticles() {
 
   if (!grid) return;
   grid.innerHTML = articles.map(art => {
-    const thumb = getArticleThumb(art.id);
+    const thumb = getArticleThumb(art.id) || art.coverUrl || '';
     const thumbEl = thumb
       ? `<img class="art-card-thumb" src="${thumb}" alt="capa" loading="lazy"/>`
       : `<div class="art-card-thumb art-card-thumb-placeholder">◻</div>`;
@@ -11419,6 +11420,13 @@ function openArticleEditor(articleId) {
       document.getElementById('art-edit-desc').value = art.desc || '';
       document.getElementById('art-edit-source').value = art.source || '';
       document.getElementById('art-edit-date').value = art.date || '';
+      document.getElementById('art-cover-url').value = art.coverUrl || '';
+      if (art.coverUrl && !getArticleThumb(articleId)) {
+        const prev = document.getElementById('art-thumb-preview');
+        prev.src = art.coverUrl; prev.style.display = 'block';
+        document.getElementById('art-thumb-icon').style.display = 'none';
+        document.getElementById('art-thumb-label').textContent = 'Clique para trocar arquivo';
+      }
       const th = getArticleThumb(articleId);
       if (th) {
         const prev = document.getElementById('art-thumb-preview');
@@ -11445,12 +11453,22 @@ function handleArticleThumb(event) {
   const reader = new FileReader();
   reader.onload = e => {
     currentArticleThumb = e.target.result;
+    document.getElementById('art-cover-url').value = '';
     const prev = document.getElementById('art-thumb-preview');
     prev.src = e.target.result; prev.style.display = 'block';
     document.getElementById('art-thumb-icon').style.display = 'none';
     document.getElementById('art-thumb-label').textContent = 'Clique para trocar';
   };
   reader.readAsDataURL(file);
+}
+
+function handleArticleCoverUrl(url) {
+  if (!url) return;
+  currentArticleThumb = null;
+  const prev = document.getElementById('art-thumb-preview');
+  prev.src = url; prev.style.display = 'block';
+  document.getElementById('art-thumb-icon').style.display = 'none';
+  document.getElementById('art-thumb-label').textContent = 'Clique para trocar arquivo';
 }
 
 function saveArticle() {
@@ -11474,10 +11492,12 @@ function saveArticle() {
     // Update existing
     const idx = arts.findIndex(a => a.id === editingArticleId);
     if (idx >= 0) {
+      const coverUrl = document.getElementById('art-cover-url').value.trim();
       arts[idx] = { ...arts[idx],
         title, url,
         desc: document.getElementById('art-edit-desc').value.trim(),
-        source, date: dateStr
+        source, date: dateStr,
+        coverUrl: coverUrl || arts[idx].coverUrl || ''
       };
       if (currentArticleThumb) {
         try { localStorage.setItem('neural-art-thumb-' + arts[idx].id, currentArticleThumb); } catch(e) {}
@@ -11485,11 +11505,13 @@ function saveArticle() {
     }
   } else {
     // New article
+    const coverUrl = document.getElementById('art-cover-url').value.trim();
     const newArt = {
       id: 'art-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
       title, url,
       desc: document.getElementById('art-edit-desc').value.trim(),
-      source, date: dateStr
+      source, date: dateStr,
+      coverUrl: coverUrl || ''
     };
     if (currentArticleThumb) {
       try { localStorage.setItem('neural-art-thumb-' + newArt.id, currentArticleThumb); } catch(e) {}
@@ -11760,6 +11782,7 @@ function closeArticleViewer() {
         <div id="art-thumb-label">Clique para enviar uma capa (.jpg, .png, .webp)</div>
       </div>
       <input type="file" id="art-thumb-file" accept="image/*" style="display:none" onchange="handleArticleThumb(event)"/>
+      <input type="text" id="art-cover-url" placeholder="Ou cole uma URL de imagem (https://...jpg)" style="margin-top:6px;width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:6px 10px;font-family:var(--mono);font-size:10px;color:var(--text);letter-spacing:0.04em;" oninput="handleArticleCoverUrl(this.value)"/>
     </div>
 
     <div class="art-field">
@@ -21151,8 +21174,10 @@ async function projOpen(id) {
       data.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
     }
     if (data.projectName) { projectName = data.projectName; projectSub = data.projectSub || ''; applyProjectName(); }
-    // Garantir que projectName seja sempre NODAL e projectSub seja o nome do projeto
     if (projectName !== 'NODAL') { projectSub = projectName; projectName = 'NODAL'; applyProjectName(); }
+    if (data.articlesData) Object.keys(data.articlesData).forEach(nid => {
+      try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(data.articlesData[nid])); } catch(e) {}
+    });
   } else {
     // Empty project — site name is always NODAL, subtitle = project name
     projectName = 'NODAL';
@@ -21175,6 +21200,10 @@ async function projSaveCurrentState() {
   const proj = allProjects.find(p => p.id === activeProjectId);
   if (!proj) return;
 
+  const _articlesData = {};
+  nodes.forEach(n => {
+    try { const r = localStorage.getItem('neural-articles-' + n.id); if (r) _articlesData[n.id] = JSON.parse(r); } catch(e) {}
+  });
   const data = {
     nodes: nodes.map(n => ({
       id:n.id, title:n.title, desc:n.desc, cat:n.cat, color:n.color,
@@ -21186,7 +21215,8 @@ async function projSaveCurrentState() {
       x:n.x, y:n.y, z:n.z
     })),
     connections: connections.map(c => ({id:c.id, from:c.from, to:c.to})),
-    projectName: 'NODAL', projectSub
+    projectName: 'NODAL', projectSub,
+    articlesData: _articlesData
   };
 
   proj.nodeCount = nodes.length;
@@ -21445,6 +21475,41 @@ async function projGenerateShareLink(projId) {
   }
 }
 
+// ── User Settings Cloud Sync ──────────────────────────
+const _SYNC_KEYS = [
+  'neural-v5-settings','neural-glass-settings','neural-lock-design',
+  'neural-visitor-btn','neural-projbtn-style',
+  'neural-proj-badge-label','neural-proj-badge-emoji',
+  'neural-hover-anim','neural-pres-theme','neural-fonts'
+];
+let _settingsSaveTimer = null;
+function _scheduleSettingsSync() {
+  clearTimeout(_settingsSaveTimer);
+  _settingsSaveTimer = setTimeout(_saveSettingsToCloud, 2000);
+}
+async function _saveSettingsToCloud() {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) return;
+    const payload = {};
+    _SYNC_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) payload[k] = v; });
+    await _sb.from('user_settings').upsert({ user_id: session.user.id, data: payload });
+  } catch(e) { console.warn('[NODAL] settings sync failed:', e.message); }
+}
+async function _loadSettingsFromCloud() {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) return;
+    const { data, error } = await _sb.from('user_settings').select('data').eq('user_id', session.user.id).single();
+    if (error || !data || !data.data) return;
+    _SYNC_KEYS.forEach(k => { if (data.data[k]) localStorage.setItem(k, data.data[k]); });
+    if (typeof loadSettings === 'function') loadSettings();
+    if (typeof loadSavedGlassSettings === 'function') loadSavedGlassSettings();
+    if (typeof applyLockDesign === 'function') applyLockDesign();
+    if (typeof loadSavedFonts === 'function') loadSavedFonts();
+  } catch(e) { console.warn('[NODAL] settings load failed:', e.message); }
+}
+
 async function projBoot() {
   // ── Limpeza total única na primeira abertura deste HTML ──────────────────
   // Remove TODOS os dados legados de versões anteriores para começar limpo.
@@ -21506,11 +21571,22 @@ async function projBoot() {
       nodeIdCounter = _maxId + 1;
       if (_pd.connections) _pd.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
       if (_pd.projectSub) { projectSub = _pd.projectSub; applyProjectName(); }
+      if (_pd.articlesData) Object.keys(_pd.articlesData).forEach(nid => {
+        try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(_pd.articlesData[nid])); } catch(e) {}
+      });
     }
   }
 }
 
 // ── Patch enterViewerMode and tryUnlock to check projects ─
+// ── Patch settings saves to trigger cloud sync ────────
+const _origSaveSettings = saveSettings;
+saveSettings = function() { _origSaveSettings(); _scheduleSettingsSync(); };
+const _origSaveGlassSettings = saveGlassSettings;
+saveGlassSettings = function() { _origSaveGlassSettings(); _scheduleSettingsSync(); };
+const _origSaveLockDesign = saveLockDesign;
+saveLockDesign = function() { _origSaveLockDesign(); _scheduleSettingsSync(); };
+
 const _origEnterViewer = enterViewerMode;
 enterViewerMode = async function() {
   _origEnterViewer();
