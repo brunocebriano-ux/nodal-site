@@ -21507,6 +21507,16 @@ async function loadSharedProject(token) {
       projectName = 'NODAL';
       projectSub = data.proj_name || '';
       applyProjectName();
+      if (pd.panoramaData && Object.keys(pd.panoramaData).length) {
+        try {
+          localStorage.setItem('neural-panorama-data', JSON.stringify(pd.panoramaData));
+          if (typeof _panoData !== 'undefined') {
+            Object.keys(_panoData).forEach(k => { if (k !== 'bgImage') delete _panoData[k]; });
+            Object.assign(_panoData, pd.panoramaData);
+            if (!_panoData.items) _panoData.items = [];
+          }
+        } catch(e) {}
+      }
     }
     updateStats();
     toast('Visualizando: ' + (data.proj_name || 'Projeto'));
@@ -21644,6 +21654,16 @@ async function projBoot() {
       if (_pd.articlesData) Object.keys(_pd.articlesData).forEach(nid => {
         try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(_pd.articlesData[nid])); } catch(e) {}
       });
+      if (_pd.panoramaData && Object.keys(_pd.panoramaData).length) {
+        try {
+          localStorage.setItem('neural-panorama-data', JSON.stringify(_pd.panoramaData));
+          if (typeof _panoData !== 'undefined') {
+            Object.keys(_panoData).forEach(k => { if (k !== 'bgImage') delete _panoData[k]; });
+            Object.assign(_panoData, _pd.panoramaData);
+            if (!_panoData.items) _panoData.items = [];
+          }
+        } catch(e) {}
+      }
       setTimeout(() => { if (typeof resetCamera === 'function') resetCamera(); }, 300);
     }
   }
