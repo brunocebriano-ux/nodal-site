@@ -6480,6 +6480,8 @@ async function registerUser() {
 
 (async function _checkSession() {
   try {
+    const _shareToken = new URLSearchParams(window.location.search).get('share');
+    if (_shareToken) { await loadSharedProject(_shareToken); return; }
     const { data: { session } } = await _sb.auth.getSession();
     if (session) await _activateEditorMode();
   } catch(e) {}
@@ -21044,9 +21046,24 @@ function _renderTabContent(p) {
   }
   const _unused_meta = ''
   document.getElementById('proj-tab-empty').textContent = '';
+  // Botão compartilhar (só no modo editor)
+  const _oldShareBtn = tabContent.querySelector('.proj-share-btn');
+  if (_oldShareBtn) _oldShareBtn.remove();
+  if (_isEdDel) {
+    const _shareBtn = document.createElement('button');
+    _shareBtn.className = 'proj-share-btn';
+    _shareBtn.textContent = '↗ compartilhar';
+    _shareBtn.title = 'Gerar link público para visualização';
+    _shareBtn.style.cssText = 'position:absolute;bottom:28px;left:28px;padding:6px 14px;border:1px solid rgba(255,255,255,0.55);border-radius:4px;background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.9);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;';
+    _shareBtn.onmouseover = function(){ this.style.background='rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.9)'; };
+    _shareBtn.onmouseout  = function(){ this.style.background='rgba(0,0,0,0.15)'; this.style.borderColor='rgba(255,255,255,0.55)'; };
+    _shareBtn.onclick = function(e){ e.stopPropagation(); projGenerateShareLink(p.id); };
+    tabContent.appendChild(_shareBtn);
+  }
+
   // Clique no painel → abre mapa
   tabContent.onclick = (e) => {
-    if (!e.target.closest('#proj-tab-add-btn')) {
+    if (!e.target.closest('#proj-tab-add-btn') && !e.target.closest('.proj-share-btn')) {
       projOpenAndGoToMap(p.id);
     }
   };
@@ -21367,6 +21384,67 @@ function projMigrateExistingData() {
 }
 
 // ── Boot ──────────────────────────────────────────────
+async function loadSharedProject(token) {
+  const curtain = document.getElementById('transition-curtain');
+  const ls = document.getElementById('lock-screen');
+  try {
+    if (curtain) curtain.classList.add('active');
+    if (ls) ls.classList.add('hidden');
+    const { data, error } = await _sb.from('public_shares').select('proj_name,proj_data').eq('token', token).single();
+    if (error || !data) throw new Error('Link inválido ou expirado');
+    isViewerMode = true;
+    setEditingEnabled(false);
+    updateLockIcon('visitor');
+    const pd = data.proj_data;
+    if (pd && pd.nodes) {
+      [...nodes].forEach(nd => { if (nd.mesh) scene.remove(nd.mesh); if (nd.labelEl) nd.labelEl.remove(); });
+      nodes.length = 0;
+      [...connections].forEach(c => { if (c.line) scene.remove(c.line); removeConnParticle(c); });
+      connections.length = 0;
+      let maxId = 0;
+      pd.nodes.forEach(nd => { const n = parseInt((nd.id||'').replace('n','')); if (!isNaN(n) && n > maxId) maxId = n; addNode(nd); });
+      nodeIdCounter = maxId + 1;
+      if (pd.connections) pd.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
+      projectName = 'NODAL';
+      projectSub = data.proj_name || '';
+      applyProjectName();
+    }
+    updateStats();
+    toast('Visualizando: ' + (data.proj_name || 'Projeto'));
+    setTimeout(() => { if (typeof resetCamera === 'function') resetCamera(); }, 300);
+  } catch(e) {
+    console.error('[NODAL] loadSharedProject erro:', e);
+    if (curtain) curtain.classList.remove('active');
+    if (ls) ls.classList.remove('hidden');
+    toast('Link inválido ou expirado');
+    return;
+  }
+  if (curtain) { curtain.classList.remove('active'); curtain.classList.add('fade-out'); setTimeout(() => curtain.classList.remove('fade-out'), 300); }
+}
+
+async function projGenerateShareLink(projId) {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { toast('Faça login para compartilhar'); return; }
+    const proj = allProjects.find(p => p.id === projId);
+    if (!proj) { toast('Projeto não encontrado'); return; }
+    toast('Gerando link...');
+    let pd = null;
+    try { const { data, error } = await _sb.from('proj_data').select('data').eq('id', projId).single(); if (!error && data) pd = data.data; } catch(e) {}
+    if (!pd) { try { const raw = localStorage.getItem(PROJ_DATA_KEY(projId)); pd = raw ? JSON.parse(raw) : null; } catch(e) {} }
+    if (!pd) { toast('Nenhum dado para compartilhar'); return; }
+    const tokenBytes = crypto.getRandomValues(new Uint8Array(9));
+    const token = Array.from(tokenBytes).map(b => b.toString(36).padStart(2,'0')).join('').slice(0,14);
+    const { error } = await _sb.from('public_shares').insert({ token, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
+    if (error) throw error;
+    const url = window.location.origin + window.location.pathname + '?share=' + token;
+    try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
+  } catch(e) {
+    console.error('[NODAL] projGenerateShareLink erro:', e);
+    toast('Erro ao gerar link: ' + (e.message || ''));
+  }
+}
+
 async function projBoot() {
   // ── Limpeza total única na primeira abertura deste HTML ──────────────────
   // Remove TODOS os dados legados de versões anteriores para começar limpo.
