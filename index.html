@@ -7886,7 +7886,7 @@ const camera = new THREE.PerspectiveCamera(58, W() / H(), 0.1, 2000);
 camera.position.set(0, 0, 90);
 
 function resetCamera() {
-  if (!nodes.length) { spherical.theta = 0; spherical.phi = Math.PI/2; spherical.radius = 90; updateCamera(); return; }
+  if (!nodes.length) { spherical.theta = 0; spherical.phi = Math.PI/2; spherical.radius = 90; cameraTarget.set(0,0,0); updateCamera(); return; }
   // Center all nodes at origin so orbit always works
   const cx = nodes.reduce((s,n) => s+(n.x||0), 0) / nodes.length;
   const cy = nodes.reduce((s,n) => s+(n.y||0), 0) / nodes.length;
@@ -7898,7 +7898,13 @@ function resetCamera() {
   });
   // Update connection lines after moving nodes
   connections.forEach(c => { try { updateConnectionLines(c.from); } catch(e) {} });
-  // Set camera via spherical so updateCamera() works correctly
+  // Sincroniza a simulação D3 com as posições centradas — sem isso o onSimTick() desfaz a centralização
+  simNodes.forEach(sn => {
+    const n = nodes.find(nd => nd.id === sn.id);
+    if (n) { sn.x = n.x; sn.y = n.y; sn.vx = 0; sn.vy = 0; }
+  });
+  // Reseta o ponto de órbita e a câmera
+  cameraTarget.set(0, 0, 0);
   spherical.theta = 0;
   spherical.phi = Math.PI / 2;
   spherical.radius = Math.max(60, maxD * 3.2);
@@ -7953,13 +7959,19 @@ scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x1a1a33, siz
 let isDragging = false, lastMouse = {x:0,y:0};
 let spherical = {theta:0, phi:Math.PI/2, radius:90};
 let mouseDownPos = {x:0,y:0}, mouseMovedSinceDown = false;
+let cameraTarget = new THREE.Vector3(0, 0, 0); // ponto de órbita / pan
+let isPanning = false, panLastMouse = {x:0,y:0};
 
 const dragPlane = new THREE.Plane();
 const dragOffset = new THREE.Vector3();
 const dragIntersect = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
 
+canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
+  if (e.button === 2 && !flat2DActive) {
+    isPanning = true; panLastMouse = {x: e.clientX, y: e.clientY}; return;
+  }
   if (e.button !== 0) return;
   // Ignorar cliques na área do painel lateral esquerdo
   if (leftPanelNode && e.clientX < 302) return;
@@ -7984,6 +7996,7 @@ canvas.addEventListener('mousedown', e => {
 window.addEventListener('mouseup', () => {
   if (draggingNode) { simNodeDragEnd(draggingNode); draggingNode = null; canvas.style.cursor = dragMode?'crosshair':'grab'; }
   isDragging = false;
+  isPanning = false;
 });
 
 window.addEventListener('mousemove', e => {
@@ -8005,6 +8018,19 @@ window.addEventListener('mousemove', e => {
     return;
   }
 
+  if (isPanning && !flat2DActive) {
+    const pdx = e.clientX - panLastMouse.x;
+    const pdy = e.clientY - panLastMouse.y;
+    panLastMouse = {x: e.clientX, y: e.clientY};
+    if (_flyRaf) { cancelAnimationFrame(_flyRaf); _flyRaf = null; }
+    const forward = cameraTarget.clone().sub(camera.position).normalize();
+    const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), forward).normalize();
+    const up = new THREE.Vector3().crossVectors(forward, right).normalize();
+    const panSpd = spherical.radius * 0.0015;
+    cameraTarget.addScaledVector(right, -pdx * panSpd);
+    cameraTarget.addScaledVector(up, pdy * panSpd);
+    updateCamera();
+  }
   if (isDragging && !connectMode && !dragMode) {
     if (_flyRaf) { cancelAnimationFrame(_flyRaf); _flyRaf = null; }
     spherical.theta -= (e.clientX - lastMouse.x) * 0.004;
@@ -8073,10 +8099,10 @@ canvas.addEventListener('touchmove', e => {
 }, {passive:true});
 
 function updateCamera() {
-  camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
-  camera.position.y = spherical.radius * Math.cos(spherical.phi);
-  camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
-  camera.lookAt(0, 0, 0);
+  camera.position.x = cameraTarget.x + spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+  camera.position.y = cameraTarget.y + spherical.radius * Math.cos(spherical.phi);
+  camera.position.z = cameraTarget.z + spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+  camera.lookAt(cameraTarget);
 }
 
 function getMouseNDC(e) {
