@@ -21124,8 +21124,8 @@ async function projOpen(id) {
   const proj = allProjects.find(p => p.id === id);
   if (!proj) return;
 
-  // Save current project first
-  if (activeProjectId) await projSaveCurrentState();
+  // Save current project first (only if canvas has actual content)
+  if (activeProjectId && nodes.length > 0) await projSaveCurrentState();
 
   // Load new project
   activeProjectId = id;
