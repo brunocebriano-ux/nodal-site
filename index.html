@@ -5322,10 +5322,11 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #pw-reset-error { font-size: 10px; color: #f87171; letter-spacing: 0.08em; min-height: 16px; margin-bottom: 4px; }
   .lock-forgot-link {
     font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
-    color: rgba(255,255,255,0.25); cursor: pointer; text-decoration: none;
-    transition: color 0.15s; text-transform: uppercase; display: inline-block; margin-top: 8px;
+    color: rgba(255,255,255,0.42); cursor: pointer; text-decoration: none;
+    transition: color 0.15s; text-transform: uppercase; display: inline-block; margin-top: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
   }
-  .lock-forgot-link:hover { color: rgba(255,255,255,0.55); }
+  .lock-forgot-link:hover { color: rgba(255,255,255,0.75); border-bottom-color: rgba(255,255,255,0.4); }
 
   /* ═══════════════════════════════════════
      LIGHTBOX: ZOOM + SWIPE
@@ -5404,9 +5405,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <button id="lock-submit" onclick="_lockSubmitCurrent();lockSubmitRipple(event)">→ Entrar</button>
         <div class="lock-hint">
           Sem senha? Apenas visualização disponível<br>
-          <span class="lock-hint-visitor" onclick="enterViewerMode()">✦ Entrar como Visitante →</span>
-        </div>
-        <div style="text-align:center;margin-top:4px">
+          <span class="lock-hint-visitor" onclick="enterViewerMode()">✦ Entrar como Visitante →</span><br>
           <span class="lock-forgot-link" id="lock-forgot-link" onclick="showForgotPassword()">Esqueci minha senha</span>
         </div>
       </div>
