@@ -21486,13 +21486,17 @@ function projMigrateExistingData() {
 
 // ── Boot ──────────────────────────────────────────────
 async function loadSharedProject(token) {
-  const curtain = document.getElementById('transition-curtain');
-  const ls = document.getElementById('lock-screen');
   try {
-    if (curtain) curtain.classList.add('active');
-    if (ls) ls.classList.add('hidden');
+    // Primeiro faz o await — quando a resposta chegar, o DOM inteiro já está montado
     const { data, error } = await _sb.from('public_shares').select('proj_name,proj_data').eq('token', token).single();
     if (error || !data) throw new Error('Link inválido ou expirado');
+
+    // DOM já está pronto: captura os elementos AGORA
+    const curtain = document.getElementById('transition-curtain');
+    const ls = document.getElementById('lock-screen');
+    if (curtain) curtain.classList.add('active');
+    if (ls) ls.classList.add('hidden');
+
     isViewerMode = true;
     setEditingEnabled(false);
     updateLockIcon('visitor');
@@ -21523,14 +21527,15 @@ async function loadSharedProject(token) {
     updateStats();
     toast('Visualizando: ' + (data.proj_name || 'Projeto'));
     setTimeout(() => { if (typeof resetCamera === 'function') resetCamera(); }, 300);
+    if (curtain) { curtain.classList.remove('active'); curtain.classList.add('fade-out'); setTimeout(() => curtain.classList.remove('fade-out'), 300); }
   } catch(e) {
     console.error('[NODAL] loadSharedProject erro:', e);
+    const curtain = document.getElementById('transition-curtain');
+    const ls = document.getElementById('lock-screen');
     if (curtain) curtain.classList.remove('active');
     if (ls) ls.classList.remove('hidden');
     toast('Link inválido ou expirado');
-    return;
   }
-  if (curtain) { curtain.classList.remove('active'); curtain.classList.add('fade-out'); setTimeout(() => curtain.classList.remove('fade-out'), 300); }
 }
 
 async function projGenerateShareLink(projId) {
