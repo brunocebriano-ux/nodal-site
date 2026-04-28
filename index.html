@@ -7555,18 +7555,18 @@ function selectSearchResult(nodeId) {
   selectNode(nd); openLeftPanel(nd); toast('→ '+nd.title);
   // animate camera toward node
   const steps = 30;
-  const startR = spherical.radius;
-  const targetR = Math.max(30, startR);
+  const startR = spherical.radius, targetR = Math.max(30, startR);
+  const dx = nd.x, dy = nd.y, dz = nd.z;
+  const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)||1;
+  const startQuat = camQuat.clone();
+  const endQuat   = sphericalToQuat(Math.atan2(dx,dz), Math.acos(Math.max(-1,Math.min(1,dy/dist))));
   let s = 0;
   (function fly(){
     s++;
-    spherical.radius = startR + (targetR-startR)*(s/steps);
-    const dx = nd.x, dy = nd.y, dz = nd.z;
-    const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)||1;
-    const tTheta = Math.atan2(dx,dz);
-    const tPhi   = Math.acos(Math.max(-1,Math.min(1,dy/dist)));
-    spherical.theta += (tTheta - spherical.theta)*0.08;
-    spherical.phi   += (tPhi   - spherical.phi  )*0.08;
+    const t = s/steps;
+    camQuat.copy(startQuat).slerp(endQuat, t);
+    spherical.radius = startR + (targetR-startR)*t;
+    zoomTarget = spherical.radius;
     updateCamera();
     if(s<steps) requestAnimationFrame(fly);
   })();
@@ -7889,7 +7889,7 @@ const camera = new THREE.PerspectiveCamera(58, W() / H(), 0.1, 2000);
 camera.position.set(0, 0, 90);
 
 function resetCamera() {
-  if (!nodes.length) { spherical.theta = 0; spherical.phi = Math.PI/2; spherical.radius = 90; cameraTarget.set(0,0,0); updateCamera(); return; }
+  if (!nodes.length) { setSpherical(0, Math.PI/2); spherical.radius = 90; zoomTarget = 90; cameraTarget.set(0,0,0); updateCamera(); return; }
   // Center all nodes at origin so orbit always works
   const cx = nodes.reduce((s,n) => s+(n.x||0), 0) / nodes.length;
   const cy = nodes.reduce((s,n) => s+(n.y||0), 0) / nodes.length;
@@ -7908,9 +7908,9 @@ function resetCamera() {
   });
   // Reseta o ponto de órbita e a câmera
   cameraTarget.set(0, 0, 0);
-  spherical.theta = 0;
-  spherical.phi = Math.PI / 2;
+  setSpherical(0, Math.PI / 2);
   spherical.radius = Math.max(60, maxD * 3.2);
+  zoomTarget = spherical.radius;
   updateCamera();
 }
 
@@ -7969,6 +7969,36 @@ const dragPlane = new THREE.Plane();
 const dragOffset = new THREE.Vector3();
 const dragIntersect = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
+
+// ── Camera inertia ─────────────────────────────────
+let orbitVelX = 0, orbitVelY = 0;
+const ORBIT_DAMPING = 0.88;
+let zoomTarget = 90;
+const ZOOM_LERP = 0.10;
+const panVel = new THREE.Vector3();
+const PAN_DAMPING = 0.85;
+
+// ── Quaternion arcball (sem gimbal lock) ───────────
+const camQuat = new THREE.Quaternion(); // identity = câmera em +Z
+
+function sphericalToQuat(theta, phi) {
+  const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
+  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), phi - Math.PI / 2);
+  return qY.multiply(qX);
+}
+
+function setSpherical(theta, phi) {
+  spherical.theta = theta; spherical.phi = phi;
+  camQuat.copy(sphericalToQuat(theta, phi));
+}
+
+function applyOrbitDelta(dx, dy) {
+  const sens = 0.004;
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camQuat);
+  const qH = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -dx * sens);
+  const qV = new THREE.Quaternion().setFromAxisAngle(right, -dy * sens);
+  camQuat.premultiply(qH).premultiply(qV).normalize();
+}
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
@@ -8030,14 +8060,17 @@ window.addEventListener('mousemove', e => {
     const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), forward).normalize();
     const up = new THREE.Vector3().crossVectors(forward, right).normalize();
     const panSpd = spherical.radius * 0.0015;
+    panVel.addScaledVector(right, -pdx * panSpd * 0.25);
+    panVel.addScaledVector(up, pdy * panSpd * 0.25);
     cameraTarget.addScaledVector(right, -pdx * panSpd);
     cameraTarget.addScaledVector(up, pdy * panSpd);
     updateCamera();
   }
   if (isDragging && !connectMode && !dragMode) {
     if (_flyRaf) { cancelAnimationFrame(_flyRaf); _flyRaf = null; }
-    spherical.theta -= (e.clientX - lastMouse.x) * 0.004;
-    spherical.phi = Math.max(0.1, Math.min(Math.PI-0.1, spherical.phi - (e.clientY - lastMouse.y) * 0.004));
+    orbitVelX = e.clientX - lastMouse.x;
+    orbitVelY = e.clientY - lastMouse.y;
+    applyOrbitDelta(orbitVelX, orbitVelY);
     lastMouse = {x:e.clientX, y:e.clientY};
     updateCamera();
   }
@@ -8048,8 +8081,7 @@ window.addEventListener('mousemove', e => {
 });
 
 canvas.addEventListener('wheel', e => {
-  spherical.radius = Math.max(8, Math.min(500, spherical.radius + e.deltaY * 0.07));
-  updateCamera();
+  zoomTarget = Math.max(8, Math.min(500, zoomTarget + e.deltaY * 0.07));
 }, {passive:true});
 
 // Touch support
@@ -8087,8 +8119,7 @@ canvas.addEventListener('touchmove', e => {
   if (e.touches.length === 1 && !dragMode) {
     const dx = e.touches[0].clientX - lastTouches[0].x;
     const dy = e.touches[0].clientY - lastTouches[0].y;
-    spherical.theta -= dx * 0.005;
-    spherical.phi = Math.max(0.1, Math.min(Math.PI-0.1, spherical.phi - dy * 0.005));
+    applyOrbitDelta(dx, dy);
     lastTouches = [{x:e.touches[0].clientX, y:e.touches[0].clientY}];
     updateCamera();
   }
@@ -8102,9 +8133,9 @@ canvas.addEventListener('touchmove', e => {
 }, {passive:true});
 
 function updateCamera() {
-  camera.position.x = cameraTarget.x + spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
-  camera.position.y = cameraTarget.y + spherical.radius * Math.cos(spherical.phi);
-  camera.position.z = cameraTarget.z + spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+  const offset = new THREE.Vector3(0, 0, spherical.radius).applyQuaternion(camQuat);
+  camera.position.copy(cameraTarget).add(offset);
+  camera.up.copy(new THREE.Vector3(0, 1, 0).applyQuaternion(camQuat));
   camera.lookAt(cameraTarget);
 }
 
@@ -8755,14 +8786,17 @@ function flyToNodeId(id, silent) {
   selectNode(nd); openLeftPanel(nd);
   if (!silent) toast('→ ' + nd.title);
   const steps = 40, startR = spherical.radius, targetR = Math.max(30, startR);
+  const _dx = nd.x, _dy = nd.y, _dz = nd.z;
+  const _dist = Math.sqrt(_dx*_dx+_dy*_dy+_dz*_dz)||1;
+  const _startQuat = camQuat.clone();
+  const _endQuat   = sphericalToQuat(Math.atan2(_dx,_dz), Math.acos(Math.max(-1,Math.min(1,_dy/_dist))));
   let s = 0;
   (function fly(){
     s++;
-    spherical.radius = startR + (targetR - startR) * (s / steps);
-    const dx = nd.x, dy = nd.y, dz = nd.z;
-    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
-    spherical.theta += (Math.atan2(dx, dz) - spherical.theta) * 0.1;
-    spherical.phi   += (Math.acos(Math.max(-1, Math.min(1, dy/dist))) - spherical.phi) * 0.1;
+    const t = s/steps;
+    camQuat.copy(_startQuat).slerp(_endQuat, t);
+    spherical.radius = startR + (targetR-startR)*t;
+    zoomTarget = spherical.radius;
     updateCamera();
     if (s < steps) requestAnimationFrame(fly);
   })();
@@ -8782,8 +8816,8 @@ function flyToNode(nd) {
   // Raio alvo: aproximar confortavelmente, mas não colidir
   const tRadius = Math.max(22, Math.min(spherical.radius, dist * 1.6 + 18));
 
-  const startTheta  = spherical.theta;
-  const startPhi    = spherical.phi;
+  const startQuat   = camQuat.clone();
+  const endQuat     = sphericalToQuat(tTheta, tPhi);
   const startRadius = spherical.radius;
 
   const STEPS = 50;
@@ -8794,9 +8828,9 @@ function flyToNode(nd) {
   function step() {
     s++;
     const t = ease(Math.min(s / STEPS, 1));
-    spherical.theta  = startTheta  + (tTheta  - startTheta)  * t;
-    spherical.phi    = startPhi    + (tPhi    - startPhi)    * t;
+    camQuat.copy(startQuat).slerp(endQuat, t);
     spherical.radius = startRadius + (tRadius - startRadius) * t;
+    zoomTarget = spherical.radius;
     updateCamera();
     if (s < STEPS) _flyRaf = requestAnimationFrame(step);
     else _flyRaf = null;
@@ -9550,6 +9584,29 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
+
+  // ── Camera inertia & smooth zoom ──────────────────
+  let needCamUpdate = false;
+  if (!isDragging && (Math.abs(orbitVelX) > 0.05 || Math.abs(orbitVelY) > 0.05)) {
+    applyOrbitDelta(orbitVelX, orbitVelY);
+    orbitVelX *= ORBIT_DAMPING;
+    orbitVelY *= ORBIT_DAMPING;
+    needCamUpdate = true;
+  }
+  if (Math.abs(spherical.radius - zoomTarget) > 0.01) {
+    if (_flyRaf) {
+      zoomTarget = spherical.radius; // fly animation controls radius — stay in sync
+    } else {
+      spherical.radius += (zoomTarget - spherical.radius) * ZOOM_LERP;
+      needCamUpdate = true;
+    }
+  }
+  if (!isPanning && panVel.lengthSq() > 0.000001) {
+    cameraTarget.add(panVel);
+    panVel.multiplyScalar(PAN_DAMPING);
+    needCamUpdate = true;
+  }
+  if (needCamUpdate) updateCamera();
 
   // Float particles
   const pp = pGeo.attributes.position.array;
@@ -11335,9 +11392,9 @@ function navigateNeighbor(dir) {
     const dx=other.x, dy=other.y, dz=other.z;
     const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
     if (dist > 0.1) {
-      spherical.theta=Math.atan2(dx,dz);
-      spherical.phi=Math.acos(Math.max(-1,Math.min(1,dy/dist)));
+      setSpherical(Math.atan2(dx,dz), Math.acos(Math.max(-1,Math.min(1,dy/dist))));
       spherical.radius=Math.max(20,dist*1.6);
+      zoomTarget=spherical.radius;
       updateCamera();
     }
     toast('→ ' + other.title + ' (' + (_neighborNavIdx+1) + '/' + conns.length + ')');
@@ -12427,15 +12484,17 @@ flyToNode = function(nd) {
   const tTheta  = Math.atan2(dx, dz);
   const tPhi    = Math.acos(Math.max(-1, Math.min(1, dy/dist)));
   const tRadius = Math.max(_flyConfig.minRadius, Math.min(spherical.radius, dist*1.6+18));
-  const startTheta = spherical.theta, startPhi = spherical.phi, startRadius = spherical.radius;
+  const startQuat2   = camQuat.clone();
+  const endQuat2     = sphericalToQuat(tTheta, tPhi);
+  const startRadius = spherical.radius;
   const STEPS = _flyConfig.steps;
   let s = 0;
   function step() {
     s++;
     const t = _flyEaseFn(_flyConfig.ease, Math.min(s/STEPS, 1));
-    spherical.theta  = startTheta  + (tTheta  - startTheta)  * t;
-    spherical.phi    = startPhi    + (tPhi    - startPhi)    * t;
+    camQuat.copy(startQuat2).slerp(endQuat2, t);
     spherical.radius = startRadius + (tRadius - startRadius) * t;
+    zoomTarget = spherical.radius;
     updateCamera();
     if (s < STEPS) _flyRaf = requestAnimationFrame(step);
     else _flyRaf = null;
@@ -13207,7 +13266,7 @@ function enterFlat2D() {
   if (!nodes.length) { toast('Adicione nós antes de ativar o modo 2D'); return; }
   flat2DActive = true;
 
-  _flat2DSavedSpherical = { ...spherical };
+  _flat2DSavedSpherical = { ...spherical, quat: camQuat.clone() };
 
   _flat2DNodePositions = {};
   nodes.forEach(nd => {
@@ -13236,12 +13295,16 @@ function enterFlat2D() {
 
   const camSteps = 60;
   let cs = 0;
-  const startPhi = spherical.phi, startR = spherical.radius;
+  const _f2dCamDir = new THREE.Vector3(0,0,1).applyQuaternion(camQuat);
+  const _f2dTheta  = Math.atan2(_f2dCamDir.x, _f2dCamDir.z);
+  const _f2dStartQ = camQuat.clone(), _f2dEndQ = sphericalToQuat(_f2dTheta, 0.05);
+  const startR = spherical.radius;
   (function flyCamera() {
     cs++;
     const t = 1 - Math.pow(1 - cs/camSteps, 3);
-    spherical.phi    = startPhi + (0.05  - startPhi) * t;
-    spherical.radius = startR   + (130   - startR)   * t;
+    camQuat.copy(_f2dStartQ).slerp(_f2dEndQ, t);
+    spherical.radius = startR + (130 - startR) * t;
+    zoomTarget = spherical.radius;
     updateCamera();
     if (cs < camSteps) requestAnimationFrame(flyCamera);
   })();
@@ -13300,14 +13363,15 @@ function exitFlat2D() {
   if (_flat2DSavedSpherical) {
     const camSteps = 55;
     let cs = 0;
-    const sp = spherical.phi, sr = spherical.radius, st = spherical.theta;
-    const tp = _flat2DSavedSpherical.phi, tr = _flat2DSavedSpherical.radius, tt = _flat2DSavedSpherical.theta;
+    const _exStartQ = camQuat.clone();
+    const _exEndQ   = _flat2DSavedSpherical.quat || sphericalToQuat(_flat2DSavedSpherical.theta, _flat2DSavedSpherical.phi);
+    const sr = spherical.radius, tr = _flat2DSavedSpherical.radius;
     (function flyCamera() {
       cs++;
       const t = 1 - Math.pow(1 - cs/camSteps, 3);
-      spherical.phi    = sp + (tp - sp) * t;
+      camQuat.copy(_exStartQ).slerp(_exEndQ, t);
       spherical.radius = sr + (tr - sr) * t;
-      spherical.theta  = st + (tt - st) * t;
+      zoomTarget = spherical.radius;
       updateCamera();
       if (cs < camSteps) requestAnimationFrame(flyCamera);
     })();
