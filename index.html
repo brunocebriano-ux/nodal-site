@@ -5169,6 +5169,187 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   .pe-cancel-btn:hover { border-color: rgba(255,80,80,0.3); color: #f87171; }
 
+  /* ═══════════════════════════════════════
+     BLOCO DE NOTAS
+  ═══════════════════════════════════════ */
+  #notepad-overlay {
+    display: none; position: fixed; inset: 0; z-index: 150;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  #notepad-overlay.open { display: flex; }
+  #notepad-panel {
+    width: min(520px, 94vw); max-height: 88vh;
+    display: flex; flex-direction: column;
+    border-radius: 3px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 2px 0 rgba(255,255,255,0.05);
+    overflow: hidden; position: relative;
+    animation: notepadIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes notepadIn {
+    from { transform: scale(0.94) translateY(14px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  #notepad-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px 10px 16px; flex-shrink: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+  #notepad-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; }
+  #notepad-close-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    padding: 4px 8px; border-radius: 3px; transition: all 0.12s;
+  }
+  #notepad-style-bar { display: flex; flex-shrink: 0; }
+  .notepad-style-btn {
+    flex: 1; height: 28px; border: none; cursor: pointer;
+    font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+    text-transform: uppercase; font-weight: 700; transition: all 0.15s;
+    border-bottom: 2px solid transparent;
+  }
+  #notepad-body { flex: 1; overflow-y: auto; position: relative; }
+  #notepad-text {
+    width: 100%; min-height: 360px; resize: none;
+    border: none; outline: none;
+    font-size: 14px; line-height: 1.8; padding: 22px 28px;
+    box-sizing: border-box; background: transparent; font-family: inherit;
+  }
+  #notepad-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; flex-shrink: 0;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+    border-top: 1px solid rgba(0,0,0,0.1);
+  }
+  #notepad-save-btn {
+    background: none; border: 1px solid currentColor; cursor: pointer;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 2px;
+    transition: all 0.12s; color: inherit; opacity: 0.7;
+  }
+  #notepad-save-btn:hover { opacity: 1; }
+
+  /* Estilo: Amarelo */
+  #notepad-panel.style-yellow { background: #fdf3a7; }
+  #notepad-panel.style-yellow #notepad-header { background: #f7e44d; border-bottom-color: rgba(0,0,0,0.1); }
+  #notepad-panel.style-yellow #notepad-title { color: #7a6a00; }
+  #notepad-panel.style-yellow #notepad-close-btn { color: #7a6a00; }
+  #notepad-panel.style-yellow #notepad-close-btn:hover { background: rgba(0,0,0,0.08); }
+  #notepad-panel.style-yellow #notepad-style-bar { background: #f7e44d; }
+  #notepad-panel.style-yellow .notepad-style-btn { background: #f7e44d; color: #7a6a00; }
+  #notepad-panel.style-yellow .notepad-style-btn:hover { background: #f0d820; }
+  #notepad-panel.style-yellow .notepad-style-btn.active { background: #f0d820; border-bottom-color: #c8a800; }
+  #notepad-panel.style-yellow #notepad-text { color: #3a2e00; font-family: 'DM Sans', sans-serif; }
+  #notepad-panel.style-yellow #notepad-footer { background: #f7e44d; color: #9a8a00; border-top-color: rgba(0,0,0,0.1); }
+
+  /* Estilo: Caderno (linhas) */
+  #notepad-panel.style-lined { background: #fff; }
+  #notepad-panel.style-lined #notepad-header { background: #e8efff; border-bottom: 3px solid #4a6fa5; }
+  #notepad-panel.style-lined #notepad-title { color: #1a3a6a; }
+  #notepad-panel.style-lined #notepad-close-btn { color: #1a3a6a; }
+  #notepad-panel.style-lined #notepad-close-btn:hover { background: rgba(0,0,100,0.08); }
+  #notepad-panel.style-lined #notepad-style-bar { background: #e8efff; }
+  #notepad-panel.style-lined .notepad-style-btn { background: #e8efff; color: #1a3a6a; }
+  #notepad-panel.style-lined .notepad-style-btn:hover { background: #d0dcf5; }
+  #notepad-panel.style-lined .notepad-style-btn.active { background: #d0dcf5; border-bottom-color: #4a6fa5; }
+  #notepad-panel.style-lined #notepad-body {
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 27px, rgba(74,111,165,0.18) 28px, rgba(74,111,165,0.18) 28px);
+  }
+  #notepad-panel.style-lined #notepad-body::before {
+    content: ''; position: absolute; top: 0; left: 48px; bottom: 0;
+    width: 1.5px; background: rgba(220,80,80,0.28); pointer-events: none;
+  }
+  #notepad-panel.style-lined #notepad-text { color: #1a1a2e; font-family: 'DM Sans', sans-serif; line-height: 28px; padding-top: 24px; padding-left: 60px; }
+  #notepad-panel.style-lined #notepad-footer { background: #e8efff; color: #4a6fa5; border-top-color: #d0dcf5; }
+
+  /* Estilo: Quadriculado */
+  #notepad-panel.style-grid { background: #f8f9ff; }
+  #notepad-panel.style-grid #notepad-header { background: #1a1a2e; border-bottom-color: rgba(167,139,250,0.3); }
+  #notepad-panel.style-grid #notepad-title { color: rgba(167,139,250,0.9); }
+  #notepad-panel.style-grid #notepad-close-btn { color: rgba(255,255,255,0.5); }
+  #notepad-panel.style-grid #notepad-close-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  #notepad-panel.style-grid #notepad-style-bar { background: #1a1a2e; }
+  #notepad-panel.style-grid .notepad-style-btn { background: #1a1a2e; color: rgba(167,139,250,0.7); }
+  #notepad-panel.style-grid .notepad-style-btn:hover { background: rgba(167,139,250,0.1); }
+  #notepad-panel.style-grid .notepad-style-btn.active { background: rgba(167,139,250,0.15); border-bottom-color: #a78bfa; color: #a78bfa; }
+  #notepad-panel.style-grid #notepad-body {
+    background:
+      linear-gradient(rgba(167,139,250,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(167,139,250,0.12) 1px, transparent 1px),
+      #f8f9ff;
+    background-size: 24px 24px;
+  }
+  #notepad-panel.style-grid #notepad-text { color: #1a1a2e; font-family: 'Space Mono', monospace; font-size: 13px; }
+  #notepad-panel.style-grid #notepad-footer { background: #1a1a2e; color: rgba(167,139,250,0.6); border-top-color: rgba(167,139,250,0.2); }
+
+  /* ═══════════════════════════════════════
+     REDEFINIÇÃO DE SENHA
+  ═══════════════════════════════════════ */
+  #pw-reset-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9500;
+    background: rgba(0,0,0,0.88); backdrop-filter: blur(24px);
+    align-items: center; justify-content: center;
+  }
+  #pw-reset-overlay.open { display: flex; }
+  #pw-reset-modal {
+    width: min(400px, 94vw);
+    background: var(--glass-heavy); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 32px 28px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    font-family: var(--mono);
+    animation: notepadIn 0.2s ease;
+  }
+  #pw-reset-modal h3 {
+    font-family: var(--display); font-size: 16px; margin: 0 0 6px;
+    color: var(--text); letter-spacing: 0.06em;
+  }
+  #pw-reset-modal p { font-size: 10px; color: var(--text2); letter-spacing: 0.08em; margin: 0 0 20px; line-height: 1.8; }
+  #pw-reset-modal input {
+    width: 100%; height: 40px; background: var(--input-bg);
+    border: 1px solid var(--border); color: var(--text);
+    font-family: var(--mono); font-size: 12px; padding: 0 12px;
+    border-radius: 4px; outline: none; box-sizing: border-box;
+    margin-bottom: 10px; transition: border-color 0.15s;
+  }
+  #pw-reset-modal input:focus { border-color: var(--border2); }
+  #pw-reset-modal .pw-reset-btn {
+    width: 100%; height: 40px; margin-top: 4px;
+    background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.4);
+    color: #a78bfa; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.12em; cursor: pointer; border-radius: 4px; transition: all 0.15s;
+  }
+  #pw-reset-modal .pw-reset-btn:hover { background: rgba(167,139,250,0.25); }
+  #pw-reset-error { font-size: 10px; color: #f87171; letter-spacing: 0.08em; min-height: 16px; margin-bottom: 4px; }
+  .lock-forgot-link {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.25); cursor: pointer; text-decoration: none;
+    transition: color 0.15s; text-transform: uppercase; display: inline-block; margin-top: 8px;
+  }
+  .lock-forgot-link:hover { color: rgba(255,255,255,0.55); }
+
+  /* ═══════════════════════════════════════
+     LIGHTBOX: ZOOM + SWIPE
+  ═══════════════════════════════════════ */
+  #sm-lb-zoom-indicator {
+    position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.85); font-family: var(--mono); font-size: 11px;
+    padding: 4px 14px; border-radius: 20px; letter-spacing: 0.1em;
+    pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 10;
+  }
+  #sm-lb-zoom-indicator.visible { opacity: 1; }
+  #sm-lb-download {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.6); font-size: 11px; cursor: pointer;
+    font-family: var(--mono); padding: 6px 12px; border-radius: 3px;
+    transition: all 0.12s; letter-spacing: 0.06em; text-decoration: none;
+    display: inline-block; margin-right: 8px;
+  }
+  #sm-lb-download:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  #sm-lb-download.hidden { display: none; }
+  #sm-lb-inner img { transition: transform 0.1s ease; transform-origin: center center; }
+  #sm-lb-inner.zoomed { cursor: grab; overflow: hidden; }
+  #sm-lb-inner.zoomed.grabbing { cursor: grabbing; }
 
 </style>
 </head>
@@ -5224,6 +5405,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div class="lock-hint">
           Sem senha? Apenas visualização disponível<br>
           <span class="lock-hint-visitor" onclick="enterViewerMode()">✦ Entrar como Visitante →</span>
+        </div>
+        <div style="text-align:center;margin-top:4px">
+          <span class="lock-forgot-link" id="lock-forgot-link" onclick="showForgotPassword()">Esqueci minha senha</span>
         </div>
       </div>
     </div>
@@ -6084,6 +6268,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     <!-- Tutorial interativo -->
     <button class="btn" id="btn-tutorial" onclick="openTutorialModal()" title="Guia interativo de funções">✦ Guia</button>
+
+    <!-- Bloco de Notas -->
+    <button class="btn" id="btn-notepad" onclick="openNotepad()" title="Bloco de notas pessoal">✎ Notas</button>
 
     <div class="hud-sep"></div>
     <!-- Cadeado unificado: visitante=fechado, editor=aberto, clique tranca -->
@@ -11864,13 +12051,18 @@ function closeArticleViewer() {
   <div id="sm-lb-top">
     <span id="sm-lb-counter"></span>
     <span id="sm-lb-caption-top"></span>
-    <button id="sm-lb-close" onclick="closeLightbox()">✕ Fechar</button>
+    <div style="display:flex;align-items:center;gap:0">
+      <a id="sm-lb-download" class="sm-lb-download hidden" title="Baixar imagem" download>↓ Baixar</a>
+      <button id="sm-lb-close" onclick="closeLightbox()">✕ Fechar</button>
+    </div>
   </div>
   <!-- Prev / Next -->
   <button class="sm-lb-arrow hidden" id="sm-lb-prev" onclick="smLbNav(-1)">‹</button>
   <button class="sm-lb-arrow hidden" id="sm-lb-next" onclick="smLbNav(1)">›</button>
   <!-- Main media -->
   <div id="sm-lb-inner"></div>
+  <!-- Zoom indicator -->
+  <div id="sm-lb-zoom-indicator">1×</div>
   <!-- Filmstrip -->
   <div id="sm-lb-strip"></div>
 </div>
@@ -23732,6 +23924,359 @@ function showIsolatedNodes() {
       if (btn) { btn.textContent = '✦ Ask AI'; btn.style.opacity=''; btn.disabled=false; }
     }
   };
+})();
+</script>
+
+
+<!-- ══ BLOCO DE NOTAS ══ -->
+<div id="notepad-overlay" onclick="if(event.target===this)closeNotepad()">
+  <div id="notepad-panel" class="style-yellow">
+    <div id="notepad-header">
+      <span id="notepad-title">✎ Notas</span>
+      <button id="notepad-close-btn" onclick="closeNotepad()">✕ fechar</button>
+    </div>
+    <div id="notepad-style-bar">
+      <button class="notepad-style-btn active" id="nps-yellow" onclick="switchNotepadStyle('yellow')" title="Papel amarelo">☀ Amarelo</button>
+      <button class="notepad-style-btn" id="nps-lined" onclick="switchNotepadStyle('lined')" title="Caderno de linhas">≡ Caderno</button>
+      <button class="notepad-style-btn" id="nps-grid" onclick="switchNotepadStyle('grid')" title="Papel quadriculado">⊞ Grade</button>
+    </div>
+    <div id="notepad-body">
+      <textarea id="notepad-text" placeholder="Escreva suas anotações aqui…" oninput="notepadAutoSave()"></textarea>
+    </div>
+    <div id="notepad-footer">
+      <span id="notepad-char-count">0 caracteres</span>
+      <button id="notepad-save-btn" onclick="saveNotepad()">✓ Salvo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REDEFINIÇÃO DE SENHA ══ -->
+<div id="pw-reset-overlay">
+  <div id="pw-reset-modal">
+    <h3>🔑 Nova Senha</h3>
+    <p>Você acessou via link de redefinição.<br>Digite sua nova senha abaixo.</p>
+    <div id="pw-reset-error"></div>
+    <input type="password" id="pw-reset-new" placeholder="Nova senha (mín. 6 caracteres)" autocomplete="new-password"/>
+    <input type="password" id="pw-reset-confirm" placeholder="Confirmar nova senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')setNewPassword()"/>
+    <button class="pw-reset-btn" onclick="setNewPassword()">→ Salvar nova senha</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  BLOCO DE NOTAS
+// ══════════════════════════════════════════════════════
+let _notepadStyle = 'yellow';
+let _notepadSaveTimer = null;
+
+function openNotepad() {
+  loadNotepad();
+  document.getElementById('notepad-overlay').classList.add('open');
+}
+
+function closeNotepad() {
+  saveNotepad();
+  document.getElementById('notepad-overlay').classList.remove('open');
+}
+
+function switchNotepadStyle(style) {
+  _notepadStyle = style;
+  const panel = document.getElementById('notepad-panel');
+  panel.classList.remove('style-yellow','style-lined','style-grid');
+  panel.classList.add('style-' + style);
+  ['yellow','lined','grid'].forEach(s => {
+    document.getElementById('nps-' + s).classList.toggle('active', s === style);
+  });
+  localStorage.setItem('notepad_style', style);
+}
+
+function saveNotepad() {
+  const text = document.getElementById('notepad-text').value;
+  const key = 'notepad_' + (typeof activeProjectId !== 'undefined' && activeProjectId ? activeProjectId : 'global');
+  localStorage.setItem(key, text);
+  const btn = document.getElementById('notepad-save-btn');
+  if (btn) { btn.textContent = '✓ Salvo'; }
+}
+
+function loadNotepad() {
+  const key = 'notepad_' + (typeof activeProjectId !== 'undefined' && activeProjectId ? activeProjectId : 'global');
+  const saved = localStorage.getItem(key) || '';
+  const ta = document.getElementById('notepad-text');
+  ta.value = saved;
+  notepadUpdateCount();
+
+  const savedStyle = localStorage.getItem('notepad_style') || 'yellow';
+  switchNotepadStyle(savedStyle);
+}
+
+function notepadAutoSave() {
+  notepadUpdateCount();
+  const btn = document.getElementById('notepad-save-btn');
+  if (btn) btn.textContent = '● Salvar';
+  clearTimeout(_notepadSaveTimer);
+  _notepadSaveTimer = setTimeout(saveNotepad, 1200);
+}
+
+function notepadUpdateCount() {
+  const len = (document.getElementById('notepad-text').value || '').length;
+  const el = document.getElementById('notepad-char-count');
+  if (el) el.textContent = len + ' caractere' + (len !== 1 ? 's' : '');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('notepad-overlay')?.classList.contains('open')) {
+    closeNotepad();
+  }
+});
+
+// ══════════════════════════════════════════════════════
+//  ESQUECI MINHA SENHA
+// ══════════════════════════════════════════════════════
+function showForgotPassword() {
+  const emailEl = document.getElementById('lock-email');
+  const email = emailEl?.value.trim() || '';
+
+  const confirmMsg = email
+    ? `Enviar link de redefinição para:\n${email}?`
+    : null;
+
+  if (!email) {
+    // Highlight email field and ask user to fill it
+    if (emailEl) {
+      emailEl.focus();
+      emailEl.style.borderColor = 'rgba(167,139,250,0.6)';
+      setTimeout(() => { emailEl.style.borderColor = ''; }, 1800);
+    }
+    const err = document.getElementById('lock-error');
+    if (err) { err.style.color = 'rgba(167,139,250,0.9)'; err.textContent = 'Digite seu email acima e clique em "Esqueci minha senha"'; }
+    setTimeout(() => {
+      if (err) { err.style.color = ''; err.textContent = ''; }
+    }, 3000);
+    return;
+  }
+
+  sendResetEmail(email);
+}
+
+async function sendResetEmail(email) {
+  const err = document.getElementById('lock-error');
+  const link = document.getElementById('lock-forgot-link');
+  if (link) { link.textContent = 'Enviando…'; link.style.pointerEvents = 'none'; }
+  try {
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+    if (err) {
+      err.style.color = '#4ade80';
+      err.textContent = '✓ Link enviado! Verifique seu email.';
+    }
+    if (link) { link.textContent = 'Email enviado ✓'; }
+  } catch(e) {
+    if (err) { err.style.color = '#f87171'; err.textContent = e.message; }
+    if (link) { link.textContent = 'Esqueci minha senha'; link.style.pointerEvents = ''; }
+  }
+}
+
+// Detecta token de recuperação do Supabase no hash da URL
+(function _detectPasswordRecovery() {
+  try {
+    _sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        document.getElementById('pw-reset-overlay').classList.add('open');
+      }
+    });
+  } catch(e) {}
+})();
+
+async function setNewPassword() {
+  const newPwd = document.getElementById('pw-reset-new').value;
+  const confirm = document.getElementById('pw-reset-confirm').value;
+  const errEl = document.getElementById('pw-reset-error');
+
+  if (!newPwd || newPwd.length < 6) { errEl.textContent = 'Senha deve ter ao menos 6 caracteres'; return; }
+  if (newPwd !== confirm) { errEl.textContent = 'As senhas não coincidem'; return; }
+
+  errEl.textContent = '';
+  const btn = document.querySelector('#pw-reset-modal .pw-reset-btn');
+  if (btn) { btn.textContent = 'Salvando…'; btn.disabled = true; }
+
+  try {
+    const { error } = await _sb.auth.updateUser({ password: newPwd });
+    if (error) throw error;
+    errEl.style.color = '#4ade80';
+    errEl.textContent = '✓ Senha atualizada com sucesso!';
+    setTimeout(() => {
+      document.getElementById('pw-reset-overlay').classList.remove('open');
+      if (btn) { btn.textContent = '→ Salvar nova senha'; btn.disabled = false; }
+      errEl.style.color = '';
+      errEl.textContent = '';
+      document.getElementById('pw-reset-new').value = '';
+      document.getElementById('pw-reset-confirm').value = '';
+    }, 1800);
+  } catch(e) {
+    errEl.style.color = '#f87171';
+    errEl.textContent = e.message;
+    if (btn) { btn.textContent = '→ Salvar nova senha'; btn.disabled = false; }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  LIGHTBOX: ZOOM COM SCROLL/PINCH + SWIPE
+// ══════════════════════════════════════════════════════
+(function _initLightboxZoom() {
+  let _lbZoom = 1;
+  let _lbPanX = 0, _lbPanY = 0;
+  let _lbDragActive = false;
+  let _lbDragStartX = 0, _lbDragStartY = 0;
+  let _lbPanStartX = 0, _lbPanStartY = 0;
+  let _lbZoomTimer = null;
+  // Touch swipe state
+  let _touchStartX = 0, _touchStartY = 0;
+  let _touchStartDist = 0;
+  let _touchStartZoom = 1;
+  let _isTouchZoom = false;
+
+  function _lbGetImg() {
+    return document.querySelector('#sm-lb-inner img');
+  }
+
+  function _lbApplyTransform() {
+    const img = _lbGetImg();
+    if (!img) return;
+    img.style.transform = `scale(${_lbZoom}) translate(${_lbPanX / _lbZoom}px, ${_lbPanY / _lbZoom}px)`;
+    const inner = document.getElementById('sm-lb-inner');
+    if (inner) inner.classList.toggle('zoomed', _lbZoom > 1);
+  }
+
+  function _lbShowZoomIndicator() {
+    const el = document.getElementById('sm-lb-zoom-indicator');
+    if (!el) return;
+    el.textContent = Math.round(_lbZoom * 10) / 10 + '×';
+    el.classList.add('visible');
+    clearTimeout(_lbZoomTimer);
+    if (_lbZoom <= 1) {
+      _lbZoomTimer = setTimeout(() => el.classList.remove('visible'), 600);
+    }
+  }
+
+  function _lbResetZoom() {
+    _lbZoom = 1; _lbPanX = 0; _lbPanY = 0;
+    _lbApplyTransform();
+    const inner = document.getElementById('sm-lb-inner');
+    if (inner) inner.classList.remove('zoomed', 'grabbing');
+    const el = document.getElementById('sm-lb-zoom-indicator');
+    if (el) el.classList.remove('visible');
+  }
+
+  // Reset zoom whenever we navigate
+  const _origSmLbRender = smLbRender;
+  window.smLbRender = function() {
+    _lbResetZoom();
+    _origSmLbRender.apply(this, arguments);
+    // Update download button
+    setTimeout(() => {
+      const m = smLbItems[smLbIndex];
+      const dl = document.getElementById('sm-lb-download');
+      if (!dl || !m) return;
+      if (m.type === 'image' && !m.url.startsWith('data:')) {
+        dl.href = m.url;
+        dl.setAttribute('target', '_blank');
+        dl.classList.remove('hidden');
+      } else {
+        dl.classList.add('hidden');
+      }
+    }, 50);
+  };
+
+  // Also reset when lightbox closes
+  const _origCloseLightbox = closeLightbox;
+  window.closeLightbox = function() {
+    _lbResetZoom();
+    _origCloseLightbox.apply(this, arguments);
+  };
+
+  // ── Wheel zoom ────────────────────────────────────
+  document.getElementById('sm-lightbox').addEventListener('wheel', e => {
+    const img = _lbGetImg();
+    if (!img) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    _lbZoom = Math.min(Math.max(_lbZoom + delta, 1), 5);
+    if (_lbZoom === 1) { _lbPanX = 0; _lbPanY = 0; }
+    _lbApplyTransform();
+    _lbShowZoomIndicator();
+  }, { passive: false });
+
+  // ── Double-click to zoom / reset ─────────────────
+  document.getElementById('sm-lightbox').addEventListener('dblclick', e => {
+    if (e.target.tagName !== 'IMG') return;
+    if (_lbZoom > 1) { _lbResetZoom(); _lbShowZoomIndicator(); }
+    else { _lbZoom = 2.5; _lbApplyTransform(); _lbShowZoomIndicator(); }
+  });
+
+  // ── Drag to pan (when zoomed) ─────────────────────
+  document.getElementById('sm-lightbox').addEventListener('mousedown', e => {
+    if (_lbZoom <= 1 || e.target.tagName !== 'IMG') return;
+    e.preventDefault();
+    _lbDragActive = true;
+    _lbDragStartX = e.clientX; _lbDragStartY = e.clientY;
+    _lbPanStartX = _lbPanX; _lbPanStartY = _lbPanY;
+    const inner = document.getElementById('sm-lb-inner');
+    if (inner) inner.classList.add('grabbing');
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!_lbDragActive) return;
+    _lbPanX = _lbPanStartX + (e.clientX - _lbDragStartX);
+    _lbPanY = _lbPanStartY + (e.clientY - _lbDragStartY);
+    _lbApplyTransform();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!_lbDragActive) return;
+    _lbDragActive = false;
+    const inner = document.getElementById('sm-lb-inner');
+    if (inner) inner.classList.remove('grabbing');
+  });
+
+  // ── Touch: swipe to navigate + pinch to zoom ──────
+  document.getElementById('sm-lightbox').addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      _touchStartX = e.touches[0].clientX;
+      _touchStartY = e.touches[0].clientY;
+      _isTouchZoom = false;
+    } else if (e.touches.length === 2) {
+      _isTouchZoom = true;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      _touchStartDist = Math.hypot(dx, dy);
+      _touchStartZoom = _lbZoom;
+    }
+  }, { passive: true });
+
+  document.getElementById('sm-lightbox').addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      _lbZoom = Math.min(Math.max(_touchStartZoom * (dist / _touchStartDist), 1), 5);
+      if (_lbZoom === 1) { _lbPanX = 0; _lbPanY = 0; }
+      _lbApplyTransform();
+      _lbShowZoomIndicator();
+    }
+  }, { passive: false });
+
+  document.getElementById('sm-lightbox').addEventListener('touchend', e => {
+    if (_isTouchZoom) { _isTouchZoom = false; return; }
+    if (e.changedTouches.length === 1 && _lbZoom <= 1) {
+      const dx = e.changedTouches[0].clientX - _touchStartX;
+      const dy = e.changedTouches[0].clientY - _touchStartY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) smLbNav(1); else smLbNav(-1);
+      }
+    }
+  }, { passive: true });
 })();
 </script>
 
