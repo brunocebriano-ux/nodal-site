@@ -2505,26 +2505,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     border-bottom-color: rgba(0,0,0,0.2);
   }
   html.light .lock-forgot-link:hover { color: rgba(0,47,167,0.75); border-bottom-color: rgba(0,47,167,0.4); }
-
-  /* ── Tipo de conexão badge ── */
-  .lp-conn-type-badge {
-    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
-    border: 1px solid var(--border); border-radius: 3px;
-    padding: 1px 5px; cursor: pointer; flex-shrink: 0;
-    transition: all 0.15s; opacity: 0.85; user-select: none;
-  }
-  .lp-conn-type-badge:hover { opacity: 1; transform: scale(1.1); }
-
-  /* ── Undo/Redo HUD indicator ── */
-  #undo-redo-indicator {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: var(--glass-heavy); border: 1px solid var(--border2);
-    color: var(--text2); font-family: var(--mono); font-size: 10px;
-    letter-spacing: 0.1em; padding: 6px 16px; border-radius: 20px;
-    pointer-events: none; opacity: 0; transition: opacity 0.3s;
-    z-index: 500; white-space: nowrap;
-  }
-  #undo-redo-indicator.visible { opacity: 1; }
   html.light #lock-card {
     box-shadow: 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
   }
@@ -6237,9 +6217,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div class="hud-drop-item editor-only hidden" onclick="openImportDialog();hudMenuClose()">
             <span class="hud-drop-icon">↓</span> Importar JSON
           </div>
-          <div class="hud-drop-item" onclick="exportGraphPNG();hudMenuClose()">
-            <span class="hud-drop-icon">◻</span> Exportar imagem PNG
-          </div>
         </div>
         <div class="hud-drop-section">
           <div class="hud-drop-label">Aparência</div>
@@ -8073,7 +8050,7 @@ const rpWidth = () => panelVisible ? 290 : 0;
 const W = () => window.innerWidth;  // canvas sempre cobre tela toda — painel fica sobre o canvas com glassmorphism
 const H = () => window.innerHeight;
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
 const scene = new THREE.Scene();
@@ -8508,14 +8485,11 @@ function openLeftPanel(nd) {
       const other = nodes.find(n => n.id===otherId);
       if (!other) return '';
       const arrow = c.from===nd.id ? '→' : '←';
-      const ctype = c.type || 'default';
-      const ctypeData = _CONN_TYPES[ctype] || _CONN_TYPES.default;
       return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
         <span class="lp-conn-dot" style="background:${catColor(other.cat)}"></span>
         <span class="lp-conn-arrow">${arrow}</span>
         <span style="flex:1;color:${other.color||catColor(other.cat)}">${other.title}</span>
-        <span class="lp-conn-type-badge" style="color:${ctypeData.color||'var(--text3)'};border-color:${ctypeData.color||'var(--border)'}"
-          onclick="event.stopPropagation();cycleConnType('${c.id}')" title="Tipo: ${ctypeData.desc} — clique para trocar">${ctypeData.icon}</span>
+        <span class="lp-conn-cat">${other.cat}</span>
       </div>`;
     }).join('');
   }
@@ -8649,7 +8623,7 @@ function removeNode(nd) {
 }
 
 // ── Connections — colored by node mix ─────────────
-function createConnection(fromId, toId, connType) {
+function createConnection(fromId, toId) {
   const from = nodes.find(n=>n.id===fromId);
   const to   = nodes.find(n=>n.id===toId);
   if (!from || !to) return;
@@ -8672,8 +8646,7 @@ function createConnection(fromId, toId, connType) {
   const conn = {
     id: 'c' + (++_connIdCounter), from: fromId, to: toId, line,
     lineColor: mixColor.clone(), lineHover: false,
-    particleT: Math.random(), particleMesh: null,
-    type: connType || 'default'
+    particleT: Math.random(), particleMesh: null
   };
   createConnParticle(conn, from, to);
   connections.push(conn);
@@ -9262,10 +9235,9 @@ function updateStats() {
 // ── Persistence ────────────────────────────────────
 function save() {
   if (typeof _t2gImporting !== 'undefined' && _t2gImporting) return;
-  if (typeof _historyRestoring !== 'undefined' && _historyRestoring) return;
   localStorage.setItem('neural-v3', JSON.stringify({
     nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||''})),
-    connections: connections.map(c=>({id:c.id,from:c.from,to:c.to,type:c.type||'default'}))
+    connections: connections.map(c=>({id:c.id,from:c.from,to:c.to}))
   }));
   saveSettings();
 }
@@ -9279,7 +9251,7 @@ function load() {
     const data = JSON.parse(raw); let maxId = 0;
     data.nodes.forEach(nd => { const n=parseInt(nd.id.replace('n','')); if(!isNaN(n)&&n>maxId) maxId=n; addNode(nd); });
     nodeIdCounter = maxId + 1;
-    data.connections.forEach(c => createConnection(c.from, c.to, c.type));
+    data.connections.forEach(c => createConnection(c.from, c.to));
   } catch(e) { spawnDefaultNodes(); }
   setTimeout(handleUrlHash, 300);
 }
@@ -9915,15 +9887,13 @@ function animate() {
       const wMult   = 1.0 + ((c.displayWeight || 1) - 1) * 0.25;
       const pulseIntensity = wavePulse * wMult;
 
-      // Color — brilho base + onda de pulso + hover (type override)
-      const _tcMap = {influencia:'#4ade80',contradiz:'#f87171',deriva:'#60a5fa',referencia:'#fbbf24'};
-      const _baseColor = (c.type && c.type !== 'default' && _tcMap[c.type])
-        ? new THREE.Color(_tcMap[c.type]) : c.lineColor;
+      // Color — brilho base + onda de pulso + hover
       if (c.lineHover) {
-        const bright = _baseColor.clone().multiplyScalar(2.4 + 0.5*Math.sin(t*4));
+        const bright = c.lineColor.clone().multiplyScalar(2.4 + 0.5*Math.sin(t*4));
         c.line.material.color.lerp(bright, 0.18);
       } else {
-        const waveColor = _baseColor.clone().multiplyScalar(0.7 + pulseIntensity * 1.1);
+        // Onda percorrendo: clareia e escurece ritmicamente
+        const waveColor = c.lineColor.clone().multiplyScalar(0.7 + pulseIntensity * 1.1);
         c.line.material.color.lerp(waveColor, 0.09);
       }
 
@@ -23962,9 +23932,6 @@ function showIsolatedNodes() {
 </script>
 
 
-<!-- Undo/Redo indicator -->
-<div id="undo-redo-indicator"></div>
-
 <!-- ══ BLOCO DE NOTAS ══ -->
 <div id="notepad-overlay" onclick="if(event.target===this)closeNotepad()">
   <div id="notepad-panel" class="style-yellow">
@@ -24269,4 +24236,53 @@ async function setNewPassword() {
     _lbApplyTransform();
   });
 
-  document.addEvent
+  document.addEventListener('mouseup', () => {
+    if (!_lbDragActive) return;
+    _lbDragActive = false;
+    const inner = document.getElementById('sm-lb-inner');
+    if (inner) inner.classList.remove('grabbing');
+  });
+
+  // ── Touch: swipe to navigate + pinch to zoom ──────
+  document.getElementById('sm-lightbox').addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      _touchStartX = e.touches[0].clientX;
+      _touchStartY = e.touches[0].clientY;
+      _isTouchZoom = false;
+    } else if (e.touches.length === 2) {
+      _isTouchZoom = true;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      _touchStartDist = Math.hypot(dx, dy);
+      _touchStartZoom = _lbZoom;
+    }
+  }, { passive: true });
+
+  document.getElementById('sm-lightbox').addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      _lbZoom = Math.min(Math.max(_touchStartZoom * (dist / _touchStartDist), 1), 5);
+      if (_lbZoom === 1) { _lbPanX = 0; _lbPanY = 0; }
+      _lbApplyTransform();
+      _lbShowZoomIndicator();
+    }
+  }, { passive: false });
+
+  document.getElementById('sm-lightbox').addEventListener('touchend', e => {
+    if (_isTouchZoom) { _isTouchZoom = false; return; }
+    if (e.changedTouches.length === 1 && _lbZoom <= 1) {
+      const dx = e.changedTouches[0].clientX - _touchStartX;
+      const dy = e.changedTouches[0].clientY - _touchStartY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) smLbNav(1); else smLbNav(-1);
+      }
+    }
+  }, { passive: true });
+})();
+</script>
+
+</body>
+</html>
