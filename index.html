@@ -2500,6 +2500,11 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     -webkit-text-fill-color: transparent;
     animation: visitor-shimmer 3s ease-in-out infinite;
   }
+  html.light .lock-forgot-link {
+    color: rgba(0,0,0,0.45);
+    border-bottom-color: rgba(0,0,0,0.2);
+  }
+  html.light .lock-forgot-link:hover { color: rgba(0,47,167,0.75); border-bottom-color: rgba(0,47,167,0.4); }
   html.light #lock-card {
     box-shadow: 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
   }
