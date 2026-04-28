@@ -6489,7 +6489,12 @@ async function registerUser() {
 (async function _checkSession() {
   try {
     const _shareToken = new URLSearchParams(window.location.search).get('share');
-    if (_shareToken) { await loadSharedProject(_shareToken); return; }
+    if (_shareToken) {
+      // loadSharedProject está em um <script> posterior — guarda o token
+      // e deixa a inicialização final chamá-la depois que estiver definida
+      window._pendingShareToken = _shareToken;
+      return;
+    }
     const { data: { session } } = await _sb.auth.getSession();
     if (session) await _activateEditorMode();
   } catch(e) {}
@@ -21541,6 +21546,13 @@ async function loadSharedProject(token) {
     if (ls) ls.classList.remove('hidden');
     toast('Link inválido ou expirado');
   }
+}
+
+// Executar share link pendente (token guardado antes desta função existir)
+if (window._pendingShareToken) {
+  const _t = window._pendingShareToken;
+  window._pendingShareToken = null;
+  loadSharedProject(_t);
 }
 
 async function projGenerateShareLink(projId) {
