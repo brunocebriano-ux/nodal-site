@@ -24282,6 +24282,156 @@ async function setNewPassword() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════
+     MENU DE CONTEXTO (botão direito no nó)
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+
+// ── Estilos do menu de contexto ──────────────────────────────
+const _stCTX = document.createElement('style');
+_stCTX.textContent = `
+#node-ctx-menu {
+  position: fixed; z-index: 9000;
+  background: var(--panel-bg); border: 1px solid var(--border2);
+  border-radius: 3px; padding: 4px 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  min-width: 172px;
+  font-family: var(--mono, 'Space Mono', monospace);
+  font-size: 10px; letter-spacing: 0.06em;
+  display: none; flex-direction: column;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+#node-ctx-menu.open { display: flex; }
+.ctx-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 14px; color: var(--text2); cursor: pointer;
+  transition: background 0.1s, color 0.1s; white-space: nowrap;
+}
+.ctx-item:hover { background: var(--btn-hover-bg); color: var(--text); }
+.ctx-item.danger { color: #f87171; }
+.ctx-item.danger:hover { background: rgba(248,113,113,0.1); color: #ff5555; }
+.ctx-icon { width: 14px; text-align: center; opacity: 0.7; flex-shrink: 0; }
+.ctx-sep { height: 1px; background: var(--border); margin: 3px 0; }
+`;
+document.head.appendChild(_stCTX);
+
+// ── Elemento do menu ─────────────────────────────────────────
+const _ctxMenu = document.createElement('div');
+_ctxMenu.id = 'node-ctx-menu';
+document.body.appendChild(_ctxMenu);
+
+let _ctxTargetNode = null;
+
+function _closeCtxMenu() {
+  _ctxMenu.classList.remove('open');
+  _ctxTargetNode = null;
+}
+
+function _openCtxMenu(nd, x, y) {
+  _ctxTargetNode = nd;
+
+  const isEditor = typeof isEditorUnlocked !== 'undefined' && isEditorUnlocked;
+
+  _ctxMenu.innerHTML = `
+    <div class="ctx-item" onclick="_ctxEdit()">
+      <span class="ctx-icon">✎</span> Editar nó
+    </div>
+    <div class="ctx-item" onclick="_ctxFocus()">
+      <span class="ctx-icon">◎</span> Focar câmera
+    </div>
+    <div class="ctx-item" onclick="_ctxOpenDetail()">
+      <span class="ctx-icon">⊞</span> Ver detalhes
+    </div>
+    ${isEditor ? `
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" onclick="_ctxConnect()">
+      <span class="ctx-icon">⬡</span> Conectar a outro nó
+    </div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item danger" onclick="_ctxDelete()">
+      <span class="ctx-icon">✕</span> Remover nó
+    </div>` : ''}
+  `;
+
+  // Posiciona evitando sair da tela
+  const mw = 180, mh = isEditor ? 190 : 110;
+  const px = x + mw > window.innerWidth  ? x - mw : x;
+  const py = y + mh > window.innerHeight ? y - mh : y;
+  _ctxMenu.style.left = px + 'px';
+  _ctxMenu.style.top  = py + 'px';
+  _ctxMenu.classList.add('open');
+}
+
+// Ações do menu
+window._ctxEdit = function() {
+  _closeCtxMenu();
+  if (!_ctxTargetNode) return;
+  selectNode(_ctxTargetNode);
+  openLeftPanel(_ctxTargetNode);
+  if (!panelVisible) togglePanel();
+  switchTab('editor');
+  if (typeof populateEditor === 'function') populateEditor(_ctxTargetNode);
+};
+
+window._ctxFocus = function() {
+  const nd = _ctxTargetNode; _closeCtxMenu();
+  if (nd && typeof flyToNode === 'function') flyToNode(nd);
+};
+
+window._ctxOpenDetail = function() {
+  const nd = _ctxTargetNode; _closeCtxMenu();
+  if (nd) { selectNode(nd); openLeftPanel(nd); }
+};
+
+window._ctxConnect = function() {
+  const nd = _ctxTargetNode; _closeCtxMenu();
+  if (!nd) return;
+  selectNode(nd);
+  if (typeof connectMode !== 'undefined' && !connectMode) toggleConnectMode();
+  connectFirst = nd;
+  if (typeof toast === 'function') toast('Agora clique no segundo nó para conectar');
+};
+
+window._ctxDelete = function() {
+  const nd = _ctxTargetNode; _closeCtxMenu();
+  if (nd && typeof removeNode === 'function') removeNode(nd);
+};
+
+// ── Intercepta botão direito no canvas ──────────────────────
+// O mousedown original usa button===2 para iniciar pan.
+// Aqui verificamos se há nó sob o cursor — se sim, mostramos menu.
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const nd = typeof getIntersectedNode === 'function' ? getIntersectedNode(e) : null;
+  if (nd) {
+    _openCtxMenu(nd, e.clientX + 4, e.clientY + 4);
+  }
+}, true); // capture para rodar antes do listener existente
+
+// Intercepta mousedown para cancelar pan quando há nó sob o cursor direito
+const _origMousedownListener = canvas.onmousedown;
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 2) {
+    const nd = typeof getIntersectedNode === 'function' ? getIntersectedNode(e) : null;
+    if (nd) {
+      e.stopImmediatePropagation(); // cancela o pan
+    }
+  }
+}, true); // capture — roda antes dos listeners existentes
+
+// Fecha ao clicar fora ou pressionar Escape
+document.addEventListener('mousedown', e => {
+  if (_ctxMenu.classList.contains('open') && !_ctxMenu.contains(e.target)) _closeCtxMenu();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && _ctxMenu.classList.contains('open')) _closeCtxMenu();
+});
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
      UNDO / REDO + TIPOS DE CONEXÃO — adicionado sobre V140
      ═══════════════════════════════════════════════════════════════ -->
 <script>
