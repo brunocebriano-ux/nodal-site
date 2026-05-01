@@ -23986,29 +23986,17 @@ function switchNotepadStyle(style) {
   localStorage.setItem('notepad_style', style);
 }
 
-async function saveNotepad() {
+function saveNotepad() {
   const text = document.getElementById('notepad-text').value;
   const _pid = (typeof activeProjectId !== 'undefined' && activeProjectId) ? activeProjectId : null;
   const key = 'notepad_' + (_pid || 'global');
   localStorage.setItem(key, text);
   const btn = document.getElementById('notepad-save-btn');
   if (btn) { btn.textContent = '✓ Salvo'; }
-
-  if (!_pid) return; // sem projeto ativo, só salva local
-  try {
-    const { data: { session } } = await _sb.auth.getSession();
-    if (!session) return;
-    // Ler cache local do projeto, injetar notepad e upsert imediato no Supabase
-    let cached = {};
-    try {
-      const raw = localStorage.getItem('neural-proj-' + _pid);
-      if (raw) cached = JSON.parse(raw);
-    } catch(e) {}
-    cached.notepad = text;
-    // Atualizar cache local também
-    try { localStorage.setItem('neural-proj-' + _pid, JSON.stringify(cached)); } catch(e) {}
-    await _sb.from('proj_data').upsert({ id: _pid, user_id: session.user.id, data: cached });
-  } catch(e) { console.warn('Notepad Supabase save falhou:', e.message); }
+  // Salvar no Supabase via projSaveCurrentState (lê de memória, nunca sobrescreve com dados errados)
+  if (_pid && typeof projSaveCurrentState === 'function') {
+    projSaveCurrentState();
+  }
 }
 
 function loadNotepad() {
