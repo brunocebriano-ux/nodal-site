@@ -24363,15 +24363,15 @@ function _openCtxMenu(nd, x, y) {
   _ctxMenu.classList.add('open');
 }
 
-// Ações do menu
+// Ações do menu — salva nd ANTES de fechar (close zera _ctxTargetNode)
 window._ctxEdit = function() {
-  _closeCtxMenu();
-  if (!_ctxTargetNode) return;
-  selectNode(_ctxTargetNode);
-  openLeftPanel(_ctxTargetNode);
+  const nd = _ctxTargetNode; _closeCtxMenu();
+  if (!nd) return;
+  selectNode(nd);
+  openLeftPanel(nd);
   if (!panelVisible) togglePanel();
   switchTab('editor');
-  if (typeof populateEditor === 'function') populateEditor(_ctxTargetNode);
+  if (typeof populateEditor === 'function') populateEditor(nd);
 };
 
 window._ctxFocus = function() {
