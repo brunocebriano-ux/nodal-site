@@ -21226,7 +21226,7 @@ async function projSaveData(id, data) {
       });
     }
     await _sb.from('proj_data').upsert({ id, user_id: session.user.id, data });
-  } catch(e) { console.warn('Supabase projSaveData falhou:', e.message); }
+  } catch(e) { console.warn('Supabase projSaveData falhou:', e.message); throw e; }
 }
 
 async function projLoadData(id) {
