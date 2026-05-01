@@ -24282,6 +24282,92 @@ async function setNewPassword() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SYNC STATUS — indicador de salvamento cloud + flush no fechamento
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+
+// ── Estilos do indicador de sync ─────────────────────────────
+const _stSync = document.createElement('style');
+_stSync.textContent = `
+#sync-indicator {
+  position: fixed; bottom: 18px; right: 58px;
+  font-family: var(--mono, 'Space Mono', monospace);
+  font-size: 9px; letter-spacing: 0.08em;
+  color: var(--text3); opacity: 0;
+  transition: opacity 0.3s; pointer-events: none;
+  z-index: 39; display: flex; align-items: center; gap: 5px;
+}
+#sync-indicator.show { opacity: 1; }
+#sync-indicator.saving { color: #60a5fa; }
+#sync-indicator.ok     { color: #34d399; }
+#sync-indicator.error  { color: #f87171; }
+@keyframes syncPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+#sync-indicator.saving { animation: syncPulse 1s infinite; }
+`;
+document.head.appendChild(_stSync);
+
+// ── Elemento ──────────────────────────────────────────────────
+const _syncEl = document.createElement('div');
+_syncEl.id = 'sync-indicator';
+document.body.appendChild(_syncEl);
+let _syncTimer = null;
+
+function _syncShow(state, msg) {
+  _syncEl.className = 'show ' + state;
+  _syncEl.textContent = msg;
+  clearTimeout(_syncTimer);
+  if (state !== 'saving') {
+    _syncTimer = setTimeout(() => { _syncEl.classList.remove('show'); }, 3000);
+  }
+}
+
+// ── Patch projSaveData para mostrar status e reduzir debounce ─
+const _origProjSaveDataSync = projSaveData;
+window.projSaveData = projSaveData = async function(id, data) {
+  // Injeta connType (de _ctOrigProjSaveData que já está no chain)
+  _syncShow('saving', '↑ Salvando na nuvem…');
+  try {
+    const result = await _origProjSaveDataSync.apply(this, arguments);
+    _syncShow('ok', '☁ Sincronizado');
+    return result;
+  } catch(e) {
+    _syncShow('error', '⚠ Erro ao salvar');
+    throw e;
+  }
+};
+
+// ── Reduz debounce de 2500ms → 1000ms ────────────────────────
+// Sobrescreve o timer centralizado após cada save()
+const _origSaveForDebounce = save;
+save = function() {
+  _origSaveForDebounce.apply(this, arguments);
+  // Substitui o timer de 2500ms por um de 1000ms
+  if (typeof _projSaveDebounceTimer !== 'undefined') {
+    clearTimeout(_projSaveDebounceTimer);
+    _projSaveDebounceTimer = setTimeout(projSaveCurrentState, 1000);
+  }
+};
+
+// ── Flush imediato ao fechar/minimizar a aba ──────────────────
+function _flushSave() {
+  if (typeof activeProjectId === 'undefined' || !activeProjectId) return;
+  if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
+  // fire-and-forget — o browser mantém requisições fetch curtas ao sair
+  if (typeof projSaveCurrentState === 'function') projSaveCurrentState();
+}
+
+window.addEventListener('beforeunload', _flushSave);
+
+// Quando a aba perde foco ou fica escondida (trocar de aba, minimizar)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') _flushSave();
+});
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
      MENU DE CONTEXTO (botão direito no nó)
      ═══════════════════════════════════════════════════════════════ -->
 <script>
