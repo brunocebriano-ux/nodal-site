@@ -24615,24 +24615,72 @@ window.projSaveData = projSaveData = async function(id, data) {
   return _ctOrigProjSaveData.apply(this, arguments);
 };
 
-// Patch projOpen para restaurar connType após carregar
-// Usa projLoadData (Supabase + localStorage fallback) em vez de ler localStorage direto
+// ── Função central: aplica connType + notepad a partir de dados já carregados ──
+function _applyProjectDataExtras(data, projectId) {
+  // 1. connType nas conexões
+  if (data.connections) {
+    let changed = false;
+    data.connections.forEach(sc => {
+      if (sc.connType && sc.connType !== 'neutro') {
+        const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+        if (conn) { conn.connType = sc.connType; _applyConnTypeColor(conn); changed = true; }
+      }
+    });
+    if (changed) updateConnectionList();
+  }
+
+  // 2. Bloco de notas — salva no localStorage e atualiza o textarea se estiver aberto
+  if (data.notepad !== undefined) {
+    const pid = projectId || (typeof activeProjectId !== 'undefined' ? activeProjectId : null);
+    if (pid) {
+      try { localStorage.setItem('notepad_' + pid, data.notepad); } catch(e) {}
+      const ta = document.getElementById('notepad-text');
+      if (ta && document.getElementById('notepad-overlay')?.classList.contains('open')) {
+        ta.value = data.notepad;
+        if (typeof notepadUpdateCount === 'function') notepadUpdateCount();
+      }
+    }
+  }
+}
+
+// Patch projOpen — usa o data já carregado pelo projOpen original (sem chamar projLoadData de novo)
 const _ctOrigProjOpen = projOpen;
 window.projOpen = projOpen = async function(id) {
-  await _ctOrigProjOpen.apply(this, arguments);
+  // Intercepta projLoadData para capturar o data que projOpen já busca
+  let _capturedData = null;
+  const _origProjLoadData = projLoadData;
+  projLoadData = async function(reqId) {
+    const result = await _origProjLoadData.apply(this, arguments);
+    if (reqId === id) _capturedData = result;
+    return result;
+  };
   try {
-    const data = await projLoadData(id);
-    if (data && data.connections) {
-      let changed = false;
-      data.connections.forEach(sc => {
-        if (sc.connType && sc.connType !== 'neutro') {
-          const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
-          if (conn) { conn.connType = sc.connType; _applyConnTypeColor(conn); changed = true; }
-        }
-      });
-      if (changed) updateConnectionList();
-    }
-  } catch(e) {}
+    await _ctOrigProjOpen.apply(this, arguments);
+  } finally {
+    projLoadData = _origProjLoadData; // restaura sempre
+  }
+  if (_capturedData) _applyProjectDataExtras(_capturedData, id);
+};
+
+// Patch projBoot — mesma coisa: captura o data carregado e aplica extras
+const _ctOrigProjBoot = projBoot;
+window.projBoot = projBoot = async function() {
+  let _capturedBootData = null;
+  const _origProjLoadData2 = projLoadData;
+  projLoadData = async function(reqId) {
+    const result = await _origProjLoadData2.apply(this, arguments);
+    _capturedBootData = result; // projBoot só chama projLoadData uma vez
+    return result;
+  };
+  try {
+    await _ctOrigProjBoot.apply(this, arguments);
+  } finally {
+    projLoadData = _origProjLoadData2;
+  }
+  if (_capturedBootData) {
+    const pid = typeof activeProjectId !== 'undefined' ? activeProjectId : null;
+    _applyProjectDataExtras(_capturedBootData, pid);
+  }
 };
 
 // Restaura connType para o grafo já carregado no boot
