@@ -24616,23 +24616,21 @@ window.projSaveData = projSaveData = async function(id, data) {
 };
 
 // Patch projOpen para restaurar connType após carregar
+// Usa projLoadData (Supabase + localStorage fallback) em vez de ler localStorage direto
 const _ctOrigProjOpen = projOpen;
 window.projOpen = projOpen = async function(id) {
   await _ctOrigProjOpen.apply(this, arguments);
-  // Restaura connType das conexões a partir dos dados do projeto
   try {
-    const raw = localStorage.getItem('neural-proj-' + id);
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (data && data.connections) {
-        data.connections.forEach(sc => {
-          if (sc.connType && sc.connType !== 'neutro') {
-            const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
-            if (conn) { conn.connType = sc.connType; _applyConnTypeColor(conn); }
-          }
-        });
-        updateConnectionList();
-      }
+    const data = await projLoadData(id);
+    if (data && data.connections) {
+      let changed = false;
+      data.connections.forEach(sc => {
+        if (sc.connType && sc.connType !== 'neutro') {
+          const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+          if (conn) { conn.connType = sc.connType; _applyConnTypeColor(conn); changed = true; }
+        }
+      });
+      if (changed) updateConnectionList();
     }
   } catch(e) {}
 };
