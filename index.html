@@ -21497,6 +21497,9 @@ async function projOpen(id) {
         }
       } catch(e) {}
     }
+    if (data.notepad !== undefined) {
+      try { localStorage.setItem('notepad_' + id, data.notepad); } catch(e) {}
+    }
   } else {
     // Empty project — site name is always NODAL, subtitle = project name
     projectName = 'NODAL';
@@ -21536,7 +21539,8 @@ async function projSaveCurrentState() {
     connections: connections.map(c => ({id:c.id, from:c.from, to:c.to})),
     projectName: 'NODAL', projectSub,
     articlesData: _articlesData,
-    panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })()
+    panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
+    notepad: (function(){ try { return localStorage.getItem('notepad_' + activeProjectId) || ''; } catch(e){ return ''; } })()
   };
 
   proj.nodeCount = nodes.length;
@@ -23988,6 +23992,11 @@ function saveNotepad() {
   localStorage.setItem(key, text);
   const btn = document.getElementById('notepad-save-btn');
   if (btn) { btn.textContent = '✓ Salvo'; }
+  // Sincronizar com Supabase via projSaveCurrentState (debounced)
+  if (typeof activeProjectId !== 'undefined' && activeProjectId && typeof projSaveCurrentState === 'function') {
+    clearTimeout(_projSaveDebounceTimer);
+    _projSaveDebounceTimer = setTimeout(projSaveCurrentState, 2000);
+  }
 }
 
 function loadNotepad() {
