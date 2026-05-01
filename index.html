@@ -7387,21 +7387,9 @@ function applyTheme(themeId) {
   if (typeof applyGlassSettingsToDOM === 'function') {
     applyGlassSettingsToDOM(Object.assign({}, glassSettings, { panelOp: glassSettings.panelOpacity || 0.55, borderGl: glassSettings.borderGlow || 0.10 }));
   }
-  // Re-aplicar config da tela de projetos para pegar as novas CSS vars
-  setTimeout(() => {
-    try {
-      const raw = localStorage.getItem(PE_CONFIG_KEY || 'neural-proj-editor-config');
-      const s = raw ? JSON.parse(raw) : {};
-      // Migrar campos antigos
-      delete s.screenBlur; delete s.screenSat; delete s.screenBrightness;
-      // Padrão: sempre seguir tema
-      if (s.bgFromTheme !== false) {
-        const screen = document.getElementById('projects-screen');
-        if (screen) screen.style.background = '';
-      }
-      if (typeof peApplyToScreen === 'function') peApplyToScreen(s);
-    } catch(e) {}
-  }, 80);
+  // Garantir que a tela de projetos siga o tema (sem peApplyToScreen que corromperia o grid de abas)
+  const _psScreen = document.getElementById('projects-screen');
+  if (_psScreen) _psScreen.style.background = '';
 }
 
 function applyThemeToLockScreen(bgColor, isLight) {
@@ -22730,17 +22718,7 @@ function peApplyToScreen(s) {
   const sub = document.getElementById('projects-subtitle');
   if (sub) sub.style.color = s.subColor;
 
-  // Grid
-  const grid = document.getElementById('projects-grid');
-  if (grid) grid.style.cssText = `display:grid;grid-template-columns:repeat(auto-fill,minmax(${s.gridMin}px,1fr));gap:${s.gridGap}px`;
-
-  // Padding
-  const body = document.getElementById('projects-body');
-  if (body) body.style.padding = `24px ${s.pagePad}px 40px`;
-  const hdr  = document.getElementById('projects-header');
-  if (hdr)  hdr.style.padding = `28px ${s.pagePad}px 0`;
-  const ttl  = document.getElementById('projects-title-wrap');
-  if (ttl)  ttl.style.padding = `32px ${s.pagePad}px 0`;
+  // Grid e padding: não modificar inline — o CSS da stylesheet controla o layout de abas
 
   // New project button
   const newBtn = document.querySelector('#projects-header-actions .proj-hdr-btn:last-child');
