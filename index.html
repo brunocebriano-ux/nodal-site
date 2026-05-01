@@ -2505,26 +2505,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     border-bottom-color: rgba(0,0,0,0.2);
   }
   html.light .lock-forgot-link:hover { color: rgba(0,47,167,0.75); border-bottom-color: rgba(0,47,167,0.4); }
-
-  /* ── Tipo de conexão badge ── */
-  .lp-conn-type-badge {
-    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
-    border: 1px solid var(--border); border-radius: 3px;
-    padding: 1px 5px; cursor: pointer; flex-shrink: 0;
-    transition: all 0.15s; opacity: 0.85; user-select: none;
-  }
-  .lp-conn-type-badge:hover { opacity: 1; transform: scale(1.1); }
-
-  /* ── Undo/Redo HUD indicator ── */
-  #undo-redo-indicator {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: var(--glass-heavy); border: 1px solid var(--border2);
-    color: var(--text2); font-family: var(--mono); font-size: 10px;
-    letter-spacing: 0.1em; padding: 6px 16px; border-radius: 20px;
-    pointer-events: none; opacity: 0; transition: opacity 0.3s;
-    z-index: 500; white-space: nowrap;
-  }
-  #undo-redo-indicator.visible { opacity: 1; }
   html.light #lock-card {
     box-shadow: 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
   }
@@ -6237,9 +6217,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div class="hud-drop-item editor-only hidden" onclick="openImportDialog();hudMenuClose()">
             <span class="hud-drop-icon">↓</span> Importar JSON
           </div>
-          <div class="hud-drop-item" onclick="exportGraphPNG();hudMenuClose()">
-            <span class="hud-drop-icon">◻</span> Exportar imagem PNG
-          </div>
         </div>
         <div class="hud-drop-section">
           <div class="hud-drop-label">Aparência</div>
@@ -8073,7 +8050,7 @@ const rpWidth = () => panelVisible ? 290 : 0;
 const W = () => window.innerWidth;  // canvas sempre cobre tela toda — painel fica sobre o canvas com glassmorphism
 const H = () => window.innerHeight;
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
 const scene = new THREE.Scene();
@@ -8508,14 +8485,11 @@ function openLeftPanel(nd) {
       const other = nodes.find(n => n.id===otherId);
       if (!other) return '';
       const arrow = c.from===nd.id ? '→' : '←';
-      const ctype = c.type || 'default';
-      const ctypeData = _CONN_TYPES[ctype] || _CONN_TYPES.default;
       return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
         <span class="lp-conn-dot" style="background:${catColor(other.cat)}"></span>
         <span class="lp-conn-arrow">${arrow}</span>
         <span style="flex:1;color:${other.color||catColor(other.cat)}">${other.title}</span>
-        <span class="lp-conn-type-badge" style="color:${ctypeData.color||'var(--text3)'};border-color:${ctypeData.color||'var(--border)'}"
-          onclick="event.stopPropagation();cycleConnType('${c.id}')" title="Tipo: ${ctypeData.desc} — clique para trocar">${ctypeData.icon}</span>
+        <span class="lp-conn-cat">${other.cat}</span>
       </div>`;
     }).join('');
   }
@@ -8649,7 +8623,7 @@ function removeNode(nd) {
 }
 
 // ── Connections — colored by node mix ─────────────
-function createConnection(fromId, toId, connType) {
+function createConnection(fromId, toId) {
   const from = nodes.find(n=>n.id===fromId);
   const to   = nodes.find(n=>n.id===toId);
   if (!from || !to) return;
@@ -8672,8 +8646,7 @@ function createConnection(fromId, toId, connType) {
   const conn = {
     id: 'c' + (++_connIdCounter), from: fromId, to: toId, line,
     lineColor: mixColor.clone(), lineHover: false,
-    particleT: Math.random(), particleMesh: null,
-    type: connType || 'default'
+    particleT: Math.random(), particleMesh: null
   };
   createConnParticle(conn, from, to);
   connections.push(conn);
@@ -9262,10 +9235,9 @@ function updateStats() {
 // ── Persistence ────────────────────────────────────
 function save() {
   if (typeof _t2gImporting !== 'undefined' && _t2gImporting) return;
-  if (typeof _historyRestoring !== 'undefined' && _historyRestoring) return;
   localStorage.setItem('neural-v3', JSON.stringify({
     nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||''})),
-    connections: connections.map(c=>({id:c.id,from:c.from,to:c.to,type:c.type||'default'}))
+    connections: connections.map(c=>({id:c.id,from:c.from,to:c.to}))
   }));
   saveSettings();
 }
@@ -9279,7 +9251,7 @@ function load() {
     const data = JSON.parse(raw); let maxId = 0;
     data.nodes.forEach(nd => { const n=parseInt(nd.id.replace('n','')); if(!isNaN(n)&&n>maxId) maxId=n; addNode(nd); });
     nodeIdCounter = maxId + 1;
-    data.connections.forEach(c => createConnection(c.from, c.to, c.type));
+    data.connections.forEach(c => createConnection(c.from, c.to));
   } catch(e) { spawnDefaultNodes(); }
   setTimeout(handleUrlHash, 300);
 }
@@ -9915,15 +9887,13 @@ function animate() {
       const wMult   = 1.0 + ((c.displayWeight || 1) - 1) * 0.25;
       const pulseIntensity = wavePulse * wMult;
 
-      // Color — brilho base + onda de pulso + hover (type override)
-      const _tcMap = {influencia:'#4ade80',contradiz:'#f87171',deriva:'#60a5fa',referencia:'#fbbf24'};
-      const _baseColor = (c.type && c.type !== 'default' && _tcMap[c.type])
-        ? new THREE.Color(_tcMap[c.type]) : c.lineColor;
+      // Color — brilho base + onda de pulso + hover
       if (c.lineHover) {
-        const bright = _baseColor.clone().multiplyScalar(2.4 + 0.5*Math.sin(t*4));
+        const bright = c.lineColor.clone().multiplyScalar(2.4 + 0.5*Math.sin(t*4));
         c.line.material.color.lerp(bright, 0.18);
       } else {
-        const waveColor = _baseColor.clone().multiplyScalar(0.7 + pulseIntensity * 1.1);
+        // Onda percorrendo: clareia e escurece ritmicamente
+        const waveColor = c.lineColor.clone().multiplyScalar(0.7 + pulseIntensity * 1.1);
         c.line.material.color.lerp(waveColor, 0.09);
       }
 
@@ -21032,8 +21002,6 @@ console.log('[v55] Onboarding editor loaded ✓  — Projeto → Editor do onboa
     </div>
     <div id="projects-header-actions">
       <button class="proj-hdr-btn secondary" onclick="projImportJSON()">↓ Importar JSON</button>
-      <button id="btn-proj-editor" class="proj-hdr-btn secondary" onclick="openProjEditor()"
-        style="display:none;border-color:rgba(167,139,250,0.25);color:rgba(167,139,250,0.7)">✦ Personalizar</button>
       <button id="btn-proj-themes" class="proj-hdr-btn secondary" onclick="openThemesOnly()"
         style="border-color:rgba(167,139,250,0.25);color:rgba(167,139,250,0.7)">◑ Temas</button>
       <button id="btn-proj-salvar-html" class="proj-hdr-btn" onclick="salvarHTML()"
@@ -22870,23 +22838,35 @@ function peResetConfig() {
   toast('↺ Tela de projetos restaurada');
 }
 
-// ── Auto-apply on load ────────────────────────────────
+// ── Cleanup on load — remove legacy proj-editor config ───────────────────
+// O botão Personalizar foi removido; limpamos qualquer dado salvo para
+// garantir que o layout de abas não seja corrompido pelo pe-dynamic-style.
 setTimeout(() => {
   try {
-    // Sempre limpar inline background para deixar var(--void) agir por padrão
+    // Remover estilos dinâmicos injetados por versões anteriores
+    const styleEl = document.getElementById('pe-dynamic-style');
+    if (styleEl) styleEl.remove();
+
+    // Remover config salva do editor de projetos (não usado mais)
+    localStorage.removeItem(PE_CONFIG_KEY);
+
+    // Garantir que o grid de abas tenha o layout correto (flex, não grid)
+    const grid = document.getElementById('projects-grid');
+    if (grid) grid.style.cssText = '';
+
+    // Garantir que o body de projetos não tenha padding inline
+    const body = document.getElementById('projects-body');
+    if (body) body.style.padding = '';
+    const hdr = document.getElementById('projects-header');
+    if (hdr) hdr.style.padding = '';
+    const ttl = document.getElementById('projects-title-wrap');
+    if (ttl) ttl.style.padding = '';
+
+    // Limpar background inline da tela de projetos
     const screen = document.getElementById('projects-screen');
     if (screen) screen.style.background = '';
-
-    const raw = localStorage.getItem(PE_CONFIG_KEY);
-    if (!raw) return;
-    const s = JSON.parse(raw);
-    // Migrar campos obsoletos de versões antigas sem quebrar
-    delete s.screenBlur; delete s.screenSat; delete s.screenBrightness;
-    // Garantia: se bgFromTheme não foi explicitamente salvo como false, tratar como true
-    if (s.bgFromTheme !== false) s.bgFromTheme = true;
-    peApplyToScreen(s);
   } catch(e) {}
-}, 1000);
+}, 500);
 
 // ── Back to map button ────────────────────────────────
 function projGoBackToMap() {
@@ -23962,9 +23942,6 @@ function showIsolatedNodes() {
 </script>
 
 
-<!-- Undo/Redo indicator -->
-<div id="undo-redo-indicator"></div>
-
 <!-- ══ BLOCO DE NOTAS ══ -->
 <div id="notepad-overlay" onclick="if(event.target===this)closeNotepad()">
   <div id="notepad-panel" class="style-yellow">
@@ -24315,160 +24292,6 @@ async function setNewPassword() {
     }
   }, { passive: true });
 })();
-</script>
-
-<script>
-// ══════════════════════════════════════════════════════
-//  TIPOS DE CONEXÃO
-// ══════════════════════════════════════════════════════
-const _CONN_TYPES = {
-  default:    { icon: '—',  color: null,        desc: 'Neutro' },
-  influencia: { icon: '→',  color: '#4ade80',   desc: 'Influencia' },
-  contradiz:  { icon: '✗',  color: '#f87171',   desc: 'Contradiz' },
-  deriva:     { icon: '⊂',  color: '#60a5fa',   desc: 'Deriva de' },
-  referencia: { icon: '◈',  color: '#fbbf24',   desc: 'Referência' },
-};
-const _CONN_TYPE_ORDER = ['default','influencia','contradiz','deriva','referencia'];
-
-function cycleConnType(cid) {
-  const c = connections.find(x => x.id === cid);
-  if (!c) return;
-  _pushUndo();
-  const cur = _CONN_TYPE_ORDER.indexOf(c.type || 'default');
-  c.type = _CONN_TYPE_ORDER[(cur + 1) % _CONN_TYPE_ORDER.length];
-  const info = _CONN_TYPES[c.type];
-  toast('Relação: ' + info.desc + ' ' + info.icon);
-  save();
-  if (leftPanelNode) openLeftPanel(leftPanelNode);
-}
-
-// ══════════════════════════════════════════════════════
-//  UNDO / REDO  (snapshot-based, máx 40 estados)
-// ══════════════════════════════════════════════════════
-let _undoStack = [], _redoStack = [];
-let _historyRestoring = false;
-const _UNDO_MAX = 40;
-
-function _takeSnapshot() {
-  return {
-    nodes: nodes.map(n => ({
-      id:n.id, title:n.title, desc:n.desc, cat:n.cat, color:n.color,
-      size:n.size, font:n.font, fontSize:n.fontSize, bold:n.bold,
-      italic:n.italic, textShadow:n.textShadow!==false, media:n.media,
-      tags:[...(n.tags||[])], notes:n.notes||'', richContent:n.richContent||'',
-      richMedia:JSON.parse(JSON.stringify(n.richMedia||[])),
-      date:n.date||'', shape:n.shape||'sphere',
-      x:n.x, y:n.y, z:n.z
-    })),
-    connections: connections.map(c => ({ from:c.from, to:c.to, type:c.type||'default' }))
-  };
-}
-
-function _pushUndo() {
-  _undoStack.push(_takeSnapshot());
-  if (_undoStack.length > _UNDO_MAX) _undoStack.shift();
-  _redoStack = [];
-}
-
-function _restoreSnapshot(snap) {
-  _historyRestoring = true;
-
-  // Remove Three.js objects
-  nodes.forEach(n => { if(n.mesh) scene.remove(n.mesh); if(n.labelEl) n.labelEl.remove(); });
-  connections.forEach(c => { if(c.line) scene.remove(c.line); if(c.particles) c.particles.forEach(p=>scene.remove(p.mesh)); else if(c.particleMesh) scene.remove(c.particleMesh); });
-  nodes = []; connections = [];
-
-  if (typeof deselectNode === 'function') deselectNode();
-  if (typeof closeLeftPanel === 'function') closeLeftPanel();
-
-  // Rebuild — addNode and createConnection won't save() while _historyRestoring=true
-  snap.nodes.forEach(nd => addNode(nd));
-  snap.connections.forEach(c => createConnection(c.from, c.to, c.type));
-
-  _historyRestoring = false;
-  save();
-  updateStats();
-  if (typeof updateConnectionList === 'function') updateConnectionList();
-  if (typeof notifyGraphChanged === 'function') notifyGraphChanged(0.1);
-}
-
-function undoLast() {
-  if (!_undoStack.length) { _showUndoIndicator('Nada para desfazer'); return; }
-  _redoStack.push(_takeSnapshot());
-  _restoreSnapshot(_undoStack.pop());
-  _showUndoIndicator('↩ Desfeito  (' + _undoStack.length + ' restantes)');
-}
-
-function redoLast() {
-  if (!_redoStack.length) { _showUndoIndicator('Nada para refazer'); return; }
-  _undoStack.push(_takeSnapshot());
-  _restoreSnapshot(_redoStack.pop());
-  _showUndoIndicator('↪ Refeito');
-}
-
-let _undoIndicatorTimer = null;
-function _showUndoIndicator(msg) {
-  const el = document.getElementById('undo-redo-indicator');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('visible');
-  clearTimeout(_undoIndicatorTimer);
-  _undoIndicatorTimer = setTimeout(() => el.classList.remove('visible'), 1600);
-}
-
-// Interceptar mutações para push automático de snapshot
-const _origAddNodeUndo = addNode;
-window.addNode = function(data) {
-  if (!_historyRestoring) _pushUndo();
-  return _origAddNodeUndo.apply(this, arguments);
-};
-
-const _origRemoveNodeUndo = removeNode;
-window.removeNode = function(nd) {
-  if (!_historyRestoring) _pushUndo();
-  return _origRemoveNodeUndo.apply(this, arguments);
-};
-
-const _origCreateConnectionUndo = createConnection;
-window.createConnection = function(fromId, toId, connType) {
-  if (!_historyRestoring) _pushUndo();
-  return _origCreateConnectionUndo.apply(this, arguments);
-};
-
-const _origRemoveConnectionUndo = removeConnection;
-window.removeConnection = function(cid) {
-  if (!_historyRestoring) _pushUndo();
-  return _origRemoveConnectionUndo.apply(this, arguments);
-};
-
-// Keyboard: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
-document.addEventListener('keydown', e => {
-  const active = document.activeElement;
-  const typing = active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.isContentEditable);
-  if (typing) return;
-  if ((e.ctrlKey||e.metaKey) && e.key==='z' && !e.shiftKey) { e.preventDefault(); undoLast(); }
-  if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.key==='z' && e.shiftKey))) { e.preventDefault(); redoLast(); }
-});
-
-// ══════════════════════════════════════════════════════
-//  EXPORTAR GRAFO COMO PNG
-// ══════════════════════════════════════════════════════
-function exportGraphPNG() {
-  try {
-    // Forçar render do frame atual
-    renderer.render(scene, camera);
-    const dataURL = renderer.domElement.toDataURL('image/png');
-    const a = document.createElement('a');
-    const name = (typeof projectName !== 'undefined' ? projectName : 'nodal')
-      .replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    a.href = dataURL;
-    a.download = name + '-' + new Date().toISOString().slice(0,10) + '.png';
-    a.click();
-    toast('◻ Imagem exportada!');
-  } catch(e) {
-    toast('⚠ Erro ao exportar: ' + e.message);
-  }
-}
 </script>
 
 </body>
