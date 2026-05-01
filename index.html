@@ -24281,5 +24281,409 @@ async function setNewPassword() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     UNDO / REDO + TIPOS DE CONEXÃO — adicionado sobre V140
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+'use strict';
+
+// ── Estilos ────────────────────────────────────────────────────
+const _stURC = document.createElement('style');
+_stURC.textContent = `
+#undo-indicator {
+  position: fixed; bottom: 18px; left: 18px;
+  background: var(--panel-bg); border: 1px solid var(--border2);
+  color: var(--text2); font-size: 9px; letter-spacing: 0.1em;
+  padding: 6px 12px; border-radius: 2px; z-index: 40;
+  opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  font-family: var(--mono, 'Space Mono', monospace);
+}
+.conn-type-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; padding: 1px 6px; border-radius: 2px;
+  border: 1px solid var(--border2); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap; flex-shrink: 0;
+  font-family: var(--mono, 'Space Mono', monospace);
+  margin-right: 4px;
+}
+.conn-type-badge:hover { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.06); }
+html.light .conn-type-badge:hover { border-color: rgba(0,0,0,0.3); background: rgba(0,0,0,0.05); }
+.lp-conn-type-badge {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 8px; padding: 1px 5px; border-radius: 2px;
+  border: 1px solid var(--border2); cursor: pointer;
+  transition: border-color 0.15s; flex-shrink: 0;
+  font-family: var(--mono, 'Space Mono', monospace);
+  margin-right: 3px;
+}
+.lp-conn-type-badge:hover { border-color: rgba(255,255,255,0.4); }
+html.light .lp-conn-type-badge:hover { border-color: rgba(0,0,0,0.35); }
+`;
+document.head.appendChild(_stURC);
+
+// ══════════════════════════════════════════════════════════════
+// TIPOS DE CONEXÃO
+// ══════════════════════════════════════════════════════════════
+const CONN_TYPES = {
+  neutro:     { icon: '—',  label: 'Neutro',     color: null       },
+  influencia: { icon: '→',  label: 'Influencia', color: '#22c55e'  },
+  contradiz:  { icon: '✗',  label: 'Contradiz',  color: '#ef4444'  },
+  deriva:     { icon: '⊂',  label: 'Deriva de',  color: '#3b82f6'  },
+  referencia: { icon: '◈',  label: 'Referência', color: '#eab308'  },
+};
+const CONN_TYPE_ORDER = ['neutro','influencia','contradiz','deriva','referencia'];
+
+function _getConnTypeMeta(c) {
+  return CONN_TYPES[c.connType || 'neutro'] || CONN_TYPES.neutro;
+}
+
+// Aplica a cor do tipo ao material 3D da linha e das partículas
+function _applyConnTypeColor(conn) {
+  const meta = _getConnTypeMeta(conn);
+  let targetColor;
+  if (meta.color) {
+    targetColor = new THREE.Color(meta.color);
+  } else {
+    // neutro: recalcula mix das cores dos nós
+    const f = nodes.find(n => n.id === conn.from);
+    const t = nodes.find(n => n.id === conn.to);
+    if (f && t) {
+      targetColor = new THREE.Color(f.color).lerp(new THREE.Color(t.color), 0.5);
+    } else {
+      targetColor = conn.lineColor.clone();
+    }
+  }
+  conn.lineColor = targetColor.clone();
+  if (conn.line && conn.line.material) conn.line.material.color.set(targetColor);
+  if (conn.particles) {
+    conn.particles.forEach(p => { if (p.mesh && p.mesh.material) p.mesh.material.color.set(targetColor); });
+  }
+  if (conn.particleMesh && conn.particleMesh.material) conn.particleMesh.material.color.set(targetColor);
+}
+
+// Cicla para o próximo tipo e atualiza tudo
+window.cycleConnType = function(cid) {
+  const conn = connections.find(c => c.id === cid);
+  if (!conn) return;
+  const cur = conn.connType || 'neutro';
+  const idx = CONN_TYPE_ORDER.indexOf(cur);
+  conn.connType = CONN_TYPE_ORDER[(idx + 1) % CONN_TYPE_ORDER.length];
+  _applyConnTypeColor(conn);
+  updateConnectionList();
+  if (typeof leftPanelNode !== 'undefined' && leftPanelNode) openLeftPanel(leftPanelNode);
+  save();
+};
+
+// Sobrescreve updateConnectionList para mostrar o badge de tipo
+const _ctOrigUpdateConnList = updateConnectionList;
+window.updateConnectionList = updateConnectionList = function() {
+  const list = document.getElementById('conn-list');
+  if (!list) return;
+  if (!connections.length) {
+    list.innerHTML = '<div style="font-size:9px;color:var(--text3);padding:6px 0">Nenhuma sinapse</div>';
+    return;
+  }
+  list.innerHTML = connections.map(c => {
+    const f = nodes.find(n => n.id === c.from);
+    const t = nodes.find(n => n.id === c.to);
+    const meta = _getConnTypeMeta(c);
+    const badgeColor = meta.color || 'var(--text3)';
+    const badgeStyle = meta.color
+      ? `border-color:${meta.color}55;color:${meta.color};background:${meta.color}18`
+      : '';
+    return `<div class="conn-item" style="flex-wrap:nowrap">
+      <span class="conn-type-badge" style="${badgeStyle}"
+            onclick="event.stopPropagation();cycleConnType('${c.id}')"
+            title="${meta.label} — clique para mudar">${meta.icon}</span>
+      <span style="color:${f ? f.color : '#888'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${f ? f.title : '?'}</span>
+      <span style="color:var(--text3);margin:0 4px;flex-shrink:0">→</span>
+      <span style="color:${t ? t.color : '#888'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${t ? t.title : '?'}</span>
+      <span class="del-conn" onclick="removeConnection('${c.id}')">✕</span>
+    </div>`;
+  }).join('');
+};
+
+// Patch openLeftPanel para adicionar badge de tipo nas conexões do painel esquerdo
+const _ctOrigOpenLP = openLeftPanel;
+window.openLeftPanel = openLeftPanel = function(nd) {
+  _ctOrigOpenLP(nd);
+  // Atualiza lp-conn-list com badges de tipo
+  const conns = connections.filter(c => c.from === nd.id || c.to === nd.id);
+  const cl = document.getElementById('lp-conn-list');
+  if (!cl || !conns.length) return;
+  cl.innerHTML = conns.map(c => {
+    const otherId = c.from === nd.id ? c.to : c.from;
+    const other = nodes.find(n => n.id === otherId);
+    if (!other) return '';
+    const arrow = c.from === nd.id ? '→' : '←';
+    const meta = _getConnTypeMeta(c);
+    const badgeStyle = meta.color
+      ? `border-color:${meta.color}55;color:${meta.color};background:${meta.color}18`
+      : '';
+    return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
+      <span class="lp-conn-type-badge" style="${badgeStyle}"
+            onclick="event.stopPropagation();cycleConnType('${c.id}');openLeftPanel(leftPanelNode)"
+            title="${meta.label} — clique para mudar">${meta.icon}</span>
+      <span class="lp-conn-dot" style="background:${typeof catColor==='function'?catColor(other.cat):'#888'}"></span>
+      <span class="lp-conn-arrow">${arrow}</span>
+      <span style="flex:1;color:${other.color || (typeof catColor==='function'?catColor(other.cat):'#888')}">${other.title}</span>
+      <span class="lp-conn-cat">${other.cat}</span>
+    </div>`;
+  }).join('');
+};
+
+// Patch save() para incluir connType nas conexões
+const _ctOrigSaveFinal = save;
+save = function() {
+  _ctOrigSaveFinal.apply(this, arguments);
+  // Emenda o localStorage para incluir connType
+  try {
+    const stored = JSON.parse(localStorage.getItem('neural-v3') || '{}');
+    if (stored.connections) {
+      stored.connections.forEach(sc => {
+        const live = connections.find(c => c.id === sc.id);
+        if (live && live.connType && live.connType !== 'neutro') sc.connType = live.connType;
+      });
+      localStorage.setItem('neural-v3', JSON.stringify(stored));
+    }
+  } catch(e) {}
+};
+
+// Patch projSaveData para incluir connType nas conexões antes de salvar no Supabase
+const _ctOrigProjSaveData = projSaveData;
+window.projSaveData = projSaveData = async function(id, data) {
+  if (data && data.connections) {
+    data.connections = data.connections.map(sc => {
+      const live = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+      return live && live.connType && live.connType !== 'neutro'
+        ? { ...sc, connType: live.connType }
+        : sc;
+    });
+  }
+  return _ctOrigProjSaveData.apply(this, arguments);
+};
+
+// Patch projOpen para restaurar connType após carregar
+const _ctOrigProjOpen = projOpen;
+window.projOpen = projOpen = async function(id) {
+  await _ctOrigProjOpen.apply(this, arguments);
+  // Restaura connType das conexões a partir dos dados do projeto
+  try {
+    const raw = localStorage.getItem('neural-proj-' + id);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && data.connections) {
+        data.connections.forEach(sc => {
+          if (sc.connType && sc.connType !== 'neutro') {
+            const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+            if (conn) { conn.connType = sc.connType; _applyConnTypeColor(conn); }
+          }
+        });
+        updateConnectionList();
+      }
+    }
+  } catch(e) {}
+};
+
+// Restaura connType para o grafo já carregado no boot
+setTimeout(() => {
+  try {
+    const raw = localStorage.getItem('neural-v3');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data && data.connections) {
+      data.connections.forEach(sc => {
+        if (sc.connType && sc.connType !== 'neutro') {
+          const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+          if (conn) { conn.connType = sc.connType; _applyConnTypeColor(conn); }
+        }
+      });
+      updateConnectionList();
+    }
+  } catch(e) {}
+}, 400);
+
+// ══════════════════════════════════════════════════════════════
+// UNDO / REDO
+// ══════════════════════════════════════════════════════════════
+const _undoStack = [];
+const _redoStack = [];
+const _MAX_UNDO  = 40;
+let _undoPaused  = false;
+
+function _snapshotState() {
+  return {
+    nodes: nodes.map(n => ({
+      id: n.id, title: n.title, desc: n.desc, cat: n.cat, color: n.color,
+      size: n.size, font: n.font, fontSize: n.fontSize, bold: n.bold,
+      italic: n.italic, textShadow: n.textShadow !== false,
+      media: n.media, tags: (n.tags || []).slice(), notes: n.notes || '',
+      richContent: n.richContent || '', richMedia: (n.richMedia || []).slice(),
+      richNotes: n.richNotes || '', date: n.date || '',
+      shape: n.shape || 'sphere', x: n.x, y: n.y, z: n.z
+    })),
+    connections: connections.map(c => ({
+      id: c.id, from: c.from, to: c.to,
+      connType: c.connType || 'neutro'
+    }))
+  };
+}
+
+function _pushUndo() {
+  if (_undoPaused) return;
+  _undoStack.push(_snapshotState());
+  if (_undoStack.length > _MAX_UNDO) _undoStack.shift();
+  _redoStack.length = 0;
+}
+
+function _restoreSnapshot(snap) {
+  _undoPaused = true;
+  try {
+    // Remove todos os objetos 3D
+    [...nodes].forEach(nd => {
+      if (nd.mesh) scene.remove(nd.mesh);
+      if (nd.labelEl) nd.labelEl.remove();
+    });
+    nodes.length = 0;
+    [...connections].forEach(c => {
+      if (c.line) scene.remove(c.line);
+      if (typeof removeConnParticle === 'function') removeConnParticle(c);
+    });
+    connections.length = 0;
+
+    // Re-adiciona nós
+    let maxId = 0;
+    snap.nodes.forEach(nd => {
+      const n = parseInt((nd.id || '').replace('n', ''));
+      if (!isNaN(n) && n > maxId) maxId = n;
+      addNode(nd);
+    });
+    if (maxId >= nodeIdCounter) nodeIdCounter = maxId + 1;
+
+    // Re-adiciona conexões
+    snap.connections.forEach(sc => {
+      try { createConnection(sc.from, sc.to); } catch(e) {}
+      if (sc.connType && sc.connType !== 'neutro') {
+        const conn = connections.find(c => c.from === sc.from && c.to === sc.to);
+        if (conn) { conn.connType = sc.connType; _applyConnTypeColor(conn); }
+      }
+    });
+
+    updateStats();
+    updateConnectionList();
+    if (typeof leftPanelNode !== 'undefined' && leftPanelNode) {
+      const stillExists = nodes.find(n => n.id === leftPanelNode.id);
+      if (stillExists) openLeftPanel(stillExists); else if (typeof closeLeftPanel === 'function') closeLeftPanel();
+    }
+    save();
+    if (typeof notifyGraphChanged === 'function') notifyGraphChanged(0.12);
+  } finally {
+    _undoPaused = false;
+  }
+}
+
+window.undoAction = function() {
+  if (!_undoStack.length) { if (typeof toast === 'function') toast('Nada para desfazer'); return; }
+  const current = _snapshotState();
+  _redoStack.push(current);
+  const snap = _undoStack.pop();
+  _restoreSnapshot(snap);
+  _showUndoIndicator('↩ Desfeito', _undoStack.length);
+};
+
+window.redoAction = function() {
+  if (!_redoStack.length) { if (typeof toast === 'function') toast('Nada para refazer'); return; }
+  const current = _snapshotState();
+  _undoStack.push(current);
+  if (_undoStack.length > _MAX_UNDO) _undoStack.shift();
+  const snap = _redoStack.pop();
+  _restoreSnapshot(snap);
+  _showUndoIndicator('↪ Refeito', _redoStack.length);
+};
+
+function _showUndoIndicator(label, remaining) {
+  let ind = document.getElementById('undo-indicator');
+  if (!ind) {
+    ind = document.createElement('div');
+    ind.id = 'undo-indicator';
+    document.body.appendChild(ind);
+  }
+  const msg = remaining > 0
+    ? `${label} (${remaining} restante${remaining !== 1 ? 's' : ''})`
+    : label;
+  ind.textContent = msg;
+  ind.style.opacity = '1';
+  clearTimeout(ind._t);
+  ind._t = setTimeout(() => { ind.style.opacity = '0'; }, 2400);
+}
+
+// Wraps de mutação — snapshot ANTES de cada ação
+const _undoWrapAddNode = addNode;
+window.addNode = addNode = function(data) {
+  _pushUndo();
+  return _undoWrapAddNode.apply(this, arguments);
+};
+
+const _undoWrapRemoveNode = removeNode;
+window.removeNode = removeNode = function(nd) {
+  _pushUndo();
+  return _undoWrapRemoveNode.apply(this, arguments);
+};
+
+const _undoWrapCreateConn = createConnection;
+window.createConnection = createConnection = function(fromId, toId) {
+  _pushUndo();
+  return _undoWrapCreateConn.apply(this, arguments);
+};
+
+const _undoWrapRemoveConn = removeConnection;
+window.removeConnection = removeConnection = function(cid) {
+  _pushUndo();
+  return _undoWrapRemoveConn.apply(this, arguments);
+};
+
+// Suprime undo durante troca de projeto
+const _undoWrapProjOpen = projOpen;
+window.projOpen = projOpen = async function(id) {
+  _undoPaused = true;
+  try {
+    await _undoWrapProjOpen.apply(this, arguments);
+  } finally {
+    _undoPaused = false;
+    _undoStack.length = 0;
+    _redoStack.length = 0;
+  }
+};
+
+// Keyboard: Ctrl+Z = desfaz, Ctrl+Y / Ctrl+Shift+Z = refaz
+document.addEventListener('keydown', function(e) {
+  if (e.target && (
+    e.target.tagName === 'INPUT' ||
+    e.target.tagName === 'TEXTAREA' ||
+    e.target.isContentEditable
+  )) return;
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    window.undoAction();
+  } else if ((e.ctrlKey || e.metaKey) && (
+    e.key.toLowerCase() === 'y' ||
+    (e.shiftKey && e.key.toLowerCase() === 'z')
+  )) {
+    e.preventDefault();
+    window.redoAction();
+  }
+});
+
+// Nota informativa no teclado do tour (se existir)
+setTimeout(() => {
+  const kbEl = document.querySelector('.kb-row:last-child');
+  // Não interfere no DOM do tour, apenas registra
+}, 500);
+
+})();
+</script>
+
 </body>
 </html>
