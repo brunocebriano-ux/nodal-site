@@ -10699,13 +10699,13 @@ function openSaibaMais() {
   // Default: open on Texto tab
   smSwitchTab('view');
 
-  // Esconde o sidebar definitivamente enquanto o modal está aberto
-  const _lp = document.getElementById('left-panel');
-  _lp.style.setProperty('z-index',        '-1',                           'important');
-  _lp.style.setProperty('visibility',     'hidden',                       'important');
-  _lp.style.setProperty('pointer-events', 'none',                         'important');
-  _lp.style.setProperty('transform',      'translateX(calc(-100% - 30px))','important');
-  _lp.style.setProperty('transition',     'none',                         'important');
+  // Empurra AMBOS os sidebars para trás enquanto o modal está aberto
+  ['left-panel','nodal-sidebar'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.setProperty('z-index',        '-1',    'important');
+    el.style.setProperty('pointer-events', 'none',  'important');
+  });
   document.body.classList.add('sm-open');
   document.getElementById('sm-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -10716,13 +10716,13 @@ function closeSaibaMais() {
   document.getElementById('sm-overlay').classList.remove('open');
   document.body.classList.remove('sm-open');
   document.body.style.overflow = '';
-  // Restaura o sidebar
-  const _lp = document.getElementById('left-panel');
-  _lp.style.removeProperty('z-index');
-  _lp.style.removeProperty('visibility');
-  _lp.style.removeProperty('pointer-events');
-  _lp.style.removeProperty('transform');
-  _lp.style.removeProperty('transition');
+  // Restaura ambos os sidebars
+  ['left-panel','nodal-sidebar'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.removeProperty('z-index');
+    el.style.removeProperty('pointer-events');
+  });
   smCurrentNode = null; smDirty = false;
 }
 
@@ -14441,9 +14441,9 @@ function goToHome() {
 const _origSetEditing = setEditingEnabled;
 setEditingEnabled = function(on) {
   _origSetEditing(on);
-  // HUD floating button (legacy, mantido para goToHome reset)
+  // Design button fica apenas no sidebar — nunca no HUD
   const btn = document.getElementById('btn-glass-design');
-  if (btn) btn.style.display = on ? '' : 'none';
+  if (btn) btn.style.display = 'none';
   const btnSalvar = document.getElementById('btn-salvar-html');
   if (btnSalvar) btnSalvar.style.display = on ? '' : 'none';
   // Dropdown item
