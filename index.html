@@ -5357,6 +5357,320 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #sm-lb-inner.zoomed { cursor: grab; overflow: hidden; }
   #sm-lb-inner.zoomed.grabbing { cursor: grabbing; }
 
+  /* ═══════════════════════════════════════════
+     NODAL Sidebar
+  ═══════════════════════════════════════════ */
+  #nodal-sidebar {
+    position: fixed;
+    left: 0;
+    top: var(--sb-top, 54px);
+    bottom: var(--sb-bottom, 82px);
+    width: 220px;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    background: rgba(var(--sb-bg-rgb, 10,10,22), var(--sb-bg-idle, 0.07));
+    backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.8);
+    border-right: 1px solid rgba(255,255,255, calc(0.10 * var(--sb-idle, 0.25)));
+    box-shadow: 4px 0 48px rgba(0,0,0, calc(0.4 * var(--sb-idle, 0.25)));
+    border-radius: 0 var(--sb-radius, 14px) var(--sb-radius, 14px) 0;
+    transform: translate(var(--sb-dx, 0px), var(--sb-dy, 0px));
+    transition: width 0.28s cubic-bezier(0.4,0,0.2,1),
+                background 0.35s ease,
+                border-color 0.35s ease,
+                box-shadow 0.35s ease,
+                opacity 0.35s ease;
+    overflow: visible;
+    padding: 20px 0 14px;
+    user-select: none;
+  }
+  /* Conteúdo fantasma quando inativo */
+  #nodal-sidebar .sb-profile,
+  #nodal-sidebar .sb-section,
+  #nodal-sidebar .sb-item,
+  #nodal-sidebar .sb-mode-row,
+  #nodal-sidebar .sb-footer-sep,
+  #nodal-sidebar #sidebar-toggle {
+    opacity: var(--sb-idle, 0.22);
+    transition: opacity 0.35s ease;
+  }
+  /* Revive ao passar o mouse */
+  #nodal-sidebar:hover {
+    background: rgba(var(--sb-bg-rgb, 10,10,22), var(--sb-bg-hover, 0.88));
+    border-right-color: var(--border);
+    box-shadow: 4px 0 48px rgba(0,0,0,0.4), inset -1px 0 0 rgba(255,255,255,0.04);
+  }
+  #nodal-sidebar:hover .sb-profile,
+  #nodal-sidebar:hover .sb-section,
+  #nodal-sidebar:hover .sb-item,
+  #nodal-sidebar:hover .sb-mode-row,
+  #nodal-sidebar:hover .sb-footer-sep,
+  #nodal-sidebar:hover #sidebar-toggle { opacity: 1; }
+  #nodal-sidebar.sb-slim { width: 60px; }
+  #nodal-sidebar.sb-floating {
+    left: 12px;
+    top: calc(var(--sb-top, 54px) - 4px);
+    bottom: calc(var(--sb-bottom, 82px) - 4px);
+    border-radius: var(--sb-radius, 18px);
+    border: 1px solid rgba(255,255,255, calc(0.20 * var(--sb-idle, 0.25)));
+    box-shadow: 0 12px 60px rgba(0,0,0, calc(0.55 * var(--sb-idle, 0.25)));
+  }
+  #nodal-sidebar:hover.sb-floating {
+    border-color: var(--border2);
+    box-shadow: 0 12px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  #nodal-sidebar.sb-hidden {
+    transform: translate(calc(var(--sb-dx, 0px) - 110%), var(--sb-dy, 0px));
+    pointer-events: none;
+  }
+  /* Cursor de arrastar na alça */
+  .sb-drag-handle { cursor: grab; }
+  .sb-drag-handle:active { cursor: grabbing; }
+
+  /* ── Toggle chevron ── */
+  #sidebar-toggle {
+    position: absolute;
+    right: -14px; top: 50%;
+    transform: translateY(-50%);
+    width: 28px; height: 28px;
+    background: rgba(12,12,26,0.92);
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2);
+    font-size: 12px; line-height: 1;
+    transition: all 0.18s;
+    z-index: 2;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 0;
+    font-family: var(--mono);
+  }
+  #sidebar-toggle:hover {
+    background: rgba(167,139,250,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 14px rgba(167,139,250,0.25);
+  }
+
+  /* ── Profile block ── */
+  .sb-profile {
+    display: flex; align-items: center; gap: 11px;
+    padding: 0 16px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .sb-avatar-wrap {
+    position: relative; flex-shrink: 0;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(167,139,250,0.12);
+  }
+  .sb-avatar-wrap::after {
+    content: '◉';
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 17px;
+    color: rgba(167,139,250,0.35);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .sb-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(167,139,250,0.3);
+    display: block;
+    position: relative; z-index: 1;
+    transition: border-color 0.18s;
+  }
+  .sb-avatar[src=""] { opacity: 0; }
+  .sb-avatar-edit {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.58);
+    color: rgba(255,255,255,0.85);
+    font-size: 10px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.18s;
+    z-index: 2;
+  }
+  .sb-avatar-wrap:hover .sb-avatar-edit { opacity: 1; }
+  .sb-avatar-wrap:hover .sb-avatar { border-color: var(--accent); }
+  .sb-profile-text {
+    flex: 1; min-width: 0; overflow: hidden;
+  }
+  .sb-greeting {
+    font-size: 7.5px;
+    color: var(--text3);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    font-family: var(--mono);
+  }
+  #sidebar-username {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    outline: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+    cursor: text;
+    font-family: var(--mono);
+    padding-bottom: 1px;
+  }
+  #sidebar-username:focus { border-bottom-color: var(--accent); }
+  #sidebar-username:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text3);
+  }
+  /* Slim: colapsa perfil */
+  #nodal-sidebar.sb-slim .sb-profile {
+    padding: 0 10px 16px;
+    justify-content: center;
+  }
+  #nodal-sidebar.sb-slim .sb-profile-text { display: none; }
+  #nodal-sidebar.sb-slim .sb-avatar,
+  #nodal-sidebar.sb-slim .sb-avatar-wrap { width: 34px; height: 34px; }
+
+  /* ── Section label ── */
+  .sb-section {
+    padding: 14px 16px 4px;
+    font-size: 7.5px;
+    color: var(--text3);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: opacity 0.2s, height 0.2s;
+  }
+  #nodal-sidebar.sb-slim .sb-section {
+    opacity: 0; pointer-events: none;
+    height: 6px; padding: 6px 0 0;
+  }
+
+  /* ── Nav item ── */
+  .sb-item {
+    display: flex; align-items: center; gap: 11px;
+    width: 100%; padding: 9px 16px;
+    background: none; border: none;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 11px; font-family: var(--mono);
+    letter-spacing: 0.04em;
+    transition: background 0.14s, color 0.14s;
+    position: relative;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .sb-item:hover {
+    background: var(--glass-light);
+    color: var(--text);
+  }
+  .sb-item:hover .sb-icon { transform: scale(1.12); }
+  .sb-item.active { color: var(--accent); background: rgba(167,139,250,0.07); }
+  .sb-item.active::before {
+    content: '';
+    position: absolute; left: 0; top: 22%; bottom: 22%;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px rgba(167,139,250,0.45);
+  }
+  .sb-item.danger:hover { color: #f87171; background: rgba(239,68,68,0.07); }
+  .sb-icon {
+    font-size: 15px; flex-shrink: 0;
+    width: 22px; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s;
+  }
+  .sb-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  #nodal-sidebar.sb-slim .sb-label { display: none; }
+  #nodal-sidebar.sb-slim .sb-item { padding: 9px; justify-content: center; }
+  #nodal-sidebar.sb-slim .sb-icon { width: auto; }
+
+  /* ── Spacer ── */
+  .sb-spacer { flex: 1; }
+
+  /* ── Footer ── */
+  .sb-footer-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 16px;
+    flex-shrink: 0;
+  }
+  #nodal-sidebar.sb-slim .sb-footer-sep { margin: 6px 10px; }
+
+  /* ── Mode pill (Fixed / Float) ── */
+  .sb-mode-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 16px 8px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  #nodal-sidebar.sb-slim .sb-mode-row { justify-content: center; padding: 5px 10px 8px; }
+  .sb-mode-pill {
+    display: flex; gap: 2px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  #nodal-sidebar.sb-slim .sb-mode-pill { display: none; }
+  .sb-mode-btn {
+    background: none; border: none;
+    color: var(--text3); font-size: 8px;
+    font-family: var(--mono); letter-spacing: 0.1em;
+    padding: 3px 8px; border-radius: 5px; cursor: pointer;
+    transition: all 0.14s; white-space: nowrap;
+    text-transform: uppercase;
+  }
+  .sb-mode-btn.active { background: rgba(167,139,250,0.18); color: var(--accent); }
+  .sb-mode-btn:hover:not(.active) { color: var(--text2); }
+  .sb-mode-icon {
+    display: none;
+    font-size: 14px; cursor: pointer;
+    color: var(--text3); padding: 2px 4px;
+    border-radius: 4px; border: none; background: none;
+    transition: color 0.14s; font-family: var(--mono);
+  }
+  #nodal-sidebar.sb-slim .sb-mode-icon {
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sb-mode-icon:hover { color: var(--text2); }
+
+  /* ── Light mode ── */
+  html.light #nodal-sidebar {
+    background: rgba(238,238,250,0.90);
+    border-right-color: var(--border);
+    box-shadow: 4px 0 48px rgba(0,0,0,0.10), inset -1px 0 0 rgba(0,0,0,0.04);
+  }
+  html.light #nodal-sidebar.sb-floating {
+    box-shadow: 0 12px 60px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+  html.light #sidebar-toggle {
+    background: rgba(235,235,252,0.96);
+    border-color: var(--border2);
+    color: var(--text2);
+  }
+  html.light .sb-avatar-wrap { background: rgba(80,60,200,0.08); }
+  html.light .sb-avatar-wrap::after { color: rgba(80,60,200,0.25); }
+  html.light .sb-avatar { border-color: rgba(80,60,200,0.25); }
+  html.light .sb-item.active { background: rgba(80,60,200,0.07); }
+  html.light .sb-mode-pill { background: rgba(0,0,0,0.04); }
+
 </style>
 </head>
 <body>
@@ -6060,9 +6374,62 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <!-- Cortina de transição login → projetos -->
 <div id="transition-curtain"></div>
 
+<!-- ═══════════════════════════════════════════
+     NODAL Sidebar
+═══════════════════════════════════════════ -->
+<div id="nodal-sidebar" class="sb-hidden">
+
+  <button id="sidebar-toggle" onclick="_sbToggle()" title="Expandir / Recolher">‹</button>
+
+  <!-- Perfil (alça de arrastar) -->
+  <div class="sb-profile sb-drag-handle" id="sb-drag-handle" title="Arraste para mover a sidebar">
+    <div class="sb-avatar-wrap">
+      <img id="sidebar-avatar" class="sb-avatar" src="" alt="avatar"/>
+      <label class="sb-avatar-edit" for="sidebar-avatar-input" title="Trocar foto">✎</label>
+      <input type="file" id="sidebar-avatar-input" accept="image/*" style="display:none" onchange="_sbAvatarChange(this)">
+    </div>
+    <div class="sb-profile-text">
+      <div class="sb-greeting" id="sidebar-greeting">Bem-vindo</div>
+      <div id="sidebar-username" class="sb-username" contenteditable="true" data-placeholder="Seu nome" title="Clique para editar"></div>
+    </div>
+  </div>
+
+  <!-- Menu -->
+  <div class="sb-section">Menu</div>
+
+  <button class="sb-item active" onclick="goToHome()" title="Tela inicial">
+    <span class="sb-icon">⌂</span>
+    <span class="sb-label">Tela inicial</span>
+  </button>
+
+  <button class="sb-item" id="sidebar-design-btn" onclick="openGlassSettings()" title="Design" style="display:none">
+    <span class="sb-icon">⬡</span>
+    <span class="sb-label">Design</span>
+  </button>
+
+  <div class="sb-spacer"></div>
+
+  <!-- Rodapé -->
+  <div class="sb-footer-sep"></div>
+
+  <div class="sb-mode-row">
+    <div class="sb-mode-pill">
+      <button class="sb-mode-btn active" id="sb-mode-fixed" onclick="_sbSetMode('fixed')" title="Sidebar fixa">Fixo</button>
+      <button class="sb-mode-btn" id="sb-mode-float" onclick="_sbSetMode('floating')" title="Sidebar flutuante">Float</button>
+    </div>
+    <button class="sb-mode-icon" id="sb-mode-icon-btn" onclick="_sbCycleMode()" title="Alternar modo">⊞</button>
+  </div>
+
+  <button class="sb-item danger" onclick="voltarAoLogin()" title="Sair da conta">
+    <span class="sb-icon">⏻</span>
+    <span class="sb-label">Sair</span>
+  </button>
+
+</div>
+
 <!-- HUD -->
 <div id="hud-top">
-  <button id="btn-home" onclick="goToHome()" title="Voltar à tela inicial">⌂</button>
+  <button id="btn-home" onclick="goToHome()" title="Voltar à tela inicial" style="display:none" aria-hidden="true" tabindex="-1">⌂</button>
   <div id="hud-logo-img-wrap" title="Logo do projeto">
     <div id="hud-logo-gradient"></div>
     <img id="hud-logo-img" src="" alt="logo"/>
@@ -12561,6 +12928,115 @@ function closeArticleViewer() {
         <input type="range" id="gs-fly-zoom" min="10" max="60" step="2" value="22"
           oninput="gsUpdateFlyZoom(this.value)"/>
         <span class="gs-val" id="gs-fly-zoom-val">22</span>
+      </div>
+    </div>
+
+    <!-- ⑨ Sidebar -->
+    <div class="gs-section" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);border-bottom:none">
+      <div class="gs-section-title">⑨ Sidebar</div>
+
+      <div style="font-size:8px;color:var(--text3);font-family:var(--mono);margin-bottom:14px;line-height:1.7">
+        Controle visual e comportamento da barra lateral.
+      </div>
+
+      <!-- Opacidade inativa -->
+      <div class="gs-row">
+        <span class="gs-label">Opacidade inativa</span>
+        <input type="range" id="gs-sb-idle" min="0.05" max="1" step="0.05" value="0.22"
+          oninput="document.getElementById('gs-sb-idle-val').textContent=Math.round(this.value*100)+'%';_sbPreview()"/>
+        <span class="gs-val" id="gs-sb-idle-val">22%</span>
+      </div>
+
+      <!-- Blur de fundo -->
+      <div class="gs-row">
+        <span class="gs-label">Desfoque (blur)</span>
+        <input type="range" id="gs-sb-blur" min="0" max="48" step="2" value="28"
+          oninput="document.getElementById('gs-sb-blur-val').textContent=this.value+'px';_sbPreview()"/>
+        <span class="gs-val" id="gs-sb-blur-val">28px</span>
+      </div>
+
+      <!-- Arredondamento -->
+      <div class="gs-row">
+        <span class="gs-label">Arredondamento</span>
+        <input type="range" id="gs-sb-radius" min="0" max="28" step="2" value="14"
+          oninput="document.getElementById('gs-sb-radius-val').textContent=this.value+'px';_sbPreview()"/>
+        <span class="gs-val" id="gs-sb-radius-val">14px</span>
+      </div>
+
+      <!-- Cor de fundo -->
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+        <span class="gs-label" style="flex-shrink:0">Cor de fundo</span>
+        <input type="color" id="gs-sb-color" value="#0a0a16"
+          oninput="document.getElementById('gs-sb-color-hex').value=this.value;_sbPreview()"
+          style="width:36px;height:26px;padding:2px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer"/>
+        <input type="text" id="gs-sb-color-hex" value="#0a0a16" maxlength="7"
+          oninput="if(this.value.length===7){document.getElementById('gs-sb-color').value=this.value;_sbPreview()}"
+          style="flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 8px;outline:none"/>
+      </div>
+
+      <!-- Cor de destaque (itens ativos) -->
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+        <span class="gs-label" style="flex-shrink:0">Cor de destaque</span>
+        <input type="color" id="gs-sb-accent" value="#a78bfa"
+          oninput="document.getElementById('gs-sb-accent-hex').value=this.value;_sbPreview()"
+          style="width:36px;height:26px;padding:2px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer"/>
+        <input type="text" id="gs-sb-accent-hex" value="#a78bfa" maxlength="7"
+          oninput="if(this.value.length===7){document.getElementById('gs-sb-accent').value=this.value;_sbPreview()}"
+          style="flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 8px;outline:none"/>
+      </div>
+
+      <!-- Largura expandida -->
+      <div class="gs-row">
+        <span class="gs-label">Largura expandida</span>
+        <input type="range" id="gs-sb-width" min="160" max="300" step="10" value="220"
+          oninput="document.getElementById('gs-sb-width-val').textContent=this.value+'px';_sbPreview()"/>
+        <span class="gs-val" id="gs-sb-width-val">220px</span>
+      </div>
+
+      <!-- Offset do topo -->
+      <div class="gs-row">
+        <span class="gs-label">Distância do topo</span>
+        <input type="range" id="gs-sb-top" min="0" max="200" step="4" value="54"
+          oninput="document.getElementById('gs-sb-top-val').textContent=this.value+'px';_sbPreview()"/>
+        <span class="gs-val" id="gs-sb-top-val">54px</span>
+      </div>
+
+      <!-- Offset inferior -->
+      <div class="gs-row">
+        <span class="gs-label">Distância inferior</span>
+        <input type="range" id="gs-sb-bottom" min="0" max="200" step="4" value="82"
+          oninput="document.getElementById('gs-sb-bottom-val').textContent=this.value+'px';_sbPreview()"/>
+        <span class="gs-val" id="gs-sb-bottom-val">82px</span>
+      </div>
+
+      <!-- Fonte dos itens -->
+      <div class="gs-row" style="align-items:center">
+        <span class="gs-label">Fonte</span>
+        <select id="gs-sb-font" onchange="_sbPreview()"
+          style="flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:10px;padding:4px 8px;outline:none;cursor:pointer">
+          <option value="var(--mono)">Mono (padrão)</option>
+          <option value="system-ui, sans-serif">Sistema</option>
+          <option value="'Georgia', serif">Serif</option>
+          <option value="'Courier New', monospace">Courier</option>
+        </select>
+      </div>
+
+      <!-- Ícones dos itens -->
+      <div style="margin-top:12px;margin-bottom:4px">
+        <div style="font-size:8px;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;font-family:var(--mono)">Ícones dos itens</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="sb-icon-set-btn active" data-set="0" onclick="_sbPickIconSet(0,this)"
+            style="padding:5px 10px;border:1px solid var(--accent);border-radius:6px;background:rgba(167,139,250,0.1);color:var(--text);font-size:11px;cursor:pointer;font-family:var(--mono)">⌂ ⬡ ⏻</button>
+          <button class="sb-icon-set-btn" data-set="1" onclick="_sbPickIconSet(1,this)"
+            style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono)">🏠 🎨 🚪</button>
+          <button class="sb-icon-set-btn" data-set="2" onclick="_sbPickIconSet(2,this)"
+            style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono)">◈ ◉ ○</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding:10px 14px;background:var(--cell-bg);border:1px solid var(--border);border-radius:6px;font-size:9px;color:var(--text3);font-family:var(--mono);line-height:1.8">
+        💡 A sidebar revive ao passar o mouse.<br>
+        Arraste pelo cabeçalho do perfil para reposicionar.
       </div>
     </div>
 
@@ -24967,6 +25443,399 @@ setTimeout(() => {
   const kbEl = document.querySelector('.kb-row:last-child');
   // Não interfere no DOM do tour, apenas registra
 }, 500);
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════
+     NODAL Sidebar — Design + Drag JS
+═══════════════════════════════════════════ -->
+<script>
+(function() {
+
+  /* ── Estado ──────────────────────────────── */
+  function _sbLoadState() {
+    try {
+      const s = JSON.parse(localStorage.getItem('neural-sidebar-state') || '{}');
+      return { expanded: s.expanded !== false, mode: s.mode || 'fixed' };
+    } catch(e) { return { expanded: true, mode: 'fixed' }; }
+  }
+  function _sbSaveState(st) {
+    localStorage.setItem('neural-sidebar-state', JSON.stringify(st));
+  }
+
+  var _sbSt = _sbLoadState();
+
+  function _sbApply() {
+    var el  = document.getElementById('nodal-sidebar');
+    var tog = document.getElementById('sidebar-toggle');
+    if (!el) return;
+    el.classList.toggle('sb-slim',     !_sbSt.expanded);
+    el.classList.toggle('sb-floating',  _sbSt.mode === 'floating');
+    if (tog) tog.textContent = _sbSt.expanded ? '‹' : '›';
+    var fBtn = document.getElementById('sb-mode-fixed');
+    var oBtn = document.getElementById('sb-mode-float');
+    if (fBtn) fBtn.classList.toggle('active', _sbSt.mode === 'fixed');
+    if (oBtn) oBtn.classList.toggle('active', _sbSt.mode === 'floating');
+  }
+
+  window._sbToggle = function() {
+    _sbSt.expanded = !_sbSt.expanded;
+    _sbSaveState(_sbSt);
+    _sbApply();
+  };
+  window._sbSetMode = function(mode) {
+    _sbSt.mode = mode;
+    _sbSaveState(_sbSt);
+    _sbApply();
+  };
+  window._sbCycleMode = function() {
+    _sbSt.mode = _sbSt.mode === 'fixed' ? 'floating' : 'fixed';
+    _sbSaveState(_sbSt);
+    _sbApply();
+  };
+
+  /* ── Mostrar / Esconder ──────────────────── */
+  window._sbShow = function() {
+    var el = document.getElementById('nodal-sidebar');
+    if (el) el.classList.remove('sb-hidden');
+  };
+  window._sbHide = function() {
+    var el = document.getElementById('nodal-sidebar');
+    if (el) el.classList.add('sb-hidden');
+  };
+
+  /* ── Perfil ──────────────────────────────── */
+  function _sbLoadProfile() {
+    var name   = localStorage.getItem('neural-display-name') || '';
+    var avatar = localStorage.getItem('neural-avatar-url')   || '';
+    var el = document.getElementById('sidebar-username');
+    if (el) el.textContent = name;
+    var img = document.getElementById('sidebar-avatar');
+    if (img && avatar) img.src = avatar;
+    var h = new Date().getHours();
+    var greet = h < 12 ? 'Bom dia ☀' : h < 18 ? 'Boa tarde 🌤' : 'Boa noite 🌙';
+    var gr = document.getElementById('sidebar-greeting');
+    if (gr) gr.textContent = greet;
+  }
+
+  function _sbSaveName(name) {
+    localStorage.setItem('neural-display-name', name);
+    if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
+  }
+
+  /* name editing */
+  var _sbNameEl = document.getElementById('sidebar-username');
+  if (_sbNameEl) {
+    _sbNameEl.addEventListener('blur', function() { _sbSaveName(this.textContent.trim()); });
+    _sbNameEl.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+      e.stopPropagation();
+    });
+    _sbNameEl.addEventListener('keyup', function(e) { e.stopPropagation(); });
+  }
+
+  /* ── Avatar upload ───────────────────────── */
+  window._sbAvatarChange = function(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function() {
+      var MAX = 96;
+      var w = img.width, h = img.height;
+      var ratio = Math.min(MAX / w, MAX / h);
+      w = Math.round(w * ratio); h = Math.round(h * ratio);
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      var base64 = c.toDataURL('image/jpeg', 0.78);
+
+      // Tenta Supabase Storage; fallback para base64 em localStorage
+      (async function() {
+        try {
+          var sess = await _sb.auth.getSession();
+          var session = sess.data && sess.data.session;
+          if (session) {
+            var blob = await fetch(base64).then(function(r){ return r.blob(); });
+            var path = 'avatars/' + session.user.id + '.jpg';
+            var up = await _sb.storage.from('user-assets').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+            if (!up.error) {
+              var pub = _sb.storage.from('user-assets').getPublicUrl(path);
+              var publicUrl = pub.data && pub.data.publicUrl;
+              if (publicUrl) {
+                localStorage.setItem('neural-avatar-url', publicUrl);
+                var av = document.getElementById('sidebar-avatar');
+                if (av) av.src = publicUrl;
+                if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
+                input.value = '';
+                return;
+              }
+            }
+          }
+        } catch(e) {}
+        // Fallback: base64
+        localStorage.setItem('neural-avatar-url', base64);
+        var av = document.getElementById('sidebar-avatar');
+        if (av) av.src = base64;
+        if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
+        input.value = '';
+      })();
+    };
+    img.src = url;
+  };
+
+  /* ── Sincroniza visibilidade com o botão Design ── */
+  var _origSetEditingSB = setEditingEnabled;
+  setEditingEnabled = function(on) {
+    _origSetEditingSB.apply(this, arguments);
+    var d = document.getElementById('sidebar-design-btn');
+    if (d) d.style.display = on ? '' : 'none';
+  };
+
+  /* ── Mostra/esconde sidebar via MutationObserver ── */
+  var _sbLs = document.getElementById('lock-screen');
+  if (_sbLs) {
+    new MutationObserver(function() {
+      if (_sbLs.classList.contains('hidden')) {
+        _sbShow();
+      } else {
+        _sbHide();
+      }
+    }).observe(_sbLs, { attributes: true, attributeFilter: ['class'] });
+    // Estado inicial
+    if (_sbLs.classList.contains('hidden')) _sbShow(); else _sbHide();
+  }
+
+  /* ── Adiciona chaves ao sync do Supabase ── */
+  if (typeof _SYNC_KEYS !== 'undefined') {
+    if (_SYNC_KEYS.indexOf('neural-display-name') === -1) _SYNC_KEYS.push('neural-display-name');
+    if (_SYNC_KEYS.indexOf('neural-avatar-url')   === -1) _SYNC_KEYS.push('neural-avatar-url');
+  }
+
+  /* ── Init ───────────────────────────────── */
+  _sbApply();
+  _sbLoadProfile();
+
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════
+   NODAL Sidebar — Design Settings + Drag
+═══════════════════════════════════════════ */
+(function() {
+
+  /* ── Icon sets ─────────────────────────── */
+  var _sbIconSets = [
+    { home: '⌂', design: '⬡', logout: '⏻' },
+    { home: '🏠', design: '🎨', logout: '🚪' },
+    { home: '◈', design: '◉', logout: '○'  }
+  ];
+
+  /* ── Design defaults ─────────────────── */
+  var _sbDesignDef = {
+    idle: 0.22, blur: 28, radius: 14,
+    color: '#0a0a16', accent: '#a78bfa',
+    width: 220, top: 54, bottom: 82,
+    font: 'var(--mono)', iconSet: 0,
+    dx: 0, dy: 0
+  };
+
+  function _sbDLoad() {
+    try {
+      return Object.assign({}, _sbDesignDef,
+        JSON.parse(localStorage.getItem('neural-sidebar-design') || '{}'));
+    } catch(e) { return Object.assign({}, _sbDesignDef); }
+  }
+  function _sbDSave(d) {
+    localStorage.setItem('neural-sidebar-design', JSON.stringify(d));
+    if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
+  }
+
+  /* ── Apply design to DOM ─────────────── */
+  function _sbApplyDesign(d) {
+    var el = document.getElementById('nodal-sidebar');
+    if (!el) return;
+
+    // hex → r,g,b for CSS var
+    var hex = (d.color || '#0a0a16').replace('#','');
+    var r = parseInt(hex.slice(0,2),16)||10;
+    var g = parseInt(hex.slice(2,4),16)||10;
+    var b = parseInt(hex.slice(4,6),16)||22;
+
+    el.style.setProperty('--sb-idle',     d.idle);
+    el.style.setProperty('--sb-bg-idle',  Math.min(d.idle * 0.35, 0.12));
+    el.style.setProperty('--sb-bg-hover', 0.88);
+    el.style.setProperty('--sb-blur',     d.blur + 'px');
+    el.style.setProperty('--sb-radius',   d.radius + 'px');
+    el.style.setProperty('--sb-bg-rgb',   r + ',' + g + ',' + b);
+    el.style.setProperty('--sb-top',      d.top + 'px');
+    el.style.setProperty('--sb-bottom',   d.bottom + 'px');
+    el.style.setProperty('--sb-dx',       (d.dx || 0) + 'px');
+    el.style.setProperty('--sb-dy',       (d.dy || 0) + 'px');
+    el.style.width = d.width + 'px';
+
+    // accent color on active items
+    var style = document.getElementById('_sb-accent-style');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = '_sb-accent-style';
+      document.head.appendChild(style);
+    }
+    var ac = d.accent || '#a78bfa';
+    var acRgb = (function(h){
+      h = h.replace('#','');
+      return parseInt(h.slice(0,2),16)+','+parseInt(h.slice(2,4),16)+','+parseInt(h.slice(4,6),16);
+    })(ac);
+    style.textContent =
+      '#nodal-sidebar .sb-item.active{color:'+ac+';background:rgba('+acRgb+',0.07)}' +
+      '#nodal-sidebar .sb-item.active::before{background:'+ac+';box-shadow:0 0 8px rgba('+acRgb+',0.45)}' +
+      '#nodal-sidebar #sidebar-toggle:hover{background:rgba('+acRgb+',0.2);border-color:'+ac+';color:'+ac+'}' +
+      '#nodal-sidebar .sb-item,.sb-username{font-family:'+d.font+'}';
+
+    // Icons
+    var set = _sbIconSets[d.iconSet || 0] || _sbIconSets[0];
+    var homeBtn = document.querySelector('#nodal-sidebar .sb-item.active .sb-icon');
+    var designBtn = document.querySelector('#sidebar-design-btn .sb-icon');
+    var logoutBtn = document.querySelector('#nodal-sidebar .sb-item.danger .sb-icon');
+    if (homeBtn)   homeBtn.textContent   = set.home;
+    if (designBtn) designBtn.textContent = set.design;
+    if (logoutBtn) logoutBtn.textContent = set.logout;
+  }
+
+  /* ── Populate modal controls ─────────── */
+  function _sbPopulateModal(d) {
+    function sv(id, v) { var e = document.getElementById(id); if (e) e.value = v; }
+    function st(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+    sv('gs-sb-idle',   d.idle);   st('gs-sb-idle-val',   Math.round(d.idle*100)+'%');
+    sv('gs-sb-blur',   d.blur);   st('gs-sb-blur-val',   d.blur+'px');
+    sv('gs-sb-radius', d.radius); st('gs-sb-radius-val', d.radius+'px');
+    sv('gs-sb-color',  d.color);  sv('gs-sb-color-hex',  d.color);
+    sv('gs-sb-accent', d.accent); sv('gs-sb-accent-hex', d.accent);
+    sv('gs-sb-width',  d.width);  st('gs-sb-width-val',  d.width+'px');
+    sv('gs-sb-top',    d.top);    st('gs-sb-top-val',    d.top+'px');
+    sv('gs-sb-bottom', d.bottom); st('gs-sb-bottom-val', d.bottom+'px');
+    sv('gs-sb-font',   d.font);
+    // icon set buttons
+    document.querySelectorAll('.sb-icon-set-btn').forEach(function(btn) {
+      var active = parseInt(btn.dataset.set) === (d.iconSet || 0);
+      btn.style.borderColor = active ? (d.accent||'var(--accent)') : 'var(--border)';
+      btn.style.background  = active ? 'rgba(167,139,250,0.1)' : 'none';
+      btn.style.color       = active ? 'var(--text)' : 'var(--text2)';
+    });
+  }
+
+  /* ── Read from modal ─────────────────── */
+  function _sbReadModal() {
+    function gv(id, fb) { var e = document.getElementById(id); return e ? parseFloat(e.value)||fb : fb; }
+    function gs(id, fb) { var e = document.getElementById(id); return e ? e.value||fb : fb; }
+    var cur = _sbDLoad();
+    return {
+      idle:    gv('gs-sb-idle',   _sbDesignDef.idle),
+      blur:    gv('gs-sb-blur',   _sbDesignDef.blur),
+      radius:  gv('gs-sb-radius', _sbDesignDef.radius),
+      color:   gs('gs-sb-color',  _sbDesignDef.color),
+      accent:  gs('gs-sb-accent', _sbDesignDef.accent),
+      width:   gv('gs-sb-width',  _sbDesignDef.width),
+      top:     gv('gs-sb-top',    _sbDesignDef.top),
+      bottom:  gv('gs-sb-bottom', _sbDesignDef.bottom),
+      font:    gs('gs-sb-font',   _sbDesignDef.font),
+      iconSet: cur.iconSet || 0,
+      dx: cur.dx || 0, dy: cur.dy || 0
+    };
+  }
+
+  /* ── Live preview ────────────────────── */
+  window._sbPreview = function() { _sbApplyDesign(_sbReadModal()); };
+
+  /* ── Icon set picker ─────────────────── */
+  window._sbPickIconSet = function(idx, btn) {
+    document.querySelectorAll('.sb-icon-set-btn').forEach(function(b) {
+      b.style.borderColor = 'var(--border)';
+      b.style.background  = 'none';
+      b.style.color       = 'var(--text2)';
+    });
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.background  = 'rgba(167,139,250,0.1)';
+    btn.style.color       = 'var(--text)';
+    var d = _sbReadModal(); d.iconSet = idx;
+    _sbApplyDesign(d);
+  };
+
+  /* ── Patch openGlassSettings ─────────── */
+  var _origOpenGSSB = openGlassSettings;
+  openGlassSettings = function() {
+    _origOpenGSSB.apply(this, arguments);
+    _sbPopulateModal(_sbDLoad());
+  };
+
+  /* ── Patch saveGlassSettings ─────────── */
+  var _origSaveGSSB = saveGlassSettings;
+  saveGlassSettings = function() {
+    _origSaveGSSB.apply(this, arguments);
+    var d = _sbReadModal();
+    _sbDSave(d);
+    _sbApplyDesign(d);
+  };
+
+  /* ── Drag functionality ──────────────── */
+  (function() {
+    var handle = document.getElementById('sb-drag-handle');
+    var sidebar = document.getElementById('nodal-sidebar');
+    if (!handle || !sidebar) return;
+
+    var dragging = false;
+    var startX, startY, startDx, startDy;
+
+    handle.addEventListener('mousedown', function(e) {
+      // Não iniciar drag em inputs, labels, etc.
+      if (e.target.closest('input,label,button,[contenteditable]')) return;
+      dragging = true;
+      var d = _sbDLoad();
+      startDx = d.dx || 0;
+      startDy = d.dy || 0;
+      startX  = e.clientX;
+      startY  = e.clientY;
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      var dx = startDx + (e.clientX - startX);
+      var dy = startDy + (e.clientY - startY);
+      // Limita para não sair da tela
+      var maxX = window.innerWidth  - sidebar.offsetWidth  - 10;
+      var minX = -(sidebar.offsetWidth * 0.5);
+      var maxY = window.innerHeight - sidebar.offsetHeight - 10;
+      var minY = -(sidebar.offsetHeight * 0.5);
+      dx = Math.max(minX, Math.min(maxX, dx));
+      dy = Math.max(minY, Math.min(maxY, dy));
+      sidebar.style.setProperty('--sb-dx', dx + 'px');
+      sidebar.style.setProperty('--sb-dy', dy + 'px');
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (!dragging) return;
+      dragging = false;
+      // Persiste posição
+      var d = _sbDLoad();
+      var cur = getComputedStyle(sidebar);
+      d.dx = parseFloat(sidebar.style.getPropertyValue('--sb-dx')) || 0;
+      d.dy = parseFloat(sidebar.style.getPropertyValue('--sb-dy')) || 0;
+      _sbDSave(d);
+    });
+  })();
+
+  /* ── Sync key ────────────────────────── */
+  if (typeof _SYNC_KEYS !== 'undefined' &&
+      _SYNC_KEYS.indexOf('neural-sidebar-design') === -1) {
+    _SYNC_KEYS.push('neural-sidebar-design');
+  }
+
+  /* ── Init ───────────────────────────── */
+  _sbApplyDesign(_sbDLoad());
 
 })();
 </script>
