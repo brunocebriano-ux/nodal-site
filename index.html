@@ -273,6 +273,13 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   #left-panel.open { transform: translateX(0); }
   #left-panel.open { pointer-events: all; }
+  /* Quando o modal SAIBA MAIS está aberto: empurra o panel para trás imediatamente */
+  body.sm-open #left-panel {
+    z-index: -1 !important;
+    transform: translateX(calc(-100% - 30px)) !important;
+    transition: none !important;
+    pointer-events: none !important;
+  }
 
   /* Camada glass — transparente como cluster-panel */
   #lp-glass {
@@ -1466,13 +1473,15 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   /* ── Saiba Mais Modal ── */
   #sm-overlay {
-    display: none; position: fixed; inset: 0; z-index: 80;
+    display: none; position: fixed; inset: 0; z-index: 9998;
     background: rgba(0,0,0,0.35);
     backdrop-filter: blur(20px) saturate(1.4);
     -webkit-backdrop-filter: blur(20px) saturate(1.4);
     align-items: flex-start; justify-content: center;
     padding: 28px 24px;
     overflow-y: auto;
+    isolation: isolate;
+    will-change: transform;
   }
   #sm-overlay.open { display: flex; }
 
@@ -1811,6 +1820,158 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   #sm-edit-tab { display: none; }
   .sm-edit-section { margin-bottom: 28px; }
+
+  /* ═══════════════════════════════════════
+     FICHA TÉCNICA TAB
+  ═══════════════════════════════════════ */
+  #sm-ficha-tab { display: none; }
+  @keyframes ft-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  #sm-ficha-tab.ft-visible { animation: ft-in 0.28s cubic-bezier(0.2,0,0,1) both; }
+
+  /* Profile header */
+  .ft-profile {
+    display: flex; align-items: center; gap: 20px;
+    padding: 18px 20px; margin-bottom: 22px;
+    background: var(--glass-light);
+    border: 1px solid var(--border2); border-radius: 16px;
+    backdrop-filter: blur(12px);
+  }
+  .ft-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
+  .ft-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: rgba(167,139,250,0.10);
+    border: 2px dashed var(--border-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; cursor: pointer; position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .ft-avatar:hover { border-color: var(--accent); transform: scale(1.04); }
+  .ft-avatar img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+  .ft-avatar-hint { font-size: 8.5px; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; }
+  .ft-profile-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+  .ft-input-nome {
+    font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 700;
+    border: none; border-bottom: 1.5px solid var(--border);
+    background: transparent; color: var(--text); outline: none; width: 100%;
+    padding: 2px 0; transition: border-color 0.2s;
+  }
+  .ft-input-nome:focus { border-bottom-color: var(--accent); }
+  .ft-input-nome::placeholder { color: var(--text3); }
+  .ft-input-sub {
+    font-size: 13px; font-family: var(--sans);
+    border: none; background: transparent; color: var(--text2);
+    outline: none; width: 100%; padding: 1px 0;
+    border-bottom: 1px solid transparent; transition: border-color 0.2s;
+  }
+  .ft-input-sub:focus { border-bottom-color: var(--border); }
+  .ft-input-sub::placeholder { color: var(--text3); }
+
+  /* Sections */
+  .ft-sec {
+    margin-bottom: 18px; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .ft-sec-head {
+    padding: 7px 15px;
+    background: var(--glass-light); border-bottom: 1px solid var(--border);
+    font-size: 8.5px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent); font-family: var(--mono);
+  }
+  .ft-sec-body {
+    padding: 14px 15px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .ft-sec-body.ft-single { grid-template-columns: 1fr; }
+  .ft-full { grid-column: 1 / -1; }
+  .ft-field { display: flex; flex-direction: column; gap: 4px; }
+  .ft-field label {
+    font-size: 9px; color: var(--text3); font-weight: 600;
+    letter-spacing: 0.10em; text-transform: uppercase; font-family: var(--mono);
+  }
+  .ft-field input[type=text],
+  .ft-field input[type=date],
+  .ft-field select,
+  .ft-field textarea {
+    font-size: 12.5px; font-family: var(--sans);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; background: var(--glass-light);
+    color: var(--text); outline: none; width: 100%;
+    transition: border-color 0.18s, background 0.18s;
+    color-scheme: dark;
+  }
+  .ft-field input:focus, .ft-field select:focus, .ft-field textarea:focus {
+    border-color: var(--border-glow); background: rgba(167,139,250,0.05);
+  }
+  .ft-field textarea { resize: vertical; min-height: 68px; line-height: 1.6; }
+  .ft-field select {
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .ft-field select option { background: #111; color: #eee; }
+
+  /* Tags */
+  .ft-tags-wrap {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 9px; background: var(--glass-light);
+    min-height: 38px; cursor: text; transition: border-color 0.18s;
+  }
+  .ft-tags-wrap:focus-within { border-color: var(--border-glow); }
+  .ft-tag {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(167,139,250,0.14); color: var(--accent);
+    font-size: 11px; padding: 3px 9px; border-radius: 20px;
+    border: 1px solid var(--border-glow);
+  }
+  .ft-tag-x { cursor: pointer; font-size: 13px; opacity: 0.5; line-height: 1; }
+  .ft-tag-x:hover { opacity: 1; }
+  .ft-tags-wrap input {
+    border: none; background: transparent; font-size: 12px;
+    color: var(--text); outline: none; min-width: 90px; flex: 1;
+    padding: 0; font-family: var(--sans);
+  }
+  .ft-tags-wrap input::placeholder { color: var(--text3); }
+
+  /* Custom tags block */
+  .ft-custom-block {
+    margin-bottom: 18px; padding: 16px 15px;
+    border: 1px solid var(--border-glow); border-radius: 12px;
+    background: rgba(167,139,250,0.04);
+  }
+  .ft-custom-block-title {
+    font-size: 8.5px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent); font-family: var(--mono);
+    margin-bottom: 6px;
+  }
+  .ft-custom-block-desc { font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+
+  /* Footer */
+  .ft-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+  .ft-btn {
+    padding: 8px 22px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.10em;
+    text-transform: uppercase; cursor: pointer; font-family: var(--mono);
+    transition: all 0.15s;
+    border: 1px solid var(--border2); background: var(--glass-light); color: var(--text2);
+  }
+  .ft-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+  .ft-btn-save {
+    background: rgba(167,139,250,0.15); border-color: var(--border-glow); color: var(--accent);
+  }
+  .ft-btn-save:hover { background: rgba(167,139,250,0.28); }
+
+  /* Saved badge */
+  .ft-saved-badge {
+    font-size: 10px; color: #6ee7b7; letter-spacing: 0.06em;
+    font-family: var(--mono); opacity: 0; transition: opacity 0.4s;
+    align-self: center; margin-right: auto;
+  }
+  .ft-saved-badge.show { opacity: 1; }
   .sm-edit-section-title {
     font-size: 8px; color: var(--text3); letter-spacing: 0.20em;
     text-transform: uppercase; font-weight: 700; margin-bottom: 12px;
@@ -10538,6 +10699,14 @@ function openSaibaMais() {
   // Default: open on Texto tab
   smSwitchTab('view');
 
+  // Esconde o sidebar definitivamente enquanto o modal está aberto
+  const _lp = document.getElementById('left-panel');
+  _lp.style.setProperty('z-index',        '-1',                           'important');
+  _lp.style.setProperty('visibility',     'hidden',                       'important');
+  _lp.style.setProperty('pointer-events', 'none',                         'important');
+  _lp.style.setProperty('transform',      'translateX(calc(-100% - 30px))','important');
+  _lp.style.setProperty('transition',     'none',                         'important');
+  document.body.classList.add('sm-open');
   document.getElementById('sm-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -10545,23 +10714,32 @@ function openSaibaMais() {
 function closeSaibaMais() {
   if (smDirty && !confirm('Há alterações não salvas. Sair sem salvar?')) return;
   document.getElementById('sm-overlay').classList.remove('open');
+  document.body.classList.remove('sm-open');
   document.body.style.overflow = '';
+  // Restaura o sidebar
+  const _lp = document.getElementById('left-panel');
+  _lp.style.removeProperty('z-index');
+  _lp.style.removeProperty('visibility');
+  _lp.style.removeProperty('pointer-events');
+  _lp.style.removeProperty('transform');
+  _lp.style.removeProperty('transition');
   smCurrentNode = null; smDirty = false;
 }
 
 // ── Tabs ──────────────────────────────────────────
 function smSwitchTab(tab) {
   smCurrentTab = tab;
-  ['view','articles','gallery','edit'].forEach(t => {
+  ['view','articles','gallery','edit','ficha'].forEach(t => {
     const el = document.getElementById('sm-'+t+'-tab');
     if (el) el.style.display = (t===tab)?'block':'none';
     const btn = document.getElementById('sm-tab-'+t);
     if (btn) btn.classList.toggle('active', t===tab);
   });
-  if (tab === 'view') smRenderView();
+  if (tab === 'view')     smRenderView();
   if (tab === 'articles') renderArticles();
-  if (tab === 'gallery') smRenderGallery();
-  if (tab === 'edit') smUpdateEditTabAccess();
+  if (tab === 'gallery')  smRenderGallery();
+  if (tab === 'edit')     smUpdateEditTabAccess();
+  if (tab === 'ficha')    { ftLoad(); const el = document.getElementById('sm-ficha-tab'); el.classList.remove('ft-visible'); void el.offsetWidth; el.classList.add('ft-visible'); }
 }
 
 // ── View Renderer ─────────────────────────────────
@@ -10982,6 +11160,183 @@ function smSave() {
     if (document.getElementById('sm-status').textContent === '✓ Salvo')
       document.getElementById('sm-status').textContent = 'Pronto';
   }, 2000);
+}
+
+// ══════════════════════════════════════════════════════
+// FICHA TÉCNICA — estado e funções
+// ══════════════════════════════════════════════════════
+let ftFotoDataUrl = null;
+
+function ftV(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function ftUpdateInitials() {
+  const nome = document.getElementById('ft-nome-artistico').value.trim();
+  const el   = document.getElementById('ft-initials');
+  if (!ftFotoDataUrl) {
+    el.textContent = nome
+      ? nome.split(' ').filter(Boolean)
+             .reduce((a,p,i,arr) => (i===0||i===arr.length-1) ? a+p[0] : a, '')
+             .toUpperCase().slice(0,2)
+      : '?';
+  }
+}
+
+function ftHandleFoto(e) {
+  const file = e.target.files[0]; if (!file) return;
+  // Comprime via canvas antes de armazenar
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = ev => {
+    img.onload = () => {
+      const MAX = 400;
+      const scale = Math.min(MAX/img.width, MAX/img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.width  * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      ftFotoDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      const av = document.getElementById('ft-avatar');
+      let preview = av.querySelector('img');
+      if (!preview) { preview = document.createElement('img'); av.appendChild(preview); }
+      preview.src = ftFotoDataUrl;
+      document.getElementById('ft-initials').style.display = 'none';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function ftAddTag(e, containerId) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const val = e.target.value.trim(); if (!val) return;
+  const container = document.getElementById(containerId);
+  const tag = document.createElement('div');
+  tag.className = 'ft-tag';
+  tag.dataset.val = val;
+  tag.innerHTML = `${val} <span class="ft-tag-x" onclick="this.parentElement.remove()">×</span>`;
+  container.insertBefore(tag, e.target);
+  e.target.value = '';
+}
+
+function ftGetTags(containerId) {
+  return [...document.getElementById(containerId).querySelectorAll('.ft-tag')]
+    .map(t => t.dataset.val).filter(Boolean);
+}
+
+function ftSetTags(containerId, tags) {
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('.ft-tag').forEach(t => t.remove());
+  const input = container.querySelector('input');
+  (tags || []).forEach(val => {
+    const tag = document.createElement('div');
+    tag.className = 'ft-tag'; tag.dataset.val = val;
+    tag.innerHTML = `${val} <span class="ft-tag-x" onclick="this.parentElement.remove()">×</span>`;
+    container.insertBefore(tag, input);
+  });
+}
+
+function ftLoad() {
+  if (!smCurrentNode) return;
+  const f = smCurrentNode.ficha || {};
+  ftFotoDataUrl = f.foto || null;
+
+  // Avatar
+  const av = document.getElementById('ft-avatar');
+  const initEl = document.getElementById('ft-initials');
+  const oldImg = av.querySelector('img');
+  if (oldImg) oldImg.remove();
+  if (ftFotoDataUrl) {
+    initEl.style.display = 'none';
+    const img = document.createElement('img'); img.src = ftFotoDataUrl; av.appendChild(img);
+  } else {
+    initEl.style.display = ''; initEl.textContent = '?';
+  }
+
+  // Campos de texto simples
+  const map = {
+    'ft-nome-artistico': f.nomeArtistico,
+    'ft-nome-real':      f.nomeReal,
+    'ft-cidade':         f.cidade,
+    'ft-nascimento':     f.nascimento,
+    'ft-nacionalidade':  f.nacionalidade,
+    'ft-instagram':      f.instagram,
+    'ft-streaming':      f.streaming,
+    'ft-area':           f.area,
+    'ft-fase':           f.fase,
+    'ft-tematicas':      f.tematicas,
+    'ft-influencias':    f.influencias,
+    'ft-estetica':       f.estetica,
+    'ft-formacao':       f.formacao,
+    'ft-marcos':         f.marcos,
+    'ft-projetos':       f.projetos,
+    'ft-portfolio':      f.portfolio,
+    'ft-origem':         f.origem,
+    'ft-coletivos':      f.coletivos,
+    'ft-selo':           f.selo,
+    'ft-colaboradores':  f.colaboradores,
+    'ft-mentores':       f.mentores,
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id); if (el) el.value = val || '';
+  });
+
+  // Tags
+  ftSetTags('ft-tags-genero',  f.generos);
+  ftSetTags('ft-tags-custom',  f.tags);
+  ftUpdateInitials();
+
+  // Esconde badge de salvo
+  const badge = document.getElementById('ft-saved-badge');
+  if (badge) { badge.classList.remove('show'); }
+}
+
+function ftSave() {
+  if (!smCurrentNode) return;
+
+  smCurrentNode.ficha = {
+    foto:          ftFotoDataUrl,
+    nomeArtistico: ftV('ft-nome-artistico'),
+    nomeReal:      ftV('ft-nome-real'),
+    cidade:        ftV('ft-cidade'),
+    nascimento:    ftV('ft-nascimento'),
+    nacionalidade: ftV('ft-nacionalidade'),
+    instagram:     ftV('ft-instagram'),
+    streaming:     ftV('ft-streaming'),
+    area:          ftV('ft-area'),
+    fase:          ftV('ft-fase'),
+    generos:       ftGetTags('ft-tags-genero'),
+    tematicas:     ftV('ft-tematicas'),
+    influencias:   ftV('ft-influencias'),
+    estetica:      ftV('ft-estetica'),
+    formacao:      ftV('ft-formacao'),
+    marcos:        ftV('ft-marcos'),
+    projetos:      ftV('ft-projetos'),
+    portfolio:     ftV('ft-portfolio'),
+    origem:        ftV('ft-origem'),
+    coletivos:     ftV('ft-coletivos'),
+    selo:          ftV('ft-selo'),
+    colaboradores: ftV('ft-colaboradores'),
+    mentores:      ftV('ft-mentores'),
+    tags:          ftGetTags('ft-tags-custom'),
+    // Supabase-ready: substituir foto por Storage URL antes de persistir
+    // supabaseStorageUrl: null,
+    updatedAt:     new Date().toISOString(),
+  };
+
+  save(); // persiste no localStorage (igual ao restante do projeto)
+
+  const badge = document.getElementById('ft-saved-badge');
+  if (badge) {
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 2200);
+  }
+  toast('Ficha salva em "' + smCurrentNode.title + '"');
+}
+
+function ftDiscard() {
+  ftLoad();
+  toast('Alterações descartadas');
 }
 
 function smClearContent() {
@@ -12245,6 +12600,7 @@ function closeArticleViewer() {
     <!-- Tabs -->
     <div id="sm-tabs">
       <button class="sm-tab active" id="sm-tab-view"     onclick="smSwitchTab('view')">✦ Texto</button>
+      <button class="sm-tab"        id="sm-tab-ficha"    onclick="smSwitchTab('ficha')">⊕ Ficha</button>
       <button class="sm-tab"        id="sm-tab-articles" onclick="smSwitchTab('articles')">◫ Artigos</button>
       <button class="sm-tab"        id="sm-tab-gallery"  onclick="smSwitchTab('gallery')">⊞ Galeria</button>
       <button class="sm-tab"        id="sm-tab-edit"     onclick="smSwitchTab('edit')">✎ Editar</button>
@@ -12397,6 +12753,176 @@ function closeArticleViewer() {
         </div>
 
       </div><!-- /sm-edit-tab -->
+
+      <!-- FICHA TÉCNICA TAB -->
+      <div id="sm-ficha-tab">
+
+        <!-- Perfil / Header -->
+        <div class="ft-profile">
+          <div class="ft-avatar-wrap">
+            <div class="ft-avatar" id="ft-avatar" onclick="document.getElementById('ft-foto-input').click()" title="Clique para adicionar foto">
+              <span id="ft-initials">?</span>
+            </div>
+            <div class="ft-avatar-hint">clique p/ foto</div>
+            <input type="file" id="ft-foto-input" accept="image/*" style="display:none" onchange="ftHandleFoto(event)">
+          </div>
+          <div class="ft-profile-fields">
+            <input class="ft-input-nome" id="ft-nome-artistico" placeholder="Nome artístico" oninput="ftUpdateInitials()">
+            <input class="ft-input-sub"  id="ft-nome-real"      placeholder="Nome real (opcional)">
+            <input class="ft-input-sub"  id="ft-cidade"         placeholder="Cidade onde atua">
+          </div>
+        </div>
+
+        <!-- Identificação -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Identificação</div>
+          <div class="ft-sec-body">
+            <div class="ft-field">
+              <label>Data de nascimento</label>
+              <input type="date" id="ft-nascimento">
+            </div>
+            <div class="ft-field">
+              <label>Nacionalidade</label>
+              <input type="text" id="ft-nacionalidade" placeholder="ex: brasileira">
+            </div>
+            <div class="ft-field">
+              <label>Instagram / site</label>
+              <input type="text" id="ft-instagram" placeholder="@usuario ou URL">
+            </div>
+            <div class="ft-field">
+              <label>Spotify / Bandcamp / portfólio</label>
+              <input type="text" id="ft-streaming" placeholder="URL ou handle">
+            </div>
+          </div>
+        </div>
+
+        <!-- Perfil artístico -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Perfil artístico</div>
+          <div class="ft-sec-body">
+            <div class="ft-field">
+              <label>Área de atuação</label>
+              <select id="ft-area">
+                <option value="">Selecione...</option>
+                <option>Música</option>
+                <option>Artes visuais</option>
+                <option>Teatro</option>
+                <option>Dança</option>
+                <option>Literatura</option>
+                <option>Cinema / vídeo</option>
+                <option>Performance</option>
+                <option>Arte urbana</option>
+                <option>Multidisciplinar</option>
+                <option>Outro</option>
+              </select>
+            </div>
+            <div class="ft-field">
+              <label>Fase da carreira</label>
+              <select id="ft-fase">
+                <option value="">Selecione...</option>
+                <option>Emergente</option>
+                <option>Em ascensão</option>
+                <option>Consolidado</option>
+                <option>Em transição</option>
+                <option>Veterano</option>
+              </select>
+            </div>
+            <div class="ft-field ft-full">
+              <label>Gênero / estilo / movimento (Enter para adicionar)</label>
+              <div class="ft-tags-wrap" id="ft-tags-genero" onclick="this.querySelector('input').focus()">
+                <input type="text" placeholder="ex: hip-hop alternativo, MPB, arte concreta..." onkeydown="ftAddTag(event,'ft-tags-genero')">
+              </div>
+            </div>
+            <div class="ft-field ft-full">
+              <label>Temáticas recorrentes na obra</label>
+              <textarea id="ft-tematicas" placeholder="ex: identidade negra, periferia, espiritualidade, amor e perda..."></textarea>
+            </div>
+            <div class="ft-field ft-full">
+              <label>Influências declaradas</label>
+              <textarea id="ft-influencias" placeholder="Artistas, movimentos ou referências que o artista menciona"></textarea>
+            </div>
+            <div class="ft-field ft-full">
+              <label>Estética predominante</label>
+              <textarea id="ft-estetica" placeholder="O que caracteriza visualmente ou sonoramente esse artista..." style="min-height:56px"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trajetória -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Trajetória</div>
+          <div class="ft-sec-body ft-single">
+            <div class="ft-field">
+              <label>Formação</label>
+              <input type="text" id="ft-formacao" placeholder="ex: autodidata, UNICAMP, Escola de Belas Artes...">
+            </div>
+            <div class="ft-field">
+              <label>Marcos importantes</label>
+              <textarea id="ft-marcos" placeholder="Prêmios, residências, festivais, exposições, lançamentos relevantes..."></textarea>
+            </div>
+            <div class="ft-field">
+              <label>Projetos anteriores / colaborações</label>
+              <textarea id="ft-projetos" placeholder="Bandas, coletivos, colabs com outros artistas..."></textarea>
+            </div>
+            <div class="ft-field">
+              <label>Discografia / portfólio / publicações principais</label>
+              <textarea id="ft-portfolio" placeholder="Álbuns, séries, livros, exposições mais relevantes..." style="min-height:56px"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contexto e narrativa -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Contexto e narrativa</div>
+          <div class="ft-sec-body ft-single">
+            <div class="ft-field">
+              <label>Como a origem geográfica influencia o trabalho</label>
+              <textarea id="ft-origem" placeholder="Cidade, região, diáspora, contexto cultural..." style="min-height:56px"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rede e conexões -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Rede e conexões</div>
+          <div class="ft-sec-body">
+            <div class="ft-field">
+              <label>Coletivos / grupos que integra</label>
+              <input type="text" id="ft-coletivos" placeholder="ex: Racionais, Opavivará...">
+            </div>
+            <div class="ft-field">
+              <label>Selo / galeria / editora / agente</label>
+              <input type="text" id="ft-selo" placeholder="ex: Tratore, Galeria Nara Roesler...">
+            </div>
+            <div class="ft-field ft-full">
+              <label>Artistas que colabora frequentemente</label>
+              <input type="text" id="ft-colaboradores" placeholder="ex: Emicida, Karina Buhr, Ana Pi...">
+            </div>
+            <div class="ft-field ft-full">
+              <label>Mentores ou referências de geração</label>
+              <input type="text" id="ft-mentores" placeholder="Quem abriu caminho ou influenciou diretamente">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags personalizadas -->
+        <div class="ft-custom-block">
+          <div class="ft-custom-block-title">◈ Tags personalizadas</div>
+          <div class="ft-custom-block-desc">Organize e classifique com tags livres — ex: Direção, Som, Experimental, Instalação, Colaboração...</div>
+          <div class="ft-tags-wrap" id="ft-tags-custom" onclick="this.querySelector('input').focus()">
+            <input type="text" placeholder="Digite uma tag e pressione Enter..." onkeydown="ftAddTag(event,'ft-tags-custom')">
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="ft-footer">
+          <span class="ft-saved-badge" id="ft-saved-badge">✓ Ficha salva</span>
+          <button class="ft-btn" onclick="ftDiscard()">↺ Descartar</button>
+          <button class="ft-btn ft-btn-save" onclick="ftSave()">✓ Salvar Ficha</button>
+        </div>
+
+      </div><!-- /sm-ficha-tab -->
+
     </div><!-- /sm-content -->
 
     <!-- Footer -->
