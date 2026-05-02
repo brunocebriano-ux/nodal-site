@@ -5890,6 +5890,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   .sb-mode-icon:hover { color: var(--text2); }
 
+  /* Botão Design aparece automaticamente quando o editor está desbloqueado */
+  html.editor-mode #sidebar-design-btn { display: flex !important; }
+
   /* ── Light mode ── */
   html.light #nodal-sidebar {
     /* Não hardcodar aqui — usa o sistema de variáveis igual ao dark */
