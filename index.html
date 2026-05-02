@@ -5369,18 +5369,18 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     z-index: 30;
     display: flex;
     flex-direction: column;
-    background: rgba(var(--sb-bg-rgb, 10,10,22), var(--sb-bg-idle, 0.06));
-    backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.8);
-    -webkit-backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.8);
-    border-right: 1px solid rgba(255,255,255, calc(0.10 * var(--sb-idle, 0.25)));
-    box-shadow: 4px 0 48px rgba(0,0,0, calc(0.4 * var(--sb-idle, 0.25)));
+    /* variável única = sem ambiguidade de rgba() composta */
+    background: var(--sb-bg-color-idle, rgba(10,10,22,0.04));
+    backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.4);
+    border-right: 1px solid var(--sb-border-idle, rgba(255,255,255,0.05));
+    box-shadow: none;
     border-radius: 0 var(--sb-radius, 14px) var(--sb-radius, 14px) 0;
     transform: translate(var(--sb-dx, 0px), var(--sb-dy, 0px));
     transition: width 0.28s cubic-bezier(0.4,0,0.2,1),
-                background 0.35s ease,
-                border-color 0.35s ease,
-                box-shadow 0.35s ease,
-                opacity 0.35s ease;
+                background 0.4s ease,
+                border-color 0.4s ease,
+                box-shadow 0.4s ease;
     overflow: visible;
     padding: 20px 0 14px;
     user-select: none;
@@ -5392,12 +5392,12 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #nodal-sidebar .sb-mode-row,
   #nodal-sidebar .sb-footer-sep,
   #nodal-sidebar #sidebar-toggle {
-    opacity: var(--sb-idle, 0.22);
-    transition: opacity 0.35s ease;
+    opacity: var(--sb-idle, 0.10);
+    transition: opacity 0.4s ease;
   }
   /* Revive ao passar o mouse */
   #nodal-sidebar:hover {
-    background: rgba(var(--sb-bg-rgb, 10,10,22), var(--sb-bg-hover, 0.88));
+    background: var(--sb-bg-color-hover, rgba(10,10,22,0.88));
     border-right-color: var(--border);
     box-shadow: 4px 0 48px rgba(0,0,0,0.4), inset -1px 0 0 rgba(255,255,255,0.04);
   }
@@ -5413,8 +5413,8 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     top: calc(var(--sb-top, 54px) - 4px);
     bottom: calc(var(--sb-bottom, 82px) - 4px);
     border-radius: var(--sb-radius, 18px);
-    border: 1px solid rgba(255,255,255, calc(0.20 * var(--sb-idle, 0.25)));
-    box-shadow: 0 12px 60px rgba(0,0,0, calc(0.55 * var(--sb-idle, 0.25)));
+    border: 1px solid var(--sb-border-idle, rgba(255,255,255,0.05));
+    box-shadow: none;
   }
   #nodal-sidebar:hover.sb-floating {
     border-color: var(--border2);
@@ -5653,12 +5653,20 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   /* ── Light mode ── */
   html.light #nodal-sidebar {
-    background: rgba(238,238,250,0.90);
-    border-right-color: var(--border);
-    box-shadow: 4px 0 48px rgba(0,0,0,0.10), inset -1px 0 0 rgba(0,0,0,0.04);
+    /* Não hardcodar aqui — usa o sistema de variáveis igual ao dark */
+    --sb-bg-color-idle:  rgba(220,220,240,0.05);
+    --sb-bg-color-hover: rgba(232,232,248,0.92);
+    --sb-border-idle:    rgba(0,0,0,0.06);
+  }
+  html.light #nodal-sidebar:hover {
+    border-right-color: rgba(0,0,0,0.10);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.12), inset -1px 0 0 rgba(0,0,0,0.04);
   }
   html.light #nodal-sidebar.sb-floating {
-    box-shadow: 0 12px 60px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.6);
+    border-color: var(--sb-border-idle, rgba(0,0,0,0.06));
+  }
+  html.light #nodal-sidebar:hover.sb-floating {
+    box-shadow: 0 12px 48px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.7);
   }
   html.light #sidebar-toggle {
     background: rgba(235,235,252,0.96);
@@ -12942,17 +12950,17 @@ function closeArticleViewer() {
       <!-- Opacidade do conteúdo (ícones/texto) inativo -->
       <div class="gs-row">
         <span class="gs-label">Conteúdo inativo</span>
-        <input type="range" id="gs-sb-idle" min="0.03" max="1" step="0.03" value="0.12"
+        <input type="range" id="gs-sb-idle" min="0.03" max="1" step="0.03" value="0.10"
           oninput="document.getElementById('gs-sb-idle-val').textContent=Math.round(this.value*100)+'%';_sbPreview()"/>
-        <span class="gs-val" id="gs-sb-idle-val">12%</span>
+        <span class="gs-val" id="gs-sb-idle-val">10%</span>
       </div>
 
       <!-- Opacidade do fundo inativo -->
       <div class="gs-row">
         <span class="gs-label">Fundo inativo</span>
-        <input type="range" id="gs-sb-bg-op" min="0" max="0.9" step="0.02" value="0.05"
+        <input type="range" id="gs-sb-bg-op" min="0" max="0.9" step="0.01" value="0.04"
           oninput="document.getElementById('gs-sb-bg-op-val').textContent=Math.round(this.value*100)+'%';_sbPreview()"/>
-        <span class="gs-val" id="gs-sb-bg-op-val">5%</span>
+        <span class="gs-val" id="gs-sb-bg-op-val">4%</span>
       </div>
 
       <!-- Blur de fundo -->
@@ -25644,7 +25652,7 @@ setTimeout(() => {
 
   /* ── Design defaults ─────────────────── */
   var _sbDesignDef = {
-    idle: 0.12, bgOp: 0.05, blur: 28, radius: 14,
+    idle: 0.10, bgOp: 0.04, blur: 28, radius: 14,
     color: '#0a0a16', accent: '#a78bfa',
     width: 220, top: 54, bottom: 82,
     font: 'var(--mono)', iconSet: 0,
@@ -25667,18 +25675,20 @@ setTimeout(() => {
     var el = document.getElementById('nodal-sidebar');
     if (!el) return;
 
-    // hex → r,g,b for CSS var
+    // hex → rgba strings completas (sem variável composta dentro de rgba())
     var hex = (d.color || '#0a0a16').replace('#','');
     var r = parseInt(hex.slice(0,2),16)||10;
     var g = parseInt(hex.slice(2,4),16)||10;
     var b = parseInt(hex.slice(4,6),16)||22;
+    var bgIdle  = d.bgOp  !== undefined ? d.bgOp  : 0.04;
+    var cntIdle = d.idle  !== undefined ? d.idle  : 0.10;
 
-    el.style.setProperty('--sb-idle',     d.idle);
-    el.style.setProperty('--sb-bg-idle',  d.bgOp !== undefined ? d.bgOp : 0.05);
-    el.style.setProperty('--sb-bg-hover', 0.88);
-    el.style.setProperty('--sb-blur',     d.blur + 'px');
-    el.style.setProperty('--sb-radius',   d.radius + 'px');
-    el.style.setProperty('--sb-bg-rgb',   r + ',' + g + ',' + b);
+    el.style.setProperty('--sb-idle',           cntIdle);
+    el.style.setProperty('--sb-bg-color-idle',  'rgba('+r+','+g+','+b+','+bgIdle+')');
+    el.style.setProperty('--sb-bg-color-hover', 'rgba('+r+','+g+','+b+',0.90)');
+    el.style.setProperty('--sb-border-idle',    'rgba('+r+','+g+','+b+',0.12)');
+    el.style.setProperty('--sb-blur',           (d.blur||28) + 'px');
+    el.style.setProperty('--sb-radius',         (d.radius||14) + 'px');
     el.style.setProperty('--sb-top',        d.top + 'px');
     el.style.setProperty('--sb-bottom',     d.bottom + 'px');
     el.style.setProperty('--sb-dx',         (d.dx || 0) + 'px');
