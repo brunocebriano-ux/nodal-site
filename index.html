@@ -6132,13 +6132,22 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     font-size: 8px; font-family: var(--mono);
     color: var(--text3); padding-left: 21px;
     display: flex; align-items: center; gap: 4px;
-    cursor: pointer; border-radius: 5px;
+    border-radius: 5px;
     padding: 3px 6px 3px 21px; margin-left: -6px;
-    transition: background 0.14s, color 0.14s;
   }
-  .fav-card-node-ref:hover {
-    background: rgba(167,139,250,0.1);
-    color: var(--accent);
+  .fav-node-goto-btn {
+    margin-left: auto; flex-shrink: 0;
+    background: none; border: 1px solid var(--border);
+    color: var(--accent); cursor: pointer;
+    font-size: 9px; font-family: var(--mono);
+    padding: 1px 5px; border-radius: 4px;
+    transition: background 0.12s, transform 0.12s, border-color 0.12s;
+    line-height: 1.4;
+  }
+  .fav-node-goto-btn:hover {
+    background: rgba(167,139,250,0.15);
+    border-color: var(--accent);
+    transform: translateX(2px);
   }
   .fav-node-dot {
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
@@ -27232,14 +27241,15 @@ setTimeout(() => {
       var dot = f.node_ref.color
         ? '<span class="fav-node-dot" style="background:' + f.node_ref.color + '"></span>'
         : '';
-      nodeRefHtml = '<div class="fav-card-node-ref" onclick="_favFlyTo(\'' + f.node_ref.id + '\')" title="Ir ao nó no mapa">' + dot + '⬡ ' + _esc(f.node_ref.title) + '</div>';
+      nodeRefHtml = '<div class="fav-card-node-ref">'
+        + dot + '⬡ ' + _esc(f.node_ref.title)
+        + '<button class="fav-node-goto-btn" data-goto-id="' + f.node_ref.id + '" title="Ir ao nó">→</button>'
+        + '</div>';
     }
     return '<div class="fav-card" data-fav-id="' + f.id + '">' +
       '<div class="fav-card-header">' +
         '<span class="fav-card-icon">★</span>' +
-        '<span class="fav-card-title" title="' + _esc(f.title) + '"'
-        + (f.node_ref && f.node_ref.id ? ' onclick="_favFlyTo(\'' + f.node_ref.id + '\')" style="cursor:pointer"' : '')
-        + '>' + _esc(f.title) + '</span>' +
+        '<span class="fav-card-title" title="' + _esc(f.title) + '">' + _esc(f.title) + '</span>' +
         '<div class="fav-card-actions">' +
           '<button class="fav-card-btn" onclick="_favEditCard(\'' + f.id + '\')" title="Editar">✎</button>' +
           '<button class="fav-card-btn del" onclick="_favDelete(\'' + f.id + '\')" title="Remover">✕</button>' +
@@ -27281,14 +27291,14 @@ setTimeout(() => {
   };
 
   window._favFlyTo = function(nodeId) {
+    toast('⟳ buscando nó ' + nodeId);
     window._favPanelClose();
     setTimeout(function() {
       var nd = nodes && nodes.find(function(n){ return n.id === nodeId; });
-      if (!nd) return;
+      if (!nd) { toast('⚠ nó não encontrado: ' + nodeId); return; }
+      toast('→ ' + nd.title);
       selectNode(nd);
       openLeftPanel(nd);
-      toast('→ ' + nd.title);
-      /* Animação inline — mesma lógica de selectSearchResult (funciona garantido) */
       var steps = 40;
       var startR = spherical.radius, targetR = Math.max(30, startR);
       var dx = nd.x || 0, dy = nd.y || 0, dz = nd.z || 0;
@@ -27615,6 +27625,14 @@ setTimeout(() => {
   /* ── Init ───────────────────────────────────────── */
   _favLoadLocal();
   _favUpdateCount();
+
+  /* Event delegation para o botão → de ir ao nó */
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.fav-node-goto-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    window._favFlyTo(btn.getAttribute('data-goto-id'));
+  });
 
 })();
 </script>
