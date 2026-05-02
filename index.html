@@ -27096,21 +27096,71 @@ setTimeout(() => {
     localStorage.setItem(_FAV_LS_KEY, JSON.stringify(_favs));
   }
 
+  /* ── Indicador de sync ──────────────────────────── */
+  var _favSyncTimer = null;
+  function _favShowSync(state, msg) {
+    var pill = document.getElementById('fav-sync-pill');
+    if (!pill) {
+      pill = document.createElement('div');
+      pill.id = 'fav-sync-pill';
+      pill.style.cssText = [
+        'position:fixed', 'top:10px', 'left:50%', 'transform:translateX(-50%)',
+        'z-index:99999', 'font-size:11px', 'font-family:var(--mono,monospace)',
+        'padding:5px 14px', 'border-radius:99px',
+        'border:1px solid transparent',
+        'pointer-events:none',
+        'transition:opacity 0.3s, background 0.3s, border-color 0.3s',
+        'opacity:0'
+      ].join(';');
+      document.body.appendChild(pill);
+    }
+    clearTimeout(_favSyncTimer);
+    pill.textContent = msg;
+    if (state === 'saving') {
+      pill.style.background = 'rgba(96,165,250,0.18)';
+      pill.style.borderColor = 'rgba(96,165,250,0.5)';
+      pill.style.color = '#93c5fd';
+    } else if (state === 'ok') {
+      pill.style.background = 'rgba(74,222,128,0.18)';
+      pill.style.borderColor = 'rgba(74,222,128,0.5)';
+      pill.style.color = '#86efac';
+    } else {
+      pill.style.background = 'rgba(248,113,113,0.18)';
+      pill.style.borderColor = 'rgba(248,113,113,0.5)';
+      pill.style.color = '#fca5a5';
+    }
+    pill.style.opacity = '1';
+    if (state !== 'saving') {
+      _favSyncTimer = setTimeout(function() { pill.style.opacity = '0'; }, 2500);
+    }
+  }
+
   /* Upsert um favorito */
   async function _favUpsertRemote(fav) {
     var uid = await _favGetUserId();
     if (!uid) return;
+    _favShowSync('saving', '☁ Salvando...');
     try {
       await _sb.from('favorites').upsert({ ...fav, user_id: uid });
-    } catch(e) { console.warn('[FAV] Erro ao salvar no Supabase:', e); }
+      _favShowSync('ok', '✓ Salvo');
+    } catch(e) {
+      _favShowSync('error', '✗ Erro ao salvar');
+      console.warn('[FAV] Erro ao salvar no Supabase:', e);
+    }
   }
 
   /* Deleta do Supabase */
   async function _favDeleteRemote(id) {
     var uid = await _favGetUserId();
     if (!uid) return;
-    try { await _sb.from('favorites').delete().eq('id', id).eq('user_id', uid); }
-    catch(e) { console.warn('[FAV] Erro ao deletar no Supabase:', e); }
+    _favShowSync('saving', '☁ Removendo...');
+    try {
+      await _sb.from('favorites').delete().eq('id', id).eq('user_id', uid);
+      _favShowSync('ok', '✓ Removido');
+    } catch(e) {
+      _favShowSync('error', '✗ Erro ao remover');
+      console.warn('[FAV] Erro ao deletar no Supabase:', e);
+    }
   }
 
   /* ── CRUD ────────────────────────────────────────── */
@@ -27637,8 +27687,21 @@ setTimeout(() => {
   });
 
   /* ── Init ───────────────────────────────────────── */
-  _favLoadLocal();
+  _favLoadLocal();   /* localStorage imediato para UI não ficar vazia */
   _favUpdateCount();
+
+  /* Expõe _favLoad para o patch do projBoot poder chamar */
+  window._favLoad = _favLoad;
+
+  /* Patch projBoot — carrega favoritos do Supabase após autenticação */
+  if (typeof projBoot === 'function') {
+    var _origProjBootFav = projBoot;
+    window.projBoot = projBoot = async function() {
+      var result = await _origProjBootFav.apply(this, arguments);
+      _favLoad(); /* async em background — não bloqueia o boot */
+      return result;
+    };
+  }
 
   /* Event delegation para o botão → de ir ao nó */
   document.addEventListener('click', function(e) {
