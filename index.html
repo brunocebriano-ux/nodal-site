@@ -27237,7 +27237,9 @@ setTimeout(() => {
     return '<div class="fav-card" data-fav-id="' + f.id + '">' +
       '<div class="fav-card-header">' +
         '<span class="fav-card-icon">★</span>' +
-        '<span class="fav-card-title" title="' + _esc(f.title) + '">' + _esc(f.title) + '</span>' +
+        '<span class="fav-card-title" title="' + _esc(f.title) + '"'
+        + (f.node_ref && f.node_ref.id ? ' onclick="_favFlyTo(\'' + f.node_ref.id + '\')" style="cursor:pointer"' : '')
+        + '>' + _esc(f.title) + '</span>' +
         '<div class="fav-card-actions">' +
           '<button class="fav-card-btn" onclick="_favEditCard(\'' + f.id + '\')" title="Editar">✎</button>' +
           '<button class="fav-card-btn del" onclick="_favDelete(\'' + f.id + '\')" title="Remover">✕</button>' +
@@ -27278,16 +27280,32 @@ setTimeout(() => {
     if (b) b.classList.remove('fav-active');
   };
 
-  window._favFlyTo = function(id) {
+  window._favFlyTo = function(nodeId) {
     window._favPanelClose();
     setTimeout(function() {
-      var nd = typeof nodes !== 'undefined' && nodes.find(function(n){ return n.id === id; });
+      var nd = nodes && nodes.find(function(n){ return n.id === nodeId; });
       if (!nd) return;
-      if (typeof flyToNode === 'function') flyToNode(nd);
-      if (typeof selectNode === 'function') selectNode(nd);
-      if (typeof openLeftPanel === 'function') openLeftPanel(nd);
-      if (typeof toast === 'function') toast('→ ' + nd.title);
-    }, 320);
+      selectNode(nd);
+      openLeftPanel(nd);
+      toast('→ ' + nd.title);
+      /* Animação inline — mesma lógica de selectSearchResult (funciona garantido) */
+      var steps = 40;
+      var startR = spherical.radius, targetR = Math.max(30, startR);
+      var dx = nd.x || 0, dy = nd.y || 0, dz = nd.z || 0;
+      var dist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+      var startQuat = camQuat.clone();
+      var endQuat = sphericalToQuat(Math.atan2(dx, dz), Math.acos(Math.max(-1, Math.min(1, dy / dist))));
+      var s = 0;
+      (function fly() {
+        s++;
+        var t = s / steps;
+        camQuat.copy(startQuat).slerp(endQuat, t);
+        spherical.radius = startR + (targetR - startR) * t;
+        zoomTarget = spherical.radius;
+        updateCamera();
+        if (s < steps) requestAnimationFrame(fly);
+      })();
+    }, 300);
   };
 
   /* ── Mini-player YouTube ─────────────────────────── */
@@ -27581,7 +27599,9 @@ setTimeout(() => {
     var inPanel   = panel.contains(e.target);
     var inBtn     = favBtn && favBtn.contains(e.target);
     var inOverlay = overlay && overlay.classList.contains('fav-modal-open');
-    if (!inPanel && !inBtn && !inOverlay) _favPanelClose();
+    var ytPopup   = document.getElementById('fav-yt-popup');
+    var inYtPopup = ytPopup && ytPopup.contains(e.target);
+    if (!inPanel && !inBtn && !inOverlay && !inYtPopup) _favPanelClose();
   });
 
   /* Esc fecha modal ou painel */
