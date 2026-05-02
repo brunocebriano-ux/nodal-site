@@ -258,12 +258,13 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   /* ── Left Info Panel ── */
   #left-panel {
-    position: fixed; top: 56px; left: 12px; bottom: 12px;
+    position: fixed;
+    top: var(--lp-top, 56px); left: 12px; bottom: var(--lp-bottom, 12px);
     width: 290px;
     background: transparent;
     border: none;
     border-radius: 16px;
-    z-index: 15;
+    z-index: 35;
     transform: translateX(calc(-100% - 30px));
     transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
     display: flex; flex-direction: column;
@@ -2700,6 +2701,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
      CAPTURA RÁPIDA (GTD Inbox) — Estilos
   ══════════════════════════════════════════════════ */
   #quick-capture-btn {
+    display: none !important; /* Migrado para dentro do #nodal-sidebar */
     position: fixed;
     bottom: 22px;
     left: 22px;
@@ -5585,6 +5587,49 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     transform: translate(calc(var(--sb-dx, 0px) - 110%), var(--sb-dy, 0px));
     pointer-events: none;
   }
+
+  /* ── Modo HORIZONTAL (dock inferior esquerdo) ── */
+  #nodal-sidebar.sb-horizontal {
+    flex-direction: row;
+    align-items: center;
+    top: auto;
+    bottom: 18px;
+    left: 18px;
+    width: auto;
+    max-width: calc(100vw - 36px);
+    height: 58px;
+    padding: 0 10px;
+    border-radius: 18px;
+    border: 1px solid var(--sb-border-idle, rgba(255,255,255,0.08));
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    overflow: visible;
+    transform: none !important;
+  }
+  #nodal-sidebar.sb-horizontal .sb-profile { flex-direction: row; padding: 0 4px; gap: 6px; }
+  #nodal-sidebar.sb-horizontal .sb-profile-text { display: none; }
+  #nodal-sidebar.sb-horizontal .sb-section { display: none; }
+  #nodal-sidebar.sb-horizontal .sb-spacer { display: none; }
+  #nodal-sidebar.sb-horizontal .sb-footer-sep { width: 1px; height: 28px; margin: 0 4px; background: var(--border); }
+  #nodal-sidebar.sb-horizontal .sb-mode-row { flex-direction: row; padding: 0 4px; }
+  #nodal-sidebar.sb-horizontal .sb-mode-pill { display: none; }
+  #nodal-sidebar.sb-horizontal .sb-item { padding: 8px 10px; justify-content: center; min-width: 38px; }
+  #nodal-sidebar.sb-horizontal .sb-label { display: none; }
+  #nodal-sidebar.sb-horizontal #sidebar-toggle { display: none; }
+  /* quick-capture como item nativo do sidebar */
+  .sb-qc-item {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+    background: none; border: 1px solid transparent;
+    color: var(--text2); transition: all 0.15s; flex-shrink: 0;
+  }
+  .sb-qc-item:hover { background: var(--glass-light); border-color: var(--border); color: var(--text); }
+  .sb-qc-item.active { color: var(--accent); border-color: var(--border-glow); background: rgba(167,139,250,0.1); }
+  #nodal-sidebar.sb-horizontal .sb-qc-item { margin: 0 2px; }
+  #nodal-sidebar:not(.sb-horizontal) .sb-qc-item { margin: 4px 8px 0; width: auto; justify-content: flex-start; padding: 8px 10px; border-radius: 8px; gap: 8px; }
+  #nodal-sidebar.sb-slim .sb-qc-item { justify-content: center; padding: 8px; }
+  #nodal-sidebar.sb-slim .sb-qc-label { display: none; }
+  .sb-qc-label { font-size: 11px; font-family: var(--mono); letter-spacing: 0.06em; }
+
   /* Cursor de arrastar na alça */
   .sb-drag-handle { cursor: grab; }
   .sb-drag-handle:active { cursor: grabbing; }
@@ -6581,10 +6626,26 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   <!-- Rodapé -->
   <div class="sb-footer-sep"></div>
 
+  <!-- Captura Rápida (integrada ao sidebar) -->
+  <button class="sb-qc-item" id="sb-quick-capture-btn" onclick="toggleQuickCapture()" title="Captura Rápida (I)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/>
+      <line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/>
+      <line x1="18" y1="12" x2="22" y2="12"/>
+    </svg>
+    <span class="sb-qc-label">Captura</span>
+  </button>
+
+  <div class="sb-spacer"></div>
+
+  <!-- Rodapé -->
+  <div class="sb-footer-sep"></div>
+
   <div class="sb-mode-row">
     <div class="sb-mode-pill">
-      <button class="sb-mode-btn active" id="sb-mode-fixed" onclick="_sbSetMode('fixed')" title="Sidebar fixa">Fixo</button>
-      <button class="sb-mode-btn" id="sb-mode-float" onclick="_sbSetMode('floating')" title="Sidebar flutuante">Float</button>
+      <button class="sb-mode-btn active" id="sb-mode-fixed"  onclick="_sbSetMode('fixed')"      title="Sidebar fixa">Fixo</button>
+      <button class="sb-mode-btn"        id="sb-mode-float"  onclick="_sbSetMode('floating')"   title="Sidebar flutuante">Float</button>
+      <button class="sb-mode-btn"        id="sb-mode-horiz"  onclick="_sbSetMode('horizontal')" title="Dock horizontal">Horiz</button>
     </div>
     <button class="sb-mode-icon" id="sb-mode-icon-btn" onclick="_sbCycleMode()" title="Alternar modo">⊞</button>
   </div>
@@ -13582,6 +13643,29 @@ function closeArticleViewer() {
       </div>
     </div>
 
+    <!-- ══ BARRA DE INFO DO NÓ ══ -->
+    <div class="gs-section">
+      <div class="gs-section-title">◈ Barra de Info do Nó</div>
+
+      <div class="gs-row">
+        <span class="gs-label">Distância do topo</span>
+        <input type="range" id="gs-lp-top" min="40" max="220" step="4" value="56"
+          oninput="document.getElementById('gs-lp-top-val').textContent=this.value+'px';_lpPreview()"/>
+        <span class="gs-val" id="gs-lp-top-val">56px</span>
+      </div>
+
+      <div class="gs-row">
+        <span class="gs-label">Distância inferior</span>
+        <input type="range" id="gs-lp-bottom" min="0" max="220" step="4" value="12"
+          oninput="document.getElementById('gs-lp-bottom-val').textContent=this.value+'px';_lpPreview()"/>
+        <span class="gs-val" id="gs-lp-bottom-val">12px</span>
+      </div>
+
+      <div class="gs-hint">
+        💡 Ajuste para que a barra não sobreponha outros elementos na tela.
+      </div>
+    </div>
+
   </div><!-- /gs-modal-body -->
   </div><!-- /glass-settings-modal -->
 </div><!-- /glass-settings-overlay -->
@@ -13603,6 +13687,8 @@ let glassSettings = {
   smOpacity: 0.55, smBlur: 40, smSat: 1.7, smOverlay: 0.65,
   // Shadow/glow/texture
   shadow: 0.55, borderGlow: 0.10, grain: 0.025, scanlines: 0.007,
+  // Left-panel position
+  lpTop: 56, lpBottom: 12,
 };
 
 function openGlassSettings() {
@@ -13940,6 +14026,8 @@ function loadGlassSettingsToUI() {
   set('gs-dd-border', s.ddBorder||0.14);    setTxt('gs-dd-border-val', Math.round((s.ddBorder||0.14)*100)+'%');
   set('gs-dd-radius', s.ddRadius||10);      setTxt('gs-dd-radius-val', (s.ddRadius||10)+'px');
   if (s.ddColor) { set('gs-dd-color', s.ddColor); setTxt('gs-dd-color-val', s.ddColor); }
+  set('gs-lp-top',    s.lpTop||56);    setTxt('gs-lp-top-val',    (s.lpTop||56)+'px');
+  set('gs-lp-bottom', s.lpBottom||12); setTxt('gs-lp-bottom-val', (s.lpBottom||12)+'px');
 
   // Badge label + emoji
   const savedLabel = localStorage.getItem('neural-proj-badge-label') || 'Projetos';
@@ -13985,6 +14073,7 @@ function getUISettings() {
     ddOpacity: g('gs-dd-opacity'), ddBlur: g('gs-dd-blur'), ddSat: g('gs-dd-sat'),
     ddBorder: g('gs-dd-border'), ddRadius: g('gs-dd-radius'),
     ddColor: document.getElementById('gs-dd-color')?.value || '#06060e',
+    lpTop: g('gs-lp-top') || 56, lpBottom: g('gs-lp-bottom') || 12,
   };
 }
 
@@ -14016,6 +14105,18 @@ function previewGlassSettings() {
   };
   Object.entries(labels).forEach(([id,v])=>{ const el=document.getElementById(id); if(el) el.textContent=v; });
   applyGlassSettingsToDOM(s);
+}
+
+function _lpPreview() {
+  const top    = parseInt(document.getElementById('gs-lp-top')?.value  || 56);
+  const bottom = parseInt(document.getElementById('gs-lp-bottom')?.value || 12);
+  const lp = document.getElementById('left-panel');
+  if (lp) {
+    lp.style.setProperty('--lp-top',    top    + 'px', 'important');
+    lp.style.setProperty('--lp-bottom', bottom + 'px', 'important');
+  }
+  document.documentElement.style.setProperty('--lp-top',    top    + 'px');
+  document.documentElement.style.setProperty('--lp-bottom', bottom + 'px');
 }
 
 function applyGlassSettingsToDOM(s) {
@@ -14083,10 +14184,12 @@ function applyGlassSettingsToDOM(s) {
   }
   // Left-panel: usa as mesmas CSS vars do :root — zero inline styles
   // Igual ao cluster-panel: herda var(--glass), var(--blur-amount), var(--border2)
-  // Apenas ajustar top conforme HUD height e custom sat
   root.style.setProperty('--lp-sat', lpSatVal);
+  const lpTopVal    = (s.lpTop    !== undefined) ? s.lpTop    : 56;
+  const lpBottomVal = (s.lpBottom !== undefined) ? s.lpBottom : 12;
+  root.style.setProperty('--lp-top',    lpTopVal    + 'px');
+  root.style.setProperty('--lp-bottom', lpBottomVal + 'px');
   const lp = document.getElementById('left-panel');
-  if (lp) { lp.style.top = (s.hudHeight + 10) + 'px'; }
   // Glass aplicado no div interno #lp-glass (mesmo princípio da HUD)
   const lpGlass = document.getElementById('lp-glass');
   if (lpGlass) {
@@ -14321,6 +14424,7 @@ function saveGlassSettings() {
   glassSettings.ddOpacity=ui.ddOpacity; glassSettings.ddBlur=ui.ddBlur; glassSettings.ddSat=ui.ddSat;
   glassSettings.ddBorder=ui.ddBorder; glassSettings.ddRadius=ui.ddRadius; glassSettings.ddColor=ui.ddColor;
   glassSettings.smOpacity=ui.smOpacity; glassSettings.smBlur=ui.smBlur; glassSettings.smSat=ui.smSat; glassSettings.smOverlay=ui.smOverlay;
+  glassSettings.lpTop=ui.lpTop; glassSettings.lpBottom=ui.lpBottom;
   applyGlassSettingsToDOM(ui);
   const { bgImage, loginBgImage, ...rest } = glassSettings;
   try {
@@ -14407,6 +14511,7 @@ function loadSavedGlassSettings() {
       ddBorder:glassSettings.ddBorder,ddRadius:glassSettings.ddRadius,ddColor:glassSettings.ddColor,
       btnOpacity:glassSettings.btnOpacity,btnBlur:glassSettings.btnBlur,
       btnBorder:glassSettings.btnBorder,btnRadius:glassSettings.btnRadius,btnColor:glassSettings.btnColor,
+      lpTop:glassSettings.lpTop||56,lpBottom:glassSettings.lpBottom||12,
     });
   } catch(e) {}
 }
@@ -26012,16 +26117,25 @@ setTimeout(() => {
     var el  = document.getElementById('nodal-sidebar');
     var tog = document.getElementById('sidebar-toggle');
     if (!el) return;
-    el.classList.toggle('sb-slim',     !_sbSt.expanded);
-    el.classList.toggle('sb-floating',  _sbSt.mode === 'floating');
+    var isHoriz = _sbSt.mode === 'horizontal';
+    el.classList.toggle('sb-slim',       !_sbSt.expanded && !isHoriz);
+    el.classList.toggle('sb-floating',    _sbSt.mode === 'floating');
+    el.classList.toggle('sb-horizontal',  isHoriz);
     if (tog) tog.textContent = _sbSt.expanded ? '‹' : '›';
     var fBtn = document.getElementById('sb-mode-fixed');
     var oBtn = document.getElementById('sb-mode-float');
+    var hBtn = document.getElementById('sb-mode-horiz');
     if (fBtn) fBtn.classList.toggle('active', _sbSt.mode === 'fixed');
     if (oBtn) oBtn.classList.toggle('active', _sbSt.mode === 'floating');
+    if (hBtn) hBtn.classList.toggle('active', isHoriz);
+    // Sincroniza o botão de captura nativo do sidebar com o estado do painel
+    var sbQc = document.getElementById('sb-quick-capture-btn');
+    var qcPanel = document.getElementById('quick-capture-panel');
+    if (sbQc) sbQc.classList.toggle('active', qcPanel && qcPanel.style.display !== 'none');
   }
 
   window._sbToggle = function() {
+    if (_sbSt.mode === 'horizontal') return; // toggle não faz sentido no modo horizontal
     _sbSt.expanded = !_sbSt.expanded;
     _sbSaveState(_sbSt);
     _sbApply();
@@ -26032,7 +26146,9 @@ setTimeout(() => {
     _sbApply();
   };
   window._sbCycleMode = function() {
-    _sbSt.mode = _sbSt.mode === 'fixed' ? 'floating' : 'fixed';
+    var modes = ['fixed', 'floating', 'horizontal'];
+    var idx = modes.indexOf(_sbSt.mode);
+    _sbSt.mode = modes[(idx + 1) % modes.length];
     _sbSaveState(_sbSt);
     _sbApply();
   };
@@ -26379,6 +26495,10 @@ setTimeout(() => {
   if (typeof _SYNC_KEYS !== 'undefined' &&
       _SYNC_KEYS.indexOf('neural-sidebar-design') === -1) {
     _SYNC_KEYS.push('neural-sidebar-design');
+  }
+  if (typeof _SYNC_KEYS !== 'undefined' &&
+      _SYNC_KEYS.indexOf('neural-sidebar-state') === -1) {
+    _SYNC_KEYS.push('neural-sidebar-state');
   }
 
   /* ── Init ───────────────────────────── */
