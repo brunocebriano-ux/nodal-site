@@ -6070,7 +6070,47 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .fav-card-url {
     font-size: 9px; color: var(--text3); font-family: var(--mono);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    padding-left: 21px;
+    padding-left: 21px; cursor: pointer; border-radius: 5px;
+    padding: 3px 6px 3px 21px; margin-left: -6px;
+    transition: background 0.14s, color 0.14s;
+  }
+  .fav-card-url:hover {
+    background: rgba(96,165,250,0.1);
+    color: var(--accent);
+  }
+  .fav-card-url.yt:hover {
+    background: rgba(248,113,113,0.1);
+    color: #f87171;
+  }
+  #fav-yt-popup {
+    position: fixed; left: 422px; bottom: 16px; z-index: 9999;
+    width: 320px; background: var(--panel-bg, rgba(14,14,28,0.97));
+    border: 1px solid var(--border2); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.7); display: none;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    animation: fav-yt-in 0.18s cubic-bezier(0.4,0,0.2,1);
+  }
+  #fav-yt-popup.open { display: block; }
+  @keyframes fav-yt-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+  #fav-yt-popup-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 10px; background: rgba(0,0,0,.35);
+    font-size: 10px; color: var(--text2); font-family: var(--mono); gap: 8px;
+  }
+  #fav-yt-popup-title {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #fav-yt-popup-close {
+    background: none; border: none; color: var(--text3); cursor: pointer;
+    font-size: 14px; padding: 0 2px; line-height: 1; flex-shrink: 0;
+    transition: color 0.12s;
+  }
+  #fav-yt-popup-close:hover { color: var(--text); }
+  #fav-yt-popup iframe {
+    width: 320px; height: 180px; border: none; display: block;
   }
   .fav-card-desc {
     font-size: 10px; color: var(--text2); line-height: 1.5;
@@ -27180,7 +27220,11 @@ setTimeout(() => {
     var tagsHtml = (f.tags || []).map(function(t){
       return '<span class="fav-card-tag">' + _esc(t) + '</span>';
     }).join('');
-    var urlHtml = f.url ? '<div class="fav-card-url" title="' + _esc(f.url) + '">' + _esc(f.url) + '</div>' : '';
+    var _isYt = f.url && /youtube\.com|youtu\.be/.test(f.url);
+    var urlHtml = f.url
+      ? '<div class="fav-card-url' + (_isYt ? ' yt' : '') + '" title="' + _esc(f.url) + '" onclick="_favOpenUrl(\'' + _esc(f.id) + '\')">'
+        + (_isYt ? '▶ ' : '🔗 ') + _esc(f.url) + '</div>'
+      : '';
     var descHtml = f.description ? '<div class="fav-card-desc">' + _esc(f.description) + '</div>' : '';
     var tagsRow = tagsHtml ? '<div class="fav-card-tags">' + tagsHtml + '</div>' : '';
     var nodeRefHtml = '';
@@ -27237,8 +27281,56 @@ setTimeout(() => {
   window._favFlyTo = function(id) {
     window._favPanelClose();
     setTimeout(function() {
-      if (typeof flyToNodeId === 'function') flyToNodeId(id);
+      var nd = typeof nodes !== 'undefined' && nodes.find(function(n){ return n.id === id; });
+      if (!nd) return;
+      if (typeof flyToNode === 'function') flyToNode(nd);
+      if (typeof selectNode === 'function') selectNode(nd);
+      if (typeof openLeftPanel === 'function') openLeftPanel(nd);
+      if (typeof toast === 'function') toast('→ ' + nd.title);
     }, 320);
+  };
+
+  /* ── Mini-player YouTube ─────────────────────────── */
+  function _favYtExtractId(url) {
+    var m = url.match(/(?:[?&]v=|youtu\.be\/)([^&?#]+)/);
+    return m ? m[1] : null;
+  }
+
+  window._favYtClose = function() {
+    var p = document.getElementById('fav-yt-popup');
+    var ifr = document.getElementById('fav-yt-popup-iframe');
+    if (ifr) ifr.src = '';
+    if (p) p.classList.remove('open');
+  };
+
+  window._favOpenUrl = function(favId) {
+    var fav = _favs.find(function(f){ return f.id === favId; });
+    if (!fav || !fav.url) return;
+    var url = fav.url;
+    if (/youtube\.com|youtu\.be/.test(url)) {
+      var ytId = _favYtExtractId(url);
+      if (!ytId) { window.open(url, '_blank'); return; }
+      var p = document.getElementById('fav-yt-popup');
+      if (!p) {
+        p = document.createElement('div');
+        p.id = 'fav-yt-popup';
+        p.innerHTML =
+          '<div id="fav-yt-popup-bar">' +
+            '<span style="color:#f87171;margin-right:4px">▶</span>' +
+            '<span id="fav-yt-popup-title">' + _esc(fav.title) + '</span>' +
+            '<button id="fav-yt-popup-close" onclick="_favYtClose()" title="Fechar">✕</button>' +
+          '</div>' +
+          '<iframe id="fav-yt-popup-iframe" allowfullscreen allow="autoplay"></iframe>';
+        document.body.appendChild(p);
+      } else {
+        document.getElementById('fav-yt-popup-title').textContent = fav.title;
+      }
+      document.getElementById('fav-yt-popup-iframe').src =
+        'https://www.youtube-nocookie.com/embed/' + ytId + '?autoplay=1&rel=0&modestbranding=1';
+      p.classList.add('open');
+    } else {
+      window.open(url, '_blank');
+    }
   };
 
   /* ── Toggle tag filtro ──────────────────────────── */
