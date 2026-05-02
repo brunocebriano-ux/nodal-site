@@ -5365,11 +5365,11 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     left: 0;
     top: var(--sb-top, 54px);
     bottom: var(--sb-bottom, 82px);
-    width: 220px;
+    width: var(--sb-full-width, 220px);
     z-index: 30;
     display: flex;
     flex-direction: column;
-    background: rgba(var(--sb-bg-rgb, 10,10,22), var(--sb-bg-idle, 0.07));
+    background: rgba(var(--sb-bg-rgb, 10,10,22), var(--sb-bg-idle, 0.06));
     backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.8);
     -webkit-backdrop-filter: blur(var(--sb-blur, 28px)) saturate(1.8);
     border-right: 1px solid rgba(255,255,255, calc(0.10 * var(--sb-idle, 0.25)));
@@ -12939,12 +12939,20 @@ function closeArticleViewer() {
         Controle visual e comportamento da barra lateral.
       </div>
 
-      <!-- Opacidade inativa -->
+      <!-- Opacidade do conteúdo (ícones/texto) inativo -->
       <div class="gs-row">
-        <span class="gs-label">Opacidade inativa</span>
-        <input type="range" id="gs-sb-idle" min="0.05" max="1" step="0.05" value="0.22"
+        <span class="gs-label">Conteúdo inativo</span>
+        <input type="range" id="gs-sb-idle" min="0.03" max="1" step="0.03" value="0.12"
           oninput="document.getElementById('gs-sb-idle-val').textContent=Math.round(this.value*100)+'%';_sbPreview()"/>
-        <span class="gs-val" id="gs-sb-idle-val">22%</span>
+        <span class="gs-val" id="gs-sb-idle-val">12%</span>
+      </div>
+
+      <!-- Opacidade do fundo inativo -->
+      <div class="gs-row">
+        <span class="gs-label">Fundo inativo</span>
+        <input type="range" id="gs-sb-bg-op" min="0" max="0.9" step="0.02" value="0.05"
+          oninput="document.getElementById('gs-sb-bg-op-val').textContent=Math.round(this.value*100)+'%';_sbPreview()"/>
+        <span class="gs-val" id="gs-sb-bg-op-val">5%</span>
       </div>
 
       <!-- Blur de fundo -->
@@ -25636,7 +25644,7 @@ setTimeout(() => {
 
   /* ── Design defaults ─────────────────── */
   var _sbDesignDef = {
-    idle: 0.22, blur: 28, radius: 14,
+    idle: 0.12, bgOp: 0.05, blur: 28, radius: 14,
     color: '#0a0a16', accent: '#a78bfa',
     width: 220, top: 54, bottom: 82,
     font: 'var(--mono)', iconSet: 0,
@@ -25666,16 +25674,16 @@ setTimeout(() => {
     var b = parseInt(hex.slice(4,6),16)||22;
 
     el.style.setProperty('--sb-idle',     d.idle);
-    el.style.setProperty('--sb-bg-idle',  Math.min(d.idle * 0.35, 0.12));
+    el.style.setProperty('--sb-bg-idle',  d.bgOp !== undefined ? d.bgOp : 0.05);
     el.style.setProperty('--sb-bg-hover', 0.88);
     el.style.setProperty('--sb-blur',     d.blur + 'px');
     el.style.setProperty('--sb-radius',   d.radius + 'px');
     el.style.setProperty('--sb-bg-rgb',   r + ',' + g + ',' + b);
-    el.style.setProperty('--sb-top',      d.top + 'px');
-    el.style.setProperty('--sb-bottom',   d.bottom + 'px');
-    el.style.setProperty('--sb-dx',       (d.dx || 0) + 'px');
-    el.style.setProperty('--sb-dy',       (d.dy || 0) + 'px');
-    el.style.width = d.width + 'px';
+    el.style.setProperty('--sb-top',        d.top + 'px');
+    el.style.setProperty('--sb-bottom',     d.bottom + 'px');
+    el.style.setProperty('--sb-dx',         (d.dx || 0) + 'px');
+    el.style.setProperty('--sb-dy',         (d.dy || 0) + 'px');
+    el.style.setProperty('--sb-full-width', (d.width || 220) + 'px');
 
     // accent color on active items
     var style = document.getElementById('_sb-accent-style');
@@ -25710,6 +25718,8 @@ setTimeout(() => {
     function sv(id, v) { var e = document.getElementById(id); if (e) e.value = v; }
     function st(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
     sv('gs-sb-idle',   d.idle);   st('gs-sb-idle-val',   Math.round(d.idle*100)+'%');
+    sv('gs-sb-bg-op',  d.bgOp !== undefined ? d.bgOp : 0.05);
+    st('gs-sb-bg-op-val', Math.round((d.bgOp !== undefined ? d.bgOp : 0.05)*100)+'%');
     sv('gs-sb-blur',   d.blur);   st('gs-sb-blur-val',   d.blur+'px');
     sv('gs-sb-radius', d.radius); st('gs-sb-radius-val', d.radius+'px');
     sv('gs-sb-color',  d.color);  sv('gs-sb-color-hex',  d.color);
@@ -25734,6 +25744,7 @@ setTimeout(() => {
     var cur = _sbDLoad();
     return {
       idle:    gv('gs-sb-idle',   _sbDesignDef.idle),
+      bgOp:    gv('gs-sb-bg-op', _sbDesignDef.bgOp),
       blur:    gv('gs-sb-blur',   _sbDesignDef.blur),
       radius:  gv('gs-sb-radius', _sbDesignDef.radius),
       color:   gs('gs-sb-color',  _sbDesignDef.color),
