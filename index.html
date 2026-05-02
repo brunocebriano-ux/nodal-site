@@ -27243,7 +27243,6 @@ setTimeout(() => {
         : '';
       nodeRefHtml = '<div class="fav-card-node-ref">'
         + dot + '⬡ ' + _esc(f.node_ref.title)
-        + '<button class="fav-node-goto-btn" data-goto-id="' + f.node_ref.id + '" title="Ir ao nó">→</button>'
         + '</div>';
     }
     return '<div class="fav-card" data-fav-id="' + f.id + '">' +
@@ -27251,6 +27250,7 @@ setTimeout(() => {
         '<span class="fav-card-icon">★</span>' +
         '<span class="fav-card-title" title="' + _esc(f.title) + '">' + _esc(f.title) + '</span>' +
         '<div class="fav-card-actions">' +
+          '<button class="fav-node-goto-btn" data-fav-id="' + f.id + '" title="Ir ao nó no mapa">→</button>' +
           '<button class="fav-card-btn" onclick="_favEditCard(\'' + f.id + '\')" title="Editar">✎</button>' +
           '<button class="fav-card-btn del" onclick="_favDelete(\'' + f.id + '\')" title="Remover">✕</button>' +
         '</div>' +
@@ -27290,25 +27290,39 @@ setTimeout(() => {
     if (b) b.classList.remove('fav-active');
   };
 
-  window._favFlyTo = function(nodeId) {
-    toast('⟳ buscando nó ' + nodeId);
+  /* Recebe favId — busca nó por node_ref.id primeiro, depois por título */
+  window._favFlyTo = function(favId) {
+    var fav = _favs.find(function(f){ return f.id === favId; });
+    if (!fav) return;
     window._favPanelClose();
     setTimeout(function() {
-      var nd = nodes && nodes.find(function(n){ return n.id === nodeId; });
-      if (!nd) { toast('⚠ nó não encontrado: ' + nodeId); return; }
+      var nd = null;
+      /* 1. Busca pelo ID vinculado (node_ref) */
+      if (fav.node_ref && fav.node_ref.id) {
+        nd = nodes && nodes.find(function(n){ return n.id === fav.node_ref.id; });
+      }
+      /* 2. Fallback: busca pelo título do favorito */
+      if (!nd && fav.title) {
+        var lc = fav.title.trim().toLowerCase();
+        nd = nodes && nodes.find(function(n){ return n.title && n.title.trim().toLowerCase() === lc; });
+      }
+      if (!nd) { toast('⚠ Nó não encontrado no mapa'); return; }
       toast('→ ' + nd.title);
       selectNode(nd);
       openLeftPanel(nd);
-      var steps = 40;
-      var startR = spherical.radius, targetR = Math.max(30, startR);
+      var steps = 50;
+      var startR = spherical.radius;
       var dx = nd.x || 0, dy = nd.y || 0, dz = nd.z || 0;
       var dist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+      /* Zoom in: posiciona câmera a ~25 unidades do nó, mínimo 22 */
+      var targetR = Math.max(22, dist + 25);
       var startQuat = camQuat.clone();
       var endQuat = sphericalToQuat(Math.atan2(dx, dz), Math.acos(Math.max(-1, Math.min(1, dy / dist))));
       var s = 0;
+      function _favEase(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
       (function fly() {
         s++;
-        var t = s / steps;
+        var t = _favEase(Math.min(s / steps, 1));
         camQuat.copy(startQuat).slerp(endQuat, t);
         spherical.radius = startR + (targetR - startR) * t;
         zoomTarget = spherical.radius;
@@ -27631,7 +27645,7 @@ setTimeout(() => {
     var btn = e.target.closest('.fav-node-goto-btn');
     if (!btn) return;
     e.stopPropagation();
-    window._favFlyTo(btn.getAttribute('data-goto-id'));
+    window._favFlyTo(btn.getAttribute('data-fav-id'));
   });
 
 })();
