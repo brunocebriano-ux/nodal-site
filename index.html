@@ -28042,22 +28042,78 @@ function _vizCards() {
   marker.appendChild(mPath); defs.appendChild(marker); svg.appendChild(defs);
   inner.appendChild(svg);
 
-  // ── compute initial 2D positions from 3D coords ────
+  // ── compute hierarchical 2D positions ────
   var W = window.innerWidth, H = window.innerHeight;
-  var CARD_W = 180, CARD_H = 80; // estimated card height
+  var CARD_W = 200, CARD_H = 90;
+  var COL_GAP = 80, ROW_GAP = 30;
   if (nodes.length === 0) { board.appendChild(inner); document.body.appendChild(board); return; }
 
-  var minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-  nodes.forEach(function(nd){ minX=Math.min(minX,nd.x);maxX=Math.max(maxX,nd.x);minZ=Math.min(minZ,nd.z);maxZ=Math.max(maxZ,nd.z); });
-  var rangeX=Math.max(maxX-minX,1), rangeZ=Math.max(maxZ-minZ,1);
-  var pad=180;
-  var sc=Math.min((W-pad*2)/rangeX,(H-pad*2)/rangeZ,18);
-  var offX=(W-rangeX*sc)/2-minX*sc;
-  var offZ=(H-rangeZ*sc)/2-minZ*sc;
+  // build adjacency: outgoing and incoming counts per node id
+  var outEdges = {}, inCount = {};
+  nodes.forEach(function(nd){ outEdges[nd.id]=[]; inCount[nd.id]=0; });
+  connections.forEach(function(c){
+    if (outEdges[c.from] !== undefined) outEdges[c.from].push(c.to);
+    if (inCount[c.to]   !== undefined) inCount[c.to]++;
+  });
+
+  // Kahn's BFS to assign column (depth) levels
+  var col = {}, queue = [], visited = {};
+  nodes.forEach(function(nd){ if(inCount[nd.id]===0){ col[nd.id]=0; queue.push(nd.id); } });
+  // nodes with no outgoing and no incoming handled below
+  var remaining = {};
+  nodes.forEach(function(nd){ remaining[nd.id]=true; });
+
+  var head = 0;
+  while(head < queue.length){
+    var id = queue[head++];
+    visited[id] = true;
+    delete remaining[id];
+    outEdges[id].forEach(function(tid){
+      var c2 = (col[id]||0) + 1;
+      if(col[tid]===undefined || col[tid] < c2) col[tid] = c2;
+      if(!visited[tid]){ queue.push(tid); visited[tid]=true; delete remaining[tid]; }
+    });
+  }
+
+  // isolated nodes (not reached by BFS) get their own grid at the end
+  var isolatedIds = Object.keys(remaining);
+  var maxCol = 0;
+  nodes.forEach(function(nd){ if(col[nd.id]!==undefined && col[nd.id]>maxCol) maxCol=col[nd.id]; });
+  var isoStartCol = maxCol + 1;
+  var isoCols = Math.ceil(Math.sqrt(isolatedIds.length)) || 1;
+  isolatedIds.forEach(function(id, i){
+    col[id] = isoStartCol + (i % isoCols);
+  });
+  var totalCols = isoStartCol + isoCols;
+
+  // group nodes per column
+  var byCol = {};
+  nodes.forEach(function(nd){
+    var c3 = col[nd.id] || 0;
+    if(!byCol[c3]) byCol[c3]=[];
+    byCol[c3].push(nd);
+  });
+
+  // assign pixel positions
+  var posMap = {};
+  var colXStart = (W - totalCols*(CARD_W+COL_GAP)) / 2 + CARD_W/2;
+  Object.keys(byCol).forEach(function(c4){
+    var ci = parseInt(c4,10);
+    var colNodes = byCol[c4];
+    var colH = colNodes.length*(CARD_H+ROW_GAP) - ROW_GAP;
+    var startY = (H - colH)/2 + CARD_H/2;
+    colNodes.forEach(function(nd, ri){
+      posMap[nd.id] = {
+        cx: colXStart + ci*(CARD_W+COL_GAP),
+        cy: startY + ri*(CARD_H+ROW_GAP)
+      };
+    });
+  });
 
   // ── create cards ───────────────────────────────────
   nodes.forEach(function(nd) {
-    var cx = nd.x*sc+offX, cy = nd.z*sc+offZ;
+    var pos = posMap[nd.id] || {cx: W/2, cy: H/2};
+    var cx = pos.cx, cy = pos.cy;
     var init = (nd.title||'?').slice(0,2).toUpperCase();
     var descHtml = nd.desc
       ? '<div class="viz-card-desc" style="color:'+tc.text2+'">'+nd.desc.slice(0,90)+'</div>' : '';
@@ -28083,41 +28139,17 @@ function _vizCards() {
 
     _vizCardEls[nd.id] = { el:div, x:cx, y:cy };
 
-    // ── card drag ──────────────────────────────────
-    var dragOff = {x:0,y:0}, dragging=false, moved=false;
+    // mousedown no card — marca qual está sendo arrastado
     div.addEventListener('mousedown', function(e) {
       if (e.button !== 0) return;
       e.stopPropagation();
-      dragging=true; moved=false;
       var r = div.getBoundingClientRect();
-      dragOff.x = e.clientX - r.left;
-      dragOff.y = e.clientY - r.top;
+      _activeCardDrag = { id:nd.id, el:div, nd:nd,
+        offX: e.clientX - r.left,
+        offY: e.clientY - r.top,
+        moved: false };
       div.classList.add('dragging');
       div.style.zIndex='20';
-    });
-    document.addEventListener('mousemove', function(e) {
-      if (!dragging) return;
-      moved = true;
-      board.classList.add('card-dragging');
-      var innerRect = inner.getBoundingClientRect();
-      var newLeft = (e.clientX - innerRect.left - dragOff.x) / _panZoom.z;
-      var newTop  = (e.clientY - innerRect.top  - dragOff.y) / _panZoom.z;
-      div.style.left = newLeft+'px';
-      div.style.top  = newTop+'px';
-      _vizCardEls[nd.id].x = newLeft + CARD_W/2;
-      _vizCardEls[nd.id].y = newTop  + CARD_H/2;
-      _drawCardConns(svg, tc);
-    });
-    document.addEventListener('mouseup', function(e) {
-      if (!dragging) return;
-      dragging=false;
-      div.classList.remove('dragging');
-      div.style.zIndex='10';
-      board.classList.remove('card-dragging');
-      if (!moved) {
-        if (typeof selectNode    === 'function') selectNode(nd);
-        if (typeof openLeftPanel === 'function') openLeftPanel(nd);
-      }
     });
 
     inner.appendChild(div);
@@ -28135,21 +28167,51 @@ function _vizCards() {
     inner.style.transform = 'translate('+_panZoom.x+'px,'+_panZoom.y+'px) scale('+_panZoom.z+')';
   }
 
+  // variável de drag compartilhada (um único listener no board)
+  var _activeCardDrag = null;
   var panning=false, panStart={x:0,y:0}, panOrigin={x:0,y:0};
+
   board.addEventListener('mousedown', function(e) {
-    if (e.target !== board && e.target !== inner && e.target !== svg) return;
-    panning=true;
-    panStart.x=e.clientX; panStart.y=e.clientY;
-    panOrigin.x=_panZoom.x; panOrigin.y=_panZoom.y;
+    // clique no fundo → pan
+    if (e.target === board || e.target === inner || e.target === svg) {
+      panning=true;
+      panStart.x=e.clientX; panStart.y=e.clientY;
+      panOrigin.x=_panZoom.x; panOrigin.y=_panZoom.y;
+    }
   });
   board.addEventListener('mousemove', function(e) {
-    if (!panning) return;
-    _panZoom.x = panOrigin.x + (e.clientX-panStart.x);
-    _panZoom.y = panOrigin.y + (e.clientY-panStart.y);
-    _applyTransform();
+    if (_activeCardDrag) {
+      _activeCardDrag.moved = true;
+      board.classList.add('card-dragging');
+      var innerRect = inner.getBoundingClientRect();
+      var newLeft = (e.clientX - innerRect.left - _activeCardDrag.offX) / _panZoom.z;
+      var newTop  = (e.clientY - innerRect.top  - _activeCardDrag.offY) / _panZoom.z;
+      _activeCardDrag.el.style.left = newLeft+'px';
+      _activeCardDrag.el.style.top  = newTop+'px';
+      _vizCardEls[_activeCardDrag.id].x = newLeft + CARD_W/2;
+      _vizCardEls[_activeCardDrag.id].y = newTop  + CARD_H/2;
+      _drawCardConns(svg, tc);
+    } else if (panning) {
+      _panZoom.x = panOrigin.x + (e.clientX-panStart.x);
+      _panZoom.y = panOrigin.y + (e.clientY-panStart.y);
+      _applyTransform();
+    }
   });
-  board.addEventListener('mouseup',   function(){ panning=false; });
-  board.addEventListener('mouseleave',function(){ panning=false; });
+  board.addEventListener('mouseup', function() {
+    if (_activeCardDrag) {
+      _activeCardDrag.el.classList.remove('dragging');
+      _activeCardDrag.el.style.zIndex='10';
+      board.classList.remove('card-dragging');
+      if (!_activeCardDrag.moved) {
+        var nd = _activeCardDrag.nd;
+        if (typeof selectNode    === 'function') selectNode(nd);
+        if (typeof openLeftPanel === 'function') openLeftPanel(nd);
+      }
+      _activeCardDrag = null;
+    }
+    panning = false;
+  });
+  board.addEventListener('mouseleave', function(){ panning=false; });
 
   board.addEventListener('wheel', function(e) {
     e.preventDefault();
