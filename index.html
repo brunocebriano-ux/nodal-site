@@ -27760,16 +27760,29 @@ setTimeout(() => {
 </script>
 
 <script>
-/* ── Favoritos: captura nome do projeto ativo ────────────────── */
+/* ── Captura nome do projeto ativo (para favoritos) ─────────── */
 (function() {
   window._favActiveProjectName = null;
   var _origUpdateHudProjBadge = updateHudProjBadge;
   updateHudProjBadge = function(proj) {
     window._favActiveProjectName = (proj && proj.name) ? proj.name : null;
-    var result = _origUpdateHudProjBadge.apply(this, arguments);
-    /* garante que o título atualiza após qualquer troca de projeto */
-    if (typeof applyProjectName === 'function') applyProjectName();
-    return result;
+    return _origUpdateHudProjBadge.apply(this, arguments);
+  };
+})();
+
+/* ── Fix definitivo: título do projeto atualiza ao trocar ────── */
+(function() {
+  var _origProjOpenTitleFix = projOpen;
+  window.projOpen = projOpen = async function(id) {
+    await _origProjOpenTitleFix.apply(this, arguments);
+    var proj = typeof allProjects !== 'undefined'
+      ? allProjects.find(function(p) { return p.id === id; })
+      : null;
+    if (proj) {
+      /* proj.sub é atualizado pelo rename; proj.name é o nome original */
+      projectSub = proj.sub || proj.name || '';
+      applyProjectName();
+    }
   };
 })();
 </script>
