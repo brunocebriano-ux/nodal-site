@@ -25968,6 +25968,10 @@ document.body.appendChild(_syncEl);
 let _syncTimer = null;
 
 function _syncShow(state, msg) {
+  if (typeof window._favShowSync === 'function') {
+    window._favShowSync(state, msg);
+    return;
+  }
   _syncEl.className = 'show ' + state;
   _syncEl.textContent = msg;
   clearTimeout(_syncTimer);
@@ -27048,12 +27052,18 @@ setTimeout(() => {
      node_ref jsonb,
      pinned boolean default false,
      created_at bigint not null,
-     updated_at bigint not null
+     updated_at bigint not null,
+     project_id text
    );
    create index if not exists fav_user_idx on favorites(user_id);
+   create index if not exists fav_proj_idx on favorites(project_id);
    alter table favorites enable row level security;
    create policy "own_favorites" on favorites
      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+   -- Migração (executar se a tabela já existia):
+   -- alter table favorites add column if not exists project_id text;
+   -- create index if not exists fav_proj_idx on favorites(project_id);
 ═══════════════════════════════════════════════════════════════ */
 (function() {
 
@@ -27073,14 +27083,17 @@ setTimeout(() => {
     } catch(e) { return null; }
   }
 
-  /* Carrega do Supabase; fallback localStorage */
+  /* Carrega do Supabase; fallback localStorage — filtra pelo projeto ativo */
   async function _favLoad() {
+    var projId = (typeof activeProjectId !== 'undefined') ? activeProjectId : null;
     var uid = await _favGetUserId();
     if (uid) {
       try {
-        var res = await _sb.from('favorites').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+        var q = _sb.from('favorites').select('*').eq('user_id', uid);
+        if (projId) q = q.eq('project_id', projId);
+        else        q = q.is('project_id', null);
+        var res = await q.order('created_at', { ascending: false });
         if (!res.error && res.data) {
-          /* Merge: mantém itens locais ainda não confirmados pelo Supabase */
           var serverIds = new Set(res.data.map(function(f){ return f.id; }));
           var pendingLocal = _favs.filter(function(f){ return !serverIds.has(f.id); });
           _favs = pendingLocal.concat(res.data);
@@ -27096,7 +27109,11 @@ setTimeout(() => {
   }
 
   function _favLoadLocal() {
-    try { _favs = JSON.parse(localStorage.getItem(_FAV_LS_KEY) || '[]'); }
+    try {
+      var all = JSON.parse(localStorage.getItem(_FAV_LS_KEY) || '[]');
+      var projId = (typeof activeProjectId !== 'undefined') ? activeProjectId : null;
+      _favs = all.filter(function(f) { return (f.project_id || null) === projId; });
+    }
     catch(e) { _favs = []; }
   }
 
@@ -27181,6 +27198,7 @@ setTimeout(() => {
       tags:        data.tags || [],
       node_ref:    data.node_ref || null,
       pinned:      false,
+      project_id:  (typeof activeProjectId !== 'undefined') ? activeProjectId : null,
       created_at:  Date.now(),
       updated_at:  Date.now()
     };
@@ -27698,8 +27716,9 @@ setTimeout(() => {
     if (_favPanelOpen) _favPanelClose();
   });
 
-  /* Expõe _favShowSync globalmente para uso fora do IIFE (ex: saveNotepad) */
+  /* Expõe funções globais */
   window._favShowSync = _favShowSync;
+  window._favLoad     = _favLoad;
 
   /* ── Init ───────────────────────────────────────── */
   _favLoadLocal();   /* localStorage imediato para UI não ficar vazia */
@@ -27727,6 +27746,18 @@ setTimeout(() => {
     window._favFlyTo(btn.getAttribute('data-fav-id'));
   });
 
+})();
+</script>
+
+<script>
+/* ── Favoritos: recarrega ao trocar de projeto ───────────────── */
+(function() {
+  var _origProjOpenFav = projOpen;
+  window.projOpen = projOpen = async function(id) {
+    var result = await _origProjOpenFav.apply(this, arguments);
+    if (typeof window._favLoad === 'function') window._favLoad();
+    return result;
+  };
 })();
 </script>
 
