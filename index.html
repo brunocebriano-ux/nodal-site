@@ -7942,7 +7942,7 @@ function hudMenuClose() {
 }
 
 function hudMenuCloseAll() {
-  ['editar','ver','projeto'].forEach(name => {
+  ['editar','ver','projeto','layout'].forEach(name => {
     const btn  = document.getElementById('menu-' + name + '-btn');
     const drop = document.getElementById('hud-drop-' + name);
     if (btn)  btn.classList.remove('open');
@@ -27961,6 +27961,10 @@ function _destroyCards() {
   if (_vizCardRaf) { cancelAnimationFrame(_vizCardRaf); _vizCardRaf = null; }
   var s = document.getElementById('viz-arrows-svg');
   if (s) s.style.display = 'none';
+  // restore 3D connection lines
+  if (typeof connections !== 'undefined') {
+    connections.forEach(function(c) { if (c.line) c.line.visible = true; });
+  }
 }
 
 function _hideSvg() {
@@ -27989,6 +27993,10 @@ function _vizCards() {
     if (nd.mesh) nd.mesh.visible = false;
     if (nd.labelEl) nd.labelEl.style.display = 'none';
   });
+  // hide 3D connection lines
+  if (typeof connections !== 'undefined') {
+    connections.forEach(function(c) { if (c.line) c.line.visible = false; });
+  }
 
   nodes.forEach(function(nd) {
     var div = document.createElement('div');
