@@ -27367,46 +27367,57 @@ setTimeout(() => {
     if (b) b.classList.remove('fav-active');
   };
 
-  /* Recebe favId — busca nó por node_ref.id primeiro, depois por título */
-  window._favFlyTo = function(favId) {
+  /* Recebe favId — troca de projeto se necessário, depois dá zoom no nó */
+  window._favFlyTo = async function(favId) {
     var fav = _favs.find(function(f){ return f.id === favId; });
     if (!fav) return;
     window._favPanelClose();
-    setTimeout(function() {
-      var nd = null;
-      /* 1. Busca pelo ID vinculado (node_ref) */
-      if (fav.node_ref && fav.node_ref.id) {
-        nd = nodes && nodes.find(function(n){ return n.id === fav.node_ref.id; });
-      }
-      /* 2. Fallback: busca pelo título do favorito */
-      if (!nd && fav.title) {
-        var lc = fav.title.trim().toLowerCase();
-        nd = nodes && nodes.find(function(n){ return n.title && n.title.trim().toLowerCase() === lc; });
-      }
-      if (!nd) { toast('⚠ Nó não encontrado no mapa'); return; }
-      toast('→ ' + nd.title);
-      selectNode(nd);
-      openLeftPanel(nd);
-      var steps = 50;
-      var startR = spherical.radius;
-      var dx = nd.x || 0, dy = nd.y || 0, dz = nd.z || 0;
-      var dist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
-      /* Zoom in: posiciona câmera a ~25 unidades do nó, mínimo 22 */
-      var targetR = Math.max(22, dist + 25);
-      var startQuat = camQuat.clone();
-      var endQuat = sphericalToQuat(Math.atan2(dx, dz), Math.acos(Math.max(-1, Math.min(1, dy / dist))));
-      var s = 0;
-      function _favEase(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-      (function fly() {
-        s++;
-        var t = _favEase(Math.min(s / steps, 1));
-        camQuat.copy(startQuat).slerp(endQuat, t);
-        spherical.radius = startR + (targetR - startR) * t;
-        zoomTarget = spherical.radius;
-        updateCamera();
-        if (s < steps) requestAnimationFrame(fly);
-      })();
-    }, 300);
+
+    /* Troca de projeto se o favorito pertence a outro */
+    var favProjId = fav.project_id || null;
+    var curProjId = (typeof activeProjectId !== 'undefined') ? activeProjectId : null;
+    if (favProjId && favProjId !== curProjId) {
+      if (typeof projOpen !== 'function') { toast('⚠ Não foi possível abrir o projeto'); return; }
+      toast('↗ Abrindo projeto...');
+      await projOpen(favProjId);
+      /* Aguarda nodes carregarem e câmera resetar */
+      await new Promise(function(r){ setTimeout(r, 500); });
+    } else {
+      await new Promise(function(r){ setTimeout(r, 300); });
+    }
+
+    /* Busca o nó no mapa */
+    var nd = null;
+    if (fav.node_ref && fav.node_ref.id) {
+      nd = nodes && nodes.find(function(n){ return n.id === fav.node_ref.id; });
+    }
+    if (!nd && fav.title) {
+      var lc = fav.title.trim().toLowerCase();
+      nd = nodes && nodes.find(function(n){ return n.title && n.title.trim().toLowerCase() === lc; });
+    }
+    if (!nd) { toast('⚠ Nó não encontrado no mapa'); return; }
+
+    toast('→ ' + nd.title);
+    selectNode(nd);
+    openLeftPanel(nd);
+    var steps = 50;
+    var startR = spherical.radius;
+    var dx = nd.x || 0, dy = nd.y || 0, dz = nd.z || 0;
+    var dist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+    var targetR = Math.max(22, dist + 25);
+    var startQuat = camQuat.clone();
+    var endQuat = sphericalToQuat(Math.atan2(dx, dz), Math.acos(Math.max(-1, Math.min(1, dy / dist))));
+    var s = 0;
+    function _favEase(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+    (function fly() {
+      s++;
+      var t = _favEase(Math.min(s / steps, 1));
+      camQuat.copy(startQuat).slerp(endQuat, t);
+      spherical.radius = startR + (targetR - startR) * t;
+      zoomTarget = spherical.radius;
+      updateCamera();
+      if (s < steps) requestAnimationFrame(fly);
+    })();
   };
 
   /* ── Mini-player YouTube ─────────────────────────── */
