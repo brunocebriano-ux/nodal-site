@@ -27690,18 +27690,19 @@ setTimeout(() => {
   _favLoadLocal();   /* localStorage imediato para UI não ficar vazia */
   _favUpdateCount();
 
-  /* Expõe _favLoad para o patch do projBoot poder chamar */
-  window._favLoad = _favLoad;
-
-  /* Patch projBoot — carrega favoritos do Supabase após autenticação */
-  if (typeof projBoot === 'function') {
-    var _origProjBootFav = projBoot;
-    window.projBoot = projBoot = async function() {
-      var result = await _origProjBootFav.apply(this, arguments);
-      _favLoad(); /* async em background — não bloqueia o boot */
-      return result;
-    };
+  /* Escuta mudança de autenticação — carrega do Supabase assim que fizer login */
+  if (_sb && _sb.auth && typeof _sb.auth.onAuthStateChange === 'function') {
+    _sb.auth.onAuthStateChange(function(event, session) {
+      if (event === 'SIGNED_IN' && session) {
+        _favLoad();
+      }
+    });
   }
+
+  /* Segurança extra: também tenta carregar se já há sessão ativa ao boot */
+  _sb.auth.getSession().then(function(res) {
+    if (res.data && res.data.session) _favLoad();
+  }).catch(function() {});
 
   /* Event delegation para o botão → de ir ao nó */
   document.addEventListener('click', function(e) {
