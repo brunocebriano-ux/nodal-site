@@ -27073,7 +27073,6 @@ setTimeout(() => {
   var _favActiveTags = [];          // tags selecionadas como filtro
   var _favModalTags  = [];          // tags no modal atual
   var _favPanelOpen  = false;
-  var _favLoadedForProj = undefined; // projeto cujos dados estão em _favs
   var _FAV_LS_KEY    = 'neural-favorites-v1';
 
   /* ── Supabase helpers ──────────────────────────── */
@@ -27084,22 +27083,17 @@ setTimeout(() => {
     } catch(e) { return null; }
   }
 
-  /* Carrega do Supabase; fallback localStorage — filtra pelo projeto ativo */
+  /* Carrega do Supabase; fallback localStorage */
   async function _favLoad() {
-    var projId = (typeof activeProjectId !== 'undefined') ? activeProjectId : null;
     var uid = await _favGetUserId();
     if (uid) {
       try {
-        var q = _sb.from('favorites').select('*').eq('user_id', uid);
-        if (projId) q = q.eq('project_id', projId);
-        else        q = q.is('project_id', null);
-        var res = await q.order('created_at', { ascending: false });
+        var res = await _sb.from('favorites').select('*').eq('user_id', uid).order('created_at', { ascending: false });
         if (!res.error && res.data) {
           var serverIds = new Set(res.data.map(function(f){ return f.id; }));
           var pendingLocal = _favs.filter(function(f){ return !serverIds.has(f.id); });
           _favs = pendingLocal.concat(res.data);
           _favs.sort(function(a,b){ return b.created_at - a.created_at; });
-          _favLoadedForProj = projId;
           _favSaveLocal();
           _favRender();
           return;
@@ -27107,16 +27101,11 @@ setTimeout(() => {
       } catch(e) { console.warn('[FAV] Supabase indisponível, usando localStorage:', e); }
     }
     _favLoadLocal();
-    _favLoadedForProj = projId;
     _favRender();
   }
 
   function _favLoadLocal() {
-    try {
-      var all = JSON.parse(localStorage.getItem(_FAV_LS_KEY) || '[]');
-      var projId = (typeof activeProjectId !== 'undefined') ? activeProjectId : null;
-      _favs = all.filter(function(f) { return (f.project_id || null) === projId; });
-    }
+    try { _favs = JSON.parse(localStorage.getItem(_FAV_LS_KEY) || '[]'); }
     catch(e) { _favs = []; }
   }
 
@@ -27202,6 +27191,7 @@ setTimeout(() => {
       node_ref:    data.node_ref || null,
       pinned:      false,
       project_id:  (typeof activeProjectId !== 'undefined') ? activeProjectId : null,
+      project_name:(typeof window._favActiveProjectName !== 'undefined') ? window._favActiveProjectName : null,
       created_at:  Date.now(),
       updated_at:  Date.now()
     };
@@ -27328,6 +27318,10 @@ setTimeout(() => {
         + dot + '⬡ ' + _esc(f.node_ref.title)
         + '</div>';
     }
+    var projBadge = '';
+    if (f.project_name) {
+      projBadge = '<div class="fav-proj-badge">📁 ' + _esc(f.project_name) + '</div>';
+    }
     return '<div class="fav-card" data-fav-id="' + f.id + '">' +
       '<div class="fav-card-header">' +
         '<span class="fav-card-icon">★</span>' +
@@ -27338,7 +27332,7 @@ setTimeout(() => {
           '<button class="fav-card-btn del" onclick="_favDelete(\'' + f.id + '\')" title="Remover">✕</button>' +
         '</div>' +
       '</div>' +
-      urlHtml + descHtml + tagsRow + nodeRefHtml +
+      urlHtml + descHtml + tagsRow + nodeRefHtml + projBadge +
     '</div>';
   }
 
@@ -27362,12 +27356,7 @@ setTimeout(() => {
     var b = document.getElementById('sidebar-fav-btn');
     if (p) p.classList.add('fav-open');
     if (b) b.classList.add('fav-active');
-    var projId = (typeof activeProjectId !== 'undefined') ? activeProjectId : null;
-    if (projId !== _favLoadedForProj) {
-      _favLoad(); /* projeto mudou — recarrega automaticamente */
-    } else {
-      _favRender(); /* mesmo projeto — usa memória */
-    }
+    _favRender();
   }
 
   window._favPanelClose = function() {
@@ -27758,16 +27747,29 @@ setTimeout(() => {
 </script>
 
 <script>
-/* ── Favoritos: recarrega ao trocar de projeto ───────────────── */
+/* ── Favoritos: captura nome do projeto ativo ────────────────── */
 (function() {
-  var _origProjOpenFav = projOpen;
-  window.projOpen = projOpen = async function(id) {
-    var result = await _origProjOpenFav.apply(this, arguments);
-    if (typeof window._favLoad === 'function') window._favLoad();
-    return result;
+  window._favActiveProjectName = null;
+  var _origUpdateHudProjBadge = updateHudProjBadge;
+  updateHudProjBadge = function(proj) {
+    window._favActiveProjectName = (proj && proj.name) ? proj.name : null;
+    return _origUpdateHudProjBadge.apply(this, arguments);
   };
 })();
 </script>
+
+<style>
+.fav-proj-badge {
+  font-size: 9px;
+  color: var(--text3, #888);
+  opacity: 0.7;
+  margin-top: 5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
 
 </body>
 </html>
