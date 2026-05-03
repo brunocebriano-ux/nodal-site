@@ -27770,19 +27770,22 @@ setTimeout(() => {
   };
 })();
 
-/* ── Fix definitivo: título do projeto atualiza ao trocar ────── */
+/* ── Fix definitivo: título atualiza imediatamente ao trocar projeto ── */
 (function() {
-  var _origProjOpenTitleFix = projOpen;
-  window.projOpen = projOpen = async function(id) {
-    await _origProjOpenTitleFix.apply(this, arguments);
-    var proj = typeof allProjects !== 'undefined'
-      ? allProjects.find(function(p) { return p.id === id; })
-      : null;
-    if (proj) {
-      /* proj.sub é atualizado pelo rename; proj.name é o nome original */
-      projectSub = proj.sub || proj.name || '';
-      applyProjectName();
+  var _origProjOpenAndGoToMap = projOpenAndGoToMap;
+  window.projOpenAndGoToMap = projOpenAndGoToMap = function(id) {
+    /* Atualiza título de forma síncrona ANTES do projOpen async disparar,
+       senão o usuário vê o título antigo enquanto o Supabase carrega */
+    if (id !== activeProjectId) {
+      var proj = typeof allProjects !== 'undefined'
+        ? allProjects.find(function(p) { return p.id === id; })
+        : null;
+      if (proj) {
+        projectSub = proj.sub || proj.name || '';
+        applyProjectName();
+      }
     }
+    return _origProjOpenAndGoToMap.apply(this, arguments);
   };
 })();
 </script>
