@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" class="light">
 <head>
 <meta charset="UTF-8">
@@ -7283,6 +7283,30 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       </div>
     </div>
 
+    <!-- Menu Layout -->
+    <div class="hud-menu-wrap">
+      <button class="hud-menu-btn" id="menu-layout-btn" onclick="hudMenuToggle('layout')">
+        ⊞ Layout <span class="caret">▾</span>
+      </button>
+      <div class="hud-dropdown" id="hud-drop-layout">
+        <div class="hud-drop-section">
+          <div class="hud-drop-label">Modo de visualização</div>
+          <div class="hud-drop-item" id="drop-viz-3d" onclick="setVizMode('3d');hudMenuClose()">
+            <span class="hud-drop-icon">◉</span> Planetas 3D <span style="font-size:8px;opacity:0.5">(padrão)</span>
+          </div>
+          <div class="hud-drop-item" id="drop-viz-cards" onclick="setVizMode('cards');hudMenuClose()">
+            <span class="hud-drop-icon">⊡</span> Cards flutuantes
+          </div>
+          <div class="hud-drop-item" id="drop-viz-chord" onclick="setVizMode('chord');hudMenuClose()">
+            <span class="hud-drop-icon">◎</span> Arco circular
+          </div>
+          <div class="hud-drop-item" id="drop-viz-radial" onclick="setVizMode('radial');hudMenuClose()">
+            <span class="hud-drop-icon">⊛</span> Dendrogram radial
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Menu Projeto -->
     <div class="hud-menu-wrap">
       <button class="hud-menu-btn" id="menu-projeto-btn" onclick="hudMenuToggle('projeto')">
@@ -9675,9 +9699,9 @@ function addNode(data) {
     richMedia: data.richMedia || [],
     date: data.date || '',
     shape: data.shape || 'sphere',
-    x: data.x !== undefined ? data.x : (Math.random()-0.5)*70,
-    y: data.y !== undefined ? data.y : (Math.random()-0.5)*70,
-    z: data.z !== undefined ? data.z : (Math.random()-0.5)*70,
+    x: data.x !== undefined ? data.x : (typeof cameraTarget!=='undefined'?cameraTarget.x:0)+(Math.random()-0.5)*18,
+    y: data.y !== undefined ? data.y : (typeof cameraTarget!=='undefined'?cameraTarget.y:0)+(Math.random()-0.5)*18,
+    z: data.z !== undefined ? data.z : (typeof cameraTarget!=='undefined'?cameraTarget.z:0)+(Math.random()-0.5)*18,
   };
   nodes.push(nd); createNodeMesh(nd); updateStats(); save();
   notifyGraphChanged(0.35);  // 🔗 reheat sim
@@ -27812,6 +27836,421 @@ setTimeout(() => {
   text-overflow: ellipsis;
 }
 </style>
+
+<!-- ══════════════════════════════════════════════════════
+     VISUALIZATION MODES v2 — Cards / Chord / Dendrogram
+     ══════════════════════════════════════════════════════ -->
+<style>
+  #viz-back-btn {
+    position:fixed; top:52px; left:50%; transform:translateX(-50%);
+    z-index:30; background:var(--panel-bg); border:1px solid rgba(167,139,250,0.3);
+    color:var(--accent,#a78bfa); font-family:var(--mono); font-size:10px; font-weight:700;
+    letter-spacing:0.1em; padding:6px 18px; border-radius:20px; cursor:pointer;
+    backdrop-filter:blur(12px); display:none; white-space:nowrap;
+  }
+  #viz-back-btn:hover { background:rgba(167,139,250,0.18); }
+  html.light #viz-back-btn { color:#5032c8; border-color:rgba(80,50,200,0.3); }
+  #viz-mode-label {
+    position:fixed; top:80px; left:50%; transform:translateX(-50%);
+    z-index:30; background:var(--panel-bg); border:1px solid var(--border);
+    color:var(--text2,rgba(167,139,250,0.7)); font-family:var(--mono); font-size:9px;
+    letter-spacing:0.12em; padding:4px 14px; border-radius:20px; pointer-events:none; display:none;
+  }
+  #viz-overlay-svg {
+    position:fixed; inset:0; width:100vw; height:100vh;
+    z-index:9; display:none; pointer-events:auto;
+  }
+  #viz-arrows-svg {
+    position:fixed; inset:0; width:100vw; height:100vh;
+    z-index:10; display:none; pointer-events:none;
+  }
+  .viz-card {
+    position:fixed; pointer-events:auto; z-index:11;
+    width:172px; border-radius:9px; padding:10px 12px;
+    display:none; cursor:pointer;
+    transition:box-shadow 0.18s, opacity 0.18s;
+    box-sizing:border-box;
+  }
+  .viz-card:hover { z-index:13 !important; box-shadow:0 6px 28px rgba(0,0,0,0.4) !important; }
+  .viz-card-top { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+  .viz-card-icon {
+    width:26px; height:26px; border-radius:7px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:800; color:#fff; letter-spacing:0;
+  }
+  .viz-card-info { flex:1; min-width:0; }
+  .viz-card-title {
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .viz-card-cat {
+    font-size:8px; font-weight:700; letter-spacing:0.08em;
+    text-transform:uppercase; opacity:0.5; margin-top:1px;
+  }
+  .viz-card-desc {
+    font-size:9px; line-height:1.45;
+    overflow:hidden; display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  #drop-viz-3d.viz-active, #drop-viz-cards.viz-active,
+  #drop-viz-chord.viz-active, #drop-viz-radial.viz-active {
+    background:rgba(167,139,250,0.15) !important; color:#a78bfa !important;
+  }
+  html.light #drop-viz-3d.viz-active, html.light #drop-viz-cards.viz-active,
+  html.light #drop-viz-chord.viz-active, html.light #drop-viz-radial.viz-active {
+    background:rgba(80,50,200,0.1) !important; color:#5032c8 !important;
+  }
+</style>
+
+<button id="viz-back-btn" onclick="setVizMode('3d')">&#9673; VOLTAR AO 3D &nbsp;[ESC]</button>
+<div id="viz-mode-label"></div>
+<svg id="viz-overlay-svg"></svg>
+<svg id="viz-arrows-svg">
+  <defs>
+    <marker id="viz-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="rgba(160,140,255,0.75)"/>
+    </marker>
+  </defs>
+</svg>
+
+<script>
+(function(){
+'use strict';
+
+window._vizMode = '3d';
+var _vizCardEls = {};
+var _vizCardRaf = null;
+
+function _isLight() { return document.documentElement.classList.contains('light'); }
+
+function _tc() {
+  var l = _isLight();
+  return {
+    bg:    l ? 'rgba(228,228,248,0.97)' : 'rgba(6,6,22,0.95)',
+    card:  l ? 'rgba(245,245,255,0.96)' : 'rgba(14,14,32,0.88)',
+    bord:  l ? 'rgba(0,0,0,0.09)'       : 'rgba(255,255,255,0.07)',
+    text:  l ? '#0e0e22'                 : '#e8e8f8',
+    text2: l ? 'rgba(0,0,0,0.42)'       : 'rgba(200,200,220,0.55)',
+    conn:  l ? 'rgba(0,0,50,0.15)'      : 'rgba(255,255,255,0.1)',
+  };
+}
+
+function _vizSyncHud(mode) {
+  ['3d','cards','chord','radial'].forEach(function(m) {
+    var el = document.getElementById('drop-viz-' + m);
+    if (el) el.classList.toggle('viz-active', m === mode);
+  });
+  var bb = document.getElementById('viz-back-btn');
+  var ml = document.getElementById('viz-mode-label');
+  var labels = { cards:'CARDS FLUTUANTES', chord:'ARCO CIRCULAR', radial:'DENDROGRAM RADIAL' };
+  if (bb) bb.style.display = mode !== '3d' ? 'block' : 'none';
+  if (ml) { ml.textContent = labels[mode] || ''; ml.style.display = mode !== '3d' ? 'block' : 'none'; }
+}
+
+function _restoreMeshes() {
+  if (typeof nodes === 'undefined') return;
+  nodes.forEach(function(nd) {
+    if (nd.mesh) nd.mesh.visible = true;
+    if (nd.labelEl) { nd.labelEl.className = 'node-label'; nd.labelEl.onclick = null; nd.labelEl.style.cssText = ''; }
+  });
+}
+
+function _destroyCards() {
+  Object.keys(_vizCardEls).forEach(function(id) { _vizCardEls[id].remove(); });
+  _vizCardEls = {};
+  if (_vizCardRaf) { cancelAnimationFrame(_vizCardRaf); _vizCardRaf = null; }
+  var s = document.getElementById('viz-arrows-svg');
+  if (s) s.style.display = 'none';
+}
+
+function _hideSvg() {
+  var s = document.getElementById('viz-overlay-svg');
+  if (s) { s.style.display = 'none'; s.innerHTML = ''; }
+}
+
+window.setVizMode = function(mode) {
+  var prev = window._vizMode;
+  if (prev === 'cards') { _destroyCards(); _restoreMeshes(); }
+  if (prev === 'chord' || prev === 'radial') { _hideSvg(); _restoreMeshes(); }
+  window._vizMode = mode;
+  _vizSyncHud(mode);
+  if (mode === 'cards')  _vizCards();
+  if (mode === 'chord')  _vizChord();
+  if (mode === 'radial') _vizRadial();
+};
+
+/* ─────────────────────────────────────────────────────
+   CARDS
+───────────────────────────────────────────────────── */
+function _vizCards() {
+  if (typeof nodes === 'undefined') return;
+  var tc = _tc();
+  nodes.forEach(function(nd) {
+    if (nd.mesh) nd.mesh.visible = false;
+    if (nd.labelEl) nd.labelEl.style.display = 'none';
+  });
+
+  nodes.forEach(function(nd) {
+    var div = document.createElement('div');
+    div.className = 'viz-card';
+    div.style.background  = tc.card;
+    div.style.border      = '1px solid ' + tc.bord;
+    div.style.borderLeft  = '3px solid ' + nd.color;
+    div.style.boxShadow   = '0 4px 20px rgba(0,0,0,0.22)';
+    var init = (nd.title || '?').slice(0,2).toUpperCase();
+    var descHtml = nd.desc
+      ? '<div class="viz-card-desc" style="color:' + tc.text2 + '">' + nd.desc.slice(0,88) + '</div>'
+      : '';
+    div.innerHTML =
+      '<div class="viz-card-top">' +
+        '<div class="viz-card-icon" style="background:' + nd.color + '">' + init + '</div>' +
+        '<div class="viz-card-info">' +
+          '<div class="viz-card-title" style="color:' + tc.text + '">' + (nd.title || '') + '</div>' +
+          '<div class="viz-card-cat"   style="color:' + tc.text + '">' + (nd.cat   || '') + '</div>' +
+        '</div>' +
+      '</div>' + descHtml;
+    div.onclick = function() {
+      if (typeof selectNode    === 'function') selectNode(nd);
+      if (typeof openLeftPanel === 'function') openLeftPanel(nd);
+    };
+    document.body.appendChild(div);
+    _vizCardEls[nd.id] = div;
+  });
+
+  var arrowSvg = document.getElementById('viz-arrows-svg');
+  if (arrowSvg) arrowSvg.style.display = 'block';
+
+  function tick() {
+    if (window._vizMode !== 'cards') return;
+    if (typeof nodes === 'undefined' || typeof camera === 'undefined') {
+      _vizCardRaf = requestAnimationFrame(tick); return;
+    }
+    var rect = (typeof canvas !== 'undefined')
+      ? canvas.getBoundingClientRect()
+      : { width: window.innerWidth, height: window.innerHeight, left: 0, top: 0 };
+
+    nodes.forEach(function(nd) {
+      var el = _vizCardEls[nd.id];
+      if (!el || !nd.labelPos) return;
+      var pos = nd.labelPos.clone().project(camera);
+      if (pos.z > 1) { el.style.display = 'none'; return; }
+      var px = (pos.x * 0.5 + 0.5) * rect.width  + rect.left;
+      var py = (-pos.y * 0.5 + 0.5) * rect.height + rect.top;
+      el.style.display = 'block';
+      el.style.left = (px - 86) + 'px';
+      el.style.top  = (py - el.offsetHeight / 2) + 'px';
+    });
+
+    if (arrowSvg && typeof connections !== 'undefined') {
+      var old = arrowSvg.querySelectorAll('path.vc');
+      old.forEach(function(p){ p.remove(); });
+      connections.forEach(function(c) {
+        var fEl = _vizCardEls[c.from], tEl = _vizCardEls[c.to];
+        if (!fEl || !tEl || fEl.style.display==='none' || tEl.style.display==='none') return;
+        var fR = fEl.getBoundingClientRect(), tR = tEl.getBoundingClientRect();
+        var x1=fR.right,  y1=fR.top+fR.height/2;
+        var x2=tR.left,   y2=tR.top+tR.height/2;
+        var dx=(x2-x1)*0.45;
+        var nd1=nodes.find(function(n){return n.id===c.from;});
+        var col=nd1?nd1.color+'aa':'rgba(160,140,255,0.5)';
+        var path=document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('class','vc');
+        path.setAttribute('d','M'+x1+','+y1+' C'+(x1+dx)+','+y1+' '+(x2-dx)+','+y2+' '+x2+','+y2);
+        path.setAttribute('stroke',col);
+        path.setAttribute('stroke-width','1.5');
+        path.setAttribute('fill','none');
+        path.setAttribute('marker-end','url(#viz-arrow)');
+        arrowSvg.appendChild(path);
+      });
+    }
+    _vizCardRaf = requestAnimationFrame(tick);
+  }
+  _vizCardRaf = requestAnimationFrame(tick);
+}
+
+/* ─────────────────────────────────────────────────────
+   CHORD
+───────────────────────────────────────────────────── */
+function _vizChord() {
+  nodes.forEach(function(nd){
+    if(nd.mesh) nd.mesh.visible=false;
+    if(nd.labelEl) nd.labelEl.style.display='none';
+  });
+  var svg=document.getElementById('viz-overlay-svg');
+  svg.innerHTML=''; svg.style.display='block';
+  var W=window.innerWidth,H=window.innerHeight;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  var tc=_tc(); svg.style.background=tc.bg;
+  if(!nodes.length) return;
+  var cx=W/2,cy=H/2,R=Math.min(W,H)*0.36;
+  var gap=0.05,total=Math.PI*2-gap*nodes.length,cursor=-Math.PI/2,aMap={};
+  nodes.forEach(function(nd){
+    var span=total/nodes.length; aMap[nd.id]=cursor+span/2; cursor+=span+gap;
+  });
+  var connG=document.createElementNS('http://www.w3.org/2000/svg','g');
+  connections.forEach(function(c){
+    var a1=aMap[c.from],a2=aMap[c.to]; if(a1===undefined||a2===undefined) return;
+    var x1=cx+Math.cos(a1)*R,y1=cy+Math.sin(a1)*R,x2=cx+Math.cos(a2)*R,y2=cy+Math.sin(a2)*R;
+    var nd1=nodes.find(function(n){return n.id===c.from;});
+    var col=nd1?nd1.color+'55':tc.conn;
+    var p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d','M'+x1+','+y1+' Q'+cx+','+cy+' '+x2+','+y2);
+    p.setAttribute('stroke',col); p.setAttribute('stroke-width','1.5'); p.setAttribute('fill','none');
+    connG.appendChild(p);
+  });
+  svg.appendChild(connG);
+  nodes.forEach(function(nd){
+    var a=aMap[nd.id],nx=cx+Math.cos(a)*R,ny=cy+Math.sin(a)*R;
+    var c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',nx); c.setAttribute('cy',ny); c.setAttribute('r',8);
+    c.setAttribute('fill',nd.color); c.setAttribute('stroke',tc.bord); c.setAttribute('stroke-width','2');
+    c.style.cursor='pointer';
+    c.onclick=function(){ if(typeof selectNode==='function') selectNode(nd); if(typeof openLeftPanel==='function') openLeftPanel(nd); };
+    svg.appendChild(c);
+    var lx=cx+Math.cos(a)*(R+26),ly=cy+Math.sin(a)*(R+26);
+    var anchor=Math.cos(a)>0.08?'start':Math.cos(a)<-0.08?'end':'middle';
+    var t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',lx); t.setAttribute('y',ly); t.setAttribute('fill',tc.text);
+    t.setAttribute('font-family',"'Space Mono',monospace"); t.setAttribute('font-size','11');
+    t.setAttribute('text-anchor',anchor); t.setAttribute('dominant-baseline','middle');
+    t.style.cursor='pointer';
+    t.textContent=nd.title.length>20?nd.title.slice(0,19)+'…':nd.title;
+    t.onclick=function(){ if(typeof selectNode==='function') selectNode(nd); if(typeof openLeftPanel==='function') openLeftPanel(nd); };
+    svg.appendChild(t);
+  });
+}
+
+/* ─────────────────────────────────────────────────────
+   DENDROGRAM RADIAL
+───────────────────────────────────────────────────── */
+function _vizRadial() {
+  nodes.forEach(function(nd){
+    if(nd.mesh) nd.mesh.visible=false;
+    if(nd.labelEl) nd.labelEl.style.display='none';
+  });
+  var svg=document.getElementById('viz-overlay-svg');
+  svg.innerHTML=''; svg.style.display='block';
+  var W=window.innerWidth,H=window.innerHeight;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  var tc=_tc(); svg.style.background=tc.bg;
+  var cx=W/2,cy=H/2;
+  if(!nodes.length) return;
+  var deg={};
+  nodes.forEach(function(nd){deg[nd.id]=0;});
+  connections.forEach(function(c){deg[c.from]=(deg[c.from]||0)+1;deg[c.to]=(deg[c.to]||0)+1;});
+  var root=nodes.reduce(function(a,b){return(deg[a.id]||0)>=(deg[b.id]||0)?a:b;});
+  var visited=new Set([root.id]),tree={};
+  tree[root.id]={nd:root,children:[],depth:0,parent:null,angle:0,r:0};
+  var queue=[root];
+  while(queue.length){
+    var cur=queue.shift();
+    connections.filter(function(c){return c.from===cur.id||c.to===cur.id;})
+      .map(function(c){return c.from===cur.id?c.to:c.from;})
+      .filter(function(id){return!visited.has(id);})
+      .map(function(id){return nodes.find(function(n){return n.id===id;});})
+      .filter(Boolean)
+      .forEach(function(nb){
+        visited.add(nb.id);
+        tree[nb.id]={nd:nb,children:[],depth:tree[cur.id].depth+1,parent:cur.id,angle:0,r:0};
+        tree[cur.id].children.push(nb.id);
+        queue.push(nb);
+      });
+  }
+  nodes.forEach(function(nd){
+    if(!visited.has(nd.id)){tree[nd.id]={nd:nd,children:[],depth:1,parent:root.id,angle:0,r:0};tree[root.id].children.push(nd.id);}
+  });
+  var maxDepth=Math.max.apply(null,Object.values(tree).map(function(t){return t.depth;}))||1;
+  var maxR=Math.min(W,H)*0.42,levelR=maxR/maxDepth;
+  function assignAngles(id,a0,a1){
+    var t=tree[id]; if(!t) return;
+    t.angle=(a0+a1)/2; t.r=t.depth===0?0:levelR*t.depth;
+    if(!t.children.length) return;
+    var step=(a1-a0)/t.children.length;
+    t.children.forEach(function(cid,i){assignAngles(cid,a0+i*step,a0+(i+1)*step);});
+  }
+  assignAngles(root.id,0,Math.PI*2);
+  var edgeG=document.createElementNS('http://www.w3.org/2000/svg','g');
+  Object.values(tree).forEach(function(t){
+    if(!t.parent) return;
+    var p=tree[t.parent]; if(!p) return;
+    var x1=cx+Math.cos(p.angle)*p.r,y1=cy+Math.sin(p.angle)*p.r;
+    var x2=cx+Math.cos(t.angle)*t.r,y2=cy+Math.sin(t.angle)*t.r;
+    var mx=(x1+x2)/2*0.9+cx*0.1,my=(y1+y2)/2*0.9+cy*0.1;
+    var path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M'+x1+','+y1+' Q'+mx+','+my+' '+x2+','+y2);
+    path.setAttribute('stroke',t.nd.color+'55'); path.setAttribute('stroke-width','1.5'); path.setAttribute('fill','none');
+    edgeG.appendChild(path);
+  });
+  svg.appendChild(edgeG);
+  connections.forEach(function(c){
+    var t1=tree[c.from],t2=tree[c.to]; if(!t1||!t2) return;
+    if(t1.parent===c.to||t2.parent===c.from) return;
+    var x1=cx+Math.cos(t1.angle)*t1.r,y1=cy+Math.sin(t1.angle)*t1.r;
+    var x2=cx+Math.cos(t2.angle)*t2.r,y2=cy+Math.sin(t2.angle)*t2.r;
+    var path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M'+x1+','+y1+' Q'+cx+','+cy+' '+x2+','+y2);
+    path.setAttribute('stroke',tc.conn); path.setAttribute('stroke-width','1');
+    path.setAttribute('fill','none'); path.setAttribute('stroke-dasharray','4 5');
+    svg.appendChild(path);
+  });
+  Object.values(tree).forEach(function(t){
+    var nx=cx+Math.cos(t.angle)*t.r,ny=cy+Math.sin(t.angle)*t.r,isRoot=t.depth===0;
+    var circ=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circ.setAttribute('cx',nx); circ.setAttribute('cy',ny); circ.setAttribute('r',isRoot?12:7);
+    circ.setAttribute('fill',t.nd.color); circ.setAttribute('stroke',t.nd.color+'33'); circ.setAttribute('stroke-width','3');
+    circ.style.cursor='pointer';
+    circ.onclick=function(){ if(typeof selectNode==='function') selectNode(t.nd); if(typeof openLeftPanel==='function') openLeftPanel(t.nd); };
+    svg.appendChild(circ);
+    var lDist=t.r+(isRoot?22:17);
+    var lx=cx+Math.cos(t.angle)*lDist,ly=cy+Math.sin(t.angle)*lDist;
+    var cosA=Math.cos(t.angle);
+    var anchor=isRoot?'middle':cosA>0.1?'start':cosA<-0.1?'end':'middle';
+    var txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',lx); txt.setAttribute('y',ly); txt.setAttribute('fill',tc.text);
+    txt.setAttribute('font-family',"'Space Mono',monospace");
+    txt.setAttribute('font-size',isRoot?'13':'10'); txt.setAttribute('font-weight',isRoot?'700':'400');
+    txt.setAttribute('text-anchor',anchor); txt.setAttribute('dominant-baseline','middle');
+    txt.style.cursor='pointer';
+    txt.textContent=t.nd.title.length>22?t.nd.title.slice(0,21)+'…':t.nd.title;
+    txt.onclick=function(){ if(typeof selectNode==='function') selectNode(t.nd); if(typeof openLeftPanel==='function') openLeftPanel(t.nd); };
+    svg.appendChild(txt);
+  });
+}
+
+/* ─────────────────────────────────────────────────────
+   patch updateLabels — suppress in viz modes
+───────────────────────────────────────────────────── */
+var _origUL = typeof updateLabels === 'function' ? updateLabels : null;
+if (_origUL) {
+  updateLabels = function() {
+    if (window._vizMode !== '3d') return;
+    _origUL();
+  };
+}
+
+/* ESC */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && window._vizMode !== '3d') {
+    var anyModal = document.querySelector('[style*="flex"][id]');
+    if (!anyModal) setVizMode('3d');
+  }
+});
+
+/* resize */
+var _rT;
+window.addEventListener('resize', function() {
+  clearTimeout(_rT);
+  _rT = setTimeout(function() {
+    var m = window._vizMode;
+    if (m === 'chord')  _vizChord();
+    if (m === 'radial') _vizRadial();
+  }, 250);
+});
+
+})();
+</script>
+
+
 
 </body>
 </html>
