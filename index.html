@@ -8127,6 +8127,8 @@ function applyProjectName() {
   if (logoFirst) logoFirst.childNodes[0].textContent = 'NODAL';
   const logoSubEl = document.getElementById('logo-sub');
   if (logoSubEl) logoSubEl.textContent = projectSub;
+  const logoSepEl = document.getElementById('logo-sep');
+  if (logoSepEl) logoSepEl.style.display = projectSub ? 'inline' : 'none';
   // Browser tab
   document.title = 'NODAL' + (projectSub ? ': ' + projectSub : '');
   // Lock screen — só NODAL (subtítulo ocultado via CSS)
@@ -27764,7 +27766,10 @@ setTimeout(() => {
   var _origUpdateHudProjBadge = updateHudProjBadge;
   updateHudProjBadge = function(proj) {
     window._favActiveProjectName = (proj && proj.name) ? proj.name : null;
-    return _origUpdateHudProjBadge.apply(this, arguments);
+    var result = _origUpdateHudProjBadge.apply(this, arguments);
+    /* garante que o título atualiza após qualquer troca de projeto */
+    if (typeof applyProjectName === 'function') applyProjectName();
+    return result;
   };
 })();
 </script>
