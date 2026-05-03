@@ -27892,6 +27892,27 @@ setTimeout(() => {
     overflow:hidden; display:-webkit-box;
     -webkit-line-clamp:2; -webkit-box-orient:vertical;
   }
+  /* ── 2D Cards board ── */
+  #viz-cards-board {
+    position:fixed; inset:0; z-index:9; overflow:hidden;
+    cursor:grab; user-select:none;
+  }
+  #viz-cards-board:active { cursor:grabbing; }
+  #viz-cards-board.card-dragging { cursor:default; }
+  #viz-cards-inner { position:absolute; top:0; left:0; transform-origin:0 0; }
+  #viz-cards-conn-svg { position:absolute; top:0; left:0; pointer-events:none; overflow:visible; }
+  .viz-card-2d {
+    position:absolute; width:180px; border-radius:9px; padding:10px 12px;
+    cursor:pointer; box-sizing:border-box; user-select:none;
+    transition:box-shadow 0.15s;
+  }
+  .viz-card-2d:hover { box-shadow:0 6px 28px rgba(0,0,0,0.4) !important; }
+  .viz-card-2d.dragging { cursor:grabbing; z-index:20 !important; box-shadow:0 12px 40px rgba(0,0,0,0.5) !important; }
+  /* output port dot on right edge */
+  .viz-card-port {
+    position:absolute; right:-6px; top:50%; transform:translateY(-50%);
+    width:10px; height:10px; border-radius:50%; border:2px solid rgba(255,255,255,0.3);
+  }
   #drop-viz-3d.viz-active, #drop-viz-cards.viz-active,
   #drop-viz-chord.viz-active, #drop-viz-radial.viz-active {
     background:rgba(167,139,250,0.15) !important; color:#a78bfa !important;
@@ -27918,8 +27939,9 @@ setTimeout(() => {
 'use strict';
 
 window._vizMode = '3d';
-var _vizCardEls = {};
+var _vizCardEls = {};   // id -> { el, x, y }
 var _vizCardRaf = null;
+var _vizBoard   = null; // the 2D board container
 
 function _isLight() { return document.documentElement.classList.contains('light'); }
 
@@ -27956,12 +27978,9 @@ function _restoreMeshes() {
 }
 
 function _destroyCards() {
-  Object.keys(_vizCardEls).forEach(function(id) { _vizCardEls[id].remove(); });
+  if (_vizBoard) { _vizBoard.remove(); _vizBoard = null; }
   _vizCardEls = {};
   if (_vizCardRaf) { cancelAnimationFrame(_vizCardRaf); _vizCardRaf = null; }
-  var s = document.getElementById('viz-arrows-svg');
-  if (s) s.style.display = 'none';
-  // restore 3D connection lines
   if (typeof connections !== 'undefined') {
     connections.forEach(function(c) { if (c.line) c.line.visible = true; });
   }
@@ -27984,96 +28003,217 @@ window.setVizMode = function(mode) {
 };
 
 /* ─────────────────────────────────────────────────────
-   CARDS
+   CARDS — lousa 2D com pan/zoom e drag individual
 ───────────────────────────────────────────────────── */
 function _vizCards() {
   if (typeof nodes === 'undefined') return;
   var tc = _tc();
+
+  // hide 3D scene
   nodes.forEach(function(nd) {
     if (nd.mesh) nd.mesh.visible = false;
     if (nd.labelEl) nd.labelEl.style.display = 'none';
   });
-  // hide 3D connection lines
   if (typeof connections !== 'undefined') {
     connections.forEach(function(c) { if (c.line) c.line.visible = false; });
   }
 
+  // ── build board ────────────────────────────────────
+  var board = document.createElement('div');
+  board.id = 'viz-cards-board';
+  board.style.background = tc.bg;
+  _vizBoard = board;
+
+  var inner = document.createElement('div');
+  inner.id = 'viz-cards-inner';
+
+  // SVG layer for connections (inside inner so it shares transform)
+  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id = 'viz-cards-conn-svg';
+  svg.setAttribute('width','1'); svg.setAttribute('height','1');
+  var defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  var marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+  marker.setAttribute('id','vca2'); marker.setAttribute('markerWidth','8');
+  marker.setAttribute('markerHeight','8'); marker.setAttribute('refX','7');
+  marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
+  var mPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  mPath.setAttribute('d','M0,0 L0,6 L8,3 z');
+  mPath.setAttribute('fill','rgba(160,140,255,0.8)');
+  marker.appendChild(mPath); defs.appendChild(marker); svg.appendChild(defs);
+  inner.appendChild(svg);
+
+  // ── compute initial 2D positions from 3D coords ────
+  var W = window.innerWidth, H = window.innerHeight;
+  var CARD_W = 180, CARD_H = 80; // estimated card height
+  if (nodes.length === 0) { board.appendChild(inner); document.body.appendChild(board); return; }
+
+  var minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  nodes.forEach(function(nd){ minX=Math.min(minX,nd.x);maxX=Math.max(maxX,nd.x);minZ=Math.min(minZ,nd.z);maxZ=Math.max(maxZ,nd.z); });
+  var rangeX=Math.max(maxX-minX,1), rangeZ=Math.max(maxZ-minZ,1);
+  var pad=180;
+  var sc=Math.min((W-pad*2)/rangeX,(H-pad*2)/rangeZ,18);
+  var offX=(W-rangeX*sc)/2-minX*sc;
+  var offZ=(H-rangeZ*sc)/2-minZ*sc;
+
+  // ── create cards ───────────────────────────────────
   nodes.forEach(function(nd) {
-    var div = document.createElement('div');
-    div.className = 'viz-card';
-    div.style.background  = tc.card;
-    div.style.border      = '1px solid ' + tc.bord;
-    div.style.borderLeft  = '3px solid ' + nd.color;
-    div.style.boxShadow   = '0 4px 20px rgba(0,0,0,0.22)';
-    var init = (nd.title || '?').slice(0,2).toUpperCase();
+    var cx = nd.x*sc+offX, cy = nd.z*sc+offZ;
+    var init = (nd.title||'?').slice(0,2).toUpperCase();
     var descHtml = nd.desc
-      ? '<div class="viz-card-desc" style="color:' + tc.text2 + '">' + nd.desc.slice(0,88) + '</div>'
-      : '';
+      ? '<div class="viz-card-desc" style="color:'+tc.text2+'">'+nd.desc.slice(0,90)+'</div>' : '';
+
+    var div = document.createElement('div');
+    div.className = 'viz-card-2d';
+    div.style.background = tc.card;
+    div.style.border     = '1px solid '+tc.bord;
+    div.style.borderLeft = '3px solid '+nd.color;
+    div.style.boxShadow  = '0 4px 20px rgba(0,0,0,0.2)';
+    div.style.left = (cx - CARD_W/2)+'px';
+    div.style.top  = (cy - CARD_H/2)+'px';
+    div.style.zIndex = '10';
     div.innerHTML =
-      '<div class="viz-card-top">' +
-        '<div class="viz-card-icon" style="background:' + nd.color + '">' + init + '</div>' +
-        '<div class="viz-card-info">' +
-          '<div class="viz-card-title" style="color:' + tc.text + '">' + (nd.title || '') + '</div>' +
-          '<div class="viz-card-cat"   style="color:' + tc.text + '">' + (nd.cat   || '') + '</div>' +
-        '</div>' +
-      '</div>' + descHtml;
-    div.onclick = function() {
-      if (typeof selectNode    === 'function') selectNode(nd);
-      if (typeof openLeftPanel === 'function') openLeftPanel(nd);
-    };
-    document.body.appendChild(div);
-    _vizCardEls[nd.id] = div;
-  });
+      '<div class="viz-card-top">'+
+        '<div class="viz-card-icon" style="background:'+nd.color+'">'+init+'</div>'+
+        '<div class="viz-card-info">'+
+          '<div class="viz-card-title" style="color:'+tc.text+'">'+nd.title+'</div>'+
+          '<div class="viz-card-cat"   style="color:'+tc.text+'">'+nd.cat+'</div>'+
+        '</div>'+
+      '</div>'+descHtml+
+      '<div class="viz-card-port" style="background:'+nd.color+'"></div>';
 
-  var arrowSvg = document.getElementById('viz-arrows-svg');
-  if (arrowSvg) arrowSvg.style.display = 'block';
+    _vizCardEls[nd.id] = { el:div, x:cx, y:cy };
 
-  function tick() {
-    if (window._vizMode !== 'cards') return;
-    if (typeof nodes === 'undefined' || typeof camera === 'undefined') {
-      _vizCardRaf = requestAnimationFrame(tick); return;
-    }
-    var rect = (typeof canvas !== 'undefined')
-      ? canvas.getBoundingClientRect()
-      : { width: window.innerWidth, height: window.innerHeight, left: 0, top: 0 };
-
-    nodes.forEach(function(nd) {
-      var el = _vizCardEls[nd.id];
-      if (!el || !nd.labelPos) return;
-      var pos = nd.labelPos.clone().project(camera);
-      if (pos.z > 1) { el.style.display = 'none'; return; }
-      var px = (pos.x * 0.5 + 0.5) * rect.width  + rect.left;
-      var py = (-pos.y * 0.5 + 0.5) * rect.height + rect.top;
-      el.style.display = 'block';
-      el.style.left = (px - 86) + 'px';
-      el.style.top  = (py - el.offsetHeight / 2) + 'px';
+    // ── card drag ──────────────────────────────────
+    var dragOff = {x:0,y:0}, dragging=false, moved=false;
+    div.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      dragging=true; moved=false;
+      var r = div.getBoundingClientRect();
+      dragOff.x = e.clientX - r.left;
+      dragOff.y = e.clientY - r.top;
+      div.classList.add('dragging');
+      div.style.zIndex='20';
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      moved = true;
+      board.classList.add('card-dragging');
+      var innerRect = inner.getBoundingClientRect();
+      var newLeft = (e.clientX - innerRect.left - dragOff.x) / _panZoom.z;
+      var newTop  = (e.clientY - innerRect.top  - dragOff.y) / _panZoom.z;
+      div.style.left = newLeft+'px';
+      div.style.top  = newTop+'px';
+      _vizCardEls[nd.id].x = newLeft + CARD_W/2;
+      _vizCardEls[nd.id].y = newTop  + CARD_H/2;
+      _drawCardConns(svg, tc);
+    });
+    document.addEventListener('mouseup', function(e) {
+      if (!dragging) return;
+      dragging=false;
+      div.classList.remove('dragging');
+      div.style.zIndex='10';
+      board.classList.remove('card-dragging');
+      if (!moved) {
+        if (typeof selectNode    === 'function') selectNode(nd);
+        if (typeof openLeftPanel === 'function') openLeftPanel(nd);
+      }
     });
 
-    if (arrowSvg && typeof connections !== 'undefined') {
-      var old = arrowSvg.querySelectorAll('path.vc');
-      old.forEach(function(p){ p.remove(); });
-      connections.forEach(function(c) {
-        var fEl = _vizCardEls[c.from], tEl = _vizCardEls[c.to];
-        if (!fEl || !tEl || fEl.style.display==='none' || tEl.style.display==='none') return;
-        var fR = fEl.getBoundingClientRect(), tR = tEl.getBoundingClientRect();
-        var x1=fR.right,  y1=fR.top+fR.height/2;
-        var x2=tR.left,   y2=tR.top+tR.height/2;
-        var dx=(x2-x1)*0.45;
-        var nd1=nodes.find(function(n){return n.id===c.from;});
-        var col=nd1?nd1.color+'aa':'rgba(160,140,255,0.5)';
-        var path=document.createElementNS('http://www.w3.org/2000/svg','path');
-        path.setAttribute('class','vc');
-        path.setAttribute('d','M'+x1+','+y1+' C'+(x1+dx)+','+y1+' '+(x2-dx)+','+y2+' '+x2+','+y2);
-        path.setAttribute('stroke',col);
-        path.setAttribute('stroke-width','1.5');
-        path.setAttribute('fill','none');
-        path.setAttribute('marker-end','url(#viz-arrow)');
-        arrowSvg.appendChild(path);
-      });
-    }
-    _vizCardRaf = requestAnimationFrame(tick);
+    inner.appendChild(div);
+  });
+
+  board.appendChild(inner);
+  document.body.appendChild(board);
+
+  // draw initial connections
+  setTimeout(function(){ _drawCardConns(svg, tc); }, 60);
+
+  // ── pan & zoom ─────────────────────────────────────
+  var _panZoom = {x:0, y:0, z:1};
+  function _applyTransform() {
+    inner.style.transform = 'translate('+_panZoom.x+'px,'+_panZoom.y+'px) scale('+_panZoom.z+')';
   }
-  _vizCardRaf = requestAnimationFrame(tick);
+
+  var panning=false, panStart={x:0,y:0}, panOrigin={x:0,y:0};
+  board.addEventListener('mousedown', function(e) {
+    if (e.target !== board && e.target !== inner && e.target !== svg) return;
+    panning=true;
+    panStart.x=e.clientX; panStart.y=e.clientY;
+    panOrigin.x=_panZoom.x; panOrigin.y=_panZoom.y;
+  });
+  board.addEventListener('mousemove', function(e) {
+    if (!panning) return;
+    _panZoom.x = panOrigin.x + (e.clientX-panStart.x);
+    _panZoom.y = panOrigin.y + (e.clientY-panStart.y);
+    _applyTransform();
+  });
+  board.addEventListener('mouseup',   function(){ panning=false; });
+  board.addEventListener('mouseleave',function(){ panning=false; });
+
+  board.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var factor = e.deltaY < 0 ? 1.08 : 0.93;
+    var rect = board.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var my = e.clientY - rect.top;
+    _panZoom.x = mx - (mx - _panZoom.x) * factor;
+    _panZoom.y = my - (my - _panZoom.y) * factor;
+    _panZoom.z = Math.min(Math.max(_panZoom.z * factor, 0.15), 4);
+    _applyTransform();
+  }, {passive:false});
+}
+
+// ── smart connection drawing ───────────────────────
+function _drawCardConns(svg, tc) {
+  var old = svg.querySelectorAll('path.vcc');
+  old.forEach(function(p){ p.remove(); });
+  if (typeof connections === 'undefined') return;
+
+  // compute real edge coords from actual DOM dimensions
+  function edgeOf(item) {
+    var el  = item.el;
+    var l   = parseFloat(el.style.left)  || 0;
+    var t   = parseFloat(el.style.top)   || 0;
+    var w   = el.offsetWidth  || 180;
+    var h   = el.offsetHeight || 80;
+    return { cx:l+w/2, cy:t+h/2, l:l, r:l+w, t:t, b:t+h, hw:w/2, hh:h/2 };
+  }
+
+  connections.forEach(function(c) {
+    var src = _vizCardEls[c.from], tgt = _vizCardEls[c.to];
+    if (!src || !tgt) return;
+    var s = edgeOf(src), t = edgeOf(tgt);
+    var dx = t.cx - s.cx, dy = t.cy - s.cy;
+
+    var x1,y1,x2,y2,cp1x,cp1y,cp2x,cp2y;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      // horizontal — exit right or left
+      if (dx >= 0) { x1=s.r; y1=s.cy; x2=t.l; y2=t.cy; }
+      else          { x1=s.l; y1=s.cy; x2=t.r; y2=t.cy; }
+      var hoff = Math.max(Math.abs(dx)*0.4, 40);
+      cp1x=x1+(dx>=0?hoff:-hoff); cp1y=y1;
+      cp2x=x2-(dx>=0?hoff:-hoff); cp2y=y2;
+    } else {
+      // vertical — exit bottom or top
+      if (dy >= 0) { x1=s.cx; y1=s.b; x2=t.cx; y2=t.t; }
+      else          { x1=s.cx; y1=s.t; x2=t.cx; y2=t.b; }
+      var voff = Math.max(Math.abs(dy)*0.4, 40);
+      cp1x=x1; cp1y=y1+(dy>=0?voff:-voff);
+      cp2x=x2; cp2y=y2-(dy>=0?voff:-voff);
+    }
+
+    var nd1=nodes.find(function(n){return n.id===c.from;});
+    var col=nd1?nd1.color+'cc':'rgba(160,140,255,0.6)';
+    var path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('class','vcc');
+    path.setAttribute('d','M'+x1+','+y1+' C'+cp1x+','+cp1y+' '+cp2x+','+cp2y+' '+x2+','+y2);
+    path.setAttribute('stroke',col);
+    path.setAttribute('stroke-width','2');
+    path.setAttribute('fill','none');
+    path.setAttribute('marker-end','url(#vca2)');
+    svg.appendChild(path);
+  });
 }
 
 /* ─────────────────────────────────────────────────────
