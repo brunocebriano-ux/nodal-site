@@ -27068,11 +27068,12 @@ setTimeout(() => {
 (function() {
 
   /* ── Estado ─────────────────────────────────────── */
-  var _favs        = [];          // array de favoritos em memória
-  var _favEditing  = null;        // id do favorito em edição
-  var _favActiveTags = [];        // tags selecionadas como filtro
-  var _favModalTags  = [];        // tags no modal atual
+  var _favs          = [];          // array de favoritos em memória
+  var _favEditing    = null;        // id do favorito em edição
+  var _favActiveTags = [];          // tags selecionadas como filtro
+  var _favModalTags  = [];          // tags no modal atual
   var _favPanelOpen  = false;
+  var _favLoadedForProj = undefined; // projeto cujos dados estão em _favs
   var _FAV_LS_KEY    = 'neural-favorites-v1';
 
   /* ── Supabase helpers ──────────────────────────── */
@@ -27098,6 +27099,7 @@ setTimeout(() => {
           var pendingLocal = _favs.filter(function(f){ return !serverIds.has(f.id); });
           _favs = pendingLocal.concat(res.data);
           _favs.sort(function(a,b){ return b.created_at - a.created_at; });
+          _favLoadedForProj = projId;
           _favSaveLocal();
           _favRender();
           return;
@@ -27105,6 +27107,7 @@ setTimeout(() => {
       } catch(e) { console.warn('[FAV] Supabase indisponível, usando localStorage:', e); }
     }
     _favLoadLocal();
+    _favLoadedForProj = projId;
     _favRender();
   }
 
@@ -27359,7 +27362,12 @@ setTimeout(() => {
     var b = document.getElementById('sidebar-fav-btn');
     if (p) p.classList.add('fav-open');
     if (b) b.classList.add('fav-active');
-    _favRender(); /* renderiza dados já em memória — sem race condition */
+    var projId = (typeof activeProjectId !== 'undefined') ? activeProjectId : null;
+    if (projId !== _favLoadedForProj) {
+      _favLoad(); /* projeto mudou — recarrega automaticamente */
+    } else {
+      _favRender(); /* mesmo projeto — usa memória */
+    }
   }
 
   window._favPanelClose = function() {
