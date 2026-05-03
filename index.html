@@ -22843,18 +22843,20 @@ async function projSaveData(id, data) {
   try { localStorage.setItem(PROJ_DATA_KEY(id), JSON.stringify(data)); } catch(e) {}
   try {
     const { data: { session } } = await _sb.auth.getSession();
-    if (!session) return;
+    if (!session) { console.warn('[NODAL] projSaveData: sem sessão ativa'); return; }
     const proj = allProjects.find(p => p.id === id);
     if (proj) {
-      await _sb.from('projetos').upsert({
+      const r1 = await _sb.from('projetos').upsert({
         id: proj.id, user_id: session.user.id,
         name: proj.name, sub: proj.sub || '',
         type: proj.type || 'livre', icon: proj.icon || '✨', color: proj.color || '#a78bfa',
         created: proj.created || Date.now(), modified: proj.modified || Date.now(),
         node_count: proj.nodeCount || 0, conn_count: proj.connCount || 0
       });
+      if (r1.error) console.warn('[NODAL] projetos upsert error:', r1.error.message);
     }
-    await _sb.from('proj_data').upsert({ id, user_id: session.user.id, data });
+    const r2 = await _sb.from('proj_data').upsert({ id, user_id: session.user.id, data });
+    if (r2.error) { console.warn('[NODAL] proj_data upsert error:', r2.error.message); throw r2.error; }
   } catch(e) { console.warn('Supabase projSaveData falhou:', e.message); throw e; }
 }
 
@@ -27140,12 +27142,12 @@ setTimeout(() => {
     var uid = await _favGetUserId();
     if (!uid) return;
     _favShowSync('saving', '☁ Salvando...');
-    try {
-      await _sb.from('favorites').upsert({ ...fav, user_id: uid });
+    var res = await _sb.from('favorites').upsert({ ...fav, user_id: uid });
+    if (res.error) {
+      _favShowSync('error', '✗ Erro: ' + res.error.message);
+      console.warn('[FAV] Supabase upsert error:', res.error);
+    } else {
       _favShowSync('ok', '✓ Salvo');
-    } catch(e) {
-      _favShowSync('error', '✗ Erro ao salvar');
-      console.warn('[FAV] Erro ao salvar no Supabase:', e);
     }
   }
 
@@ -27154,12 +27156,12 @@ setTimeout(() => {
     var uid = await _favGetUserId();
     if (!uid) return;
     _favShowSync('saving', '☁ Removendo...');
-    try {
-      await _sb.from('favorites').delete().eq('id', id).eq('user_id', uid);
-      _favShowSync('ok', '✓ Removido');
-    } catch(e) {
+    var res = await _sb.from('favorites').delete().eq('id', id).eq('user_id', uid);
+    if (res.error) {
       _favShowSync('error', '✗ Erro ao remover');
-      console.warn('[FAV] Erro ao deletar no Supabase:', e);
+      console.warn('[FAV] Supabase delete error:', res.error);
+    } else {
+      _favShowSync('ok', '✓ Removido');
     }
   }
 
@@ -27205,7 +27207,11 @@ setTimeout(() => {
   };
 
   function _favGenId() {
-    return 'fav_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
   }
 
   /* ── Tags globais ───────────────────────────────── */
