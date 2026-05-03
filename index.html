@@ -25630,16 +25630,22 @@ function switchNotepadStyle(style) {
   localStorage.setItem('notepad_style', style);
 }
 
-function saveNotepad() {
+async function saveNotepad() {
   const text = document.getElementById('notepad-text').value;
   const _pid = (typeof activeProjectId !== 'undefined' && activeProjectId) ? activeProjectId : null;
   const key = 'notepad_' + (_pid || 'global');
   localStorage.setItem(key, text);
   const btn = document.getElementById('notepad-save-btn');
   if (btn) { btn.textContent = '✓ Salvo'; }
-  // Salvar no Supabase via projSaveCurrentState (lê de memória, nunca sobrescreve com dados errados)
   if (_pid && typeof projSaveCurrentState === 'function') {
-    projSaveCurrentState();
+    if (typeof _favShowSync === 'function') _favShowSync('saving', '☁ Salvando notas...');
+    try {
+      await projSaveCurrentState();
+      if (typeof _favShowSync === 'function') _favShowSync('ok', '✓ Notas salvas');
+    } catch(e) {
+      if (typeof _favShowSync === 'function') _favShowSync('error', '✗ Erro ao salvar notas');
+      console.error('[NOTEPAD] Supabase save error:', e);
+    }
   }
 }
 
@@ -27691,6 +27697,9 @@ setTimeout(() => {
     if (ov && ov.classList.contains('fav-modal-open')) { _favModalClose(); return; }
     if (_favPanelOpen) _favPanelClose();
   });
+
+  /* Expõe _favShowSync globalmente para uso fora do IIFE (ex: saveNotepad) */
+  window._favShowSync = _favShowSync;
 
   /* ── Init ───────────────────────────────────────── */
   _favLoadLocal();   /* localStorage imediato para UI não ficar vazia */
