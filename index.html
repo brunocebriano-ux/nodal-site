@@ -5930,7 +5930,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   /* ── Painel gaveta ── */
   #fav-panel {
     position: fixed;
-    left: 72px;
+    left: var(--fav-left, 72px);
     top: 52px;     /* respeita HUD (46px) + 6px de margem */
     bottom: 16px;  /* margem inferior */
     width: 340px;
@@ -5941,7 +5941,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     border-radius: 14px;
     z-index: 29;
     display: flex; flex-direction: column;
-    transform: translateX(calc(-100% - 72px));
+    transform: translateX(calc(-100% - var(--fav-left, 72px)));
     transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
     overflow: hidden;
     box-shadow: 4px 0 32px rgba(0,0,0,0.3);
@@ -28749,6 +28749,59 @@ window.addEventListener('resize', function() {
 
   // calcula ao carregar se as conexões já existirem
   setTimeout(_recalcConnWeights, 500);
+})();
+</script>
+
+<script>
+/* ── Favorites panel position: acompanha largura real do sidebar ── */
+(function() {
+  'use strict';
+
+  function _updateFavPanelPos() {
+    var sb = document.getElementById('nodal-sidebar');
+    var fp = document.getElementById('fav-panel');
+    if (!sb || !fp) return;
+    var cls = sb.classList;
+    var newLeft;
+    if (cls.contains('sb-floating') || cls.contains('sb-horizontal') || cls.contains('sb-hidden')) {
+      // sidebar flutua sobre o conteúdo — não empurra o painel
+      newLeft = '72px';
+    } else if (cls.contains('sb-slim')) {
+      // sidebar slim = 60px
+      newLeft = '72px';
+    } else {
+      // FIXO: lê --sb-full-width da CSS var (padrão 220px) — evita ler offsetWidth durante transição
+      var fullW = parseInt(getComputedStyle(sb).getPropertyValue('--sb-full-width')) || 220;
+      newLeft = (fullW + 12) + 'px';
+    }
+    fp.style.setProperty('--fav-left', newLeft);
+  }
+
+  window._updateFavPanelPos = _updateFavPanelPos;
+
+  // observa mudanças de classe e estilo no sidebar (slim ↔ expandido)
+  function _startObs() {
+    var sb = document.getElementById('nodal-sidebar');
+    if (!sb) { setTimeout(_startObs, 300); return; }
+    var obs = new MutationObserver(function() { _updateFavPanelPos(); });
+    obs.observe(sb, { attributes: true, attributeFilter: ['class', 'style'] });
+    _updateFavPanelPos();
+  }
+
+  // patch _sbRefresh para recalcular posição após cada aplicação de estado
+  var _origSbRefreshFP = window._sbRefresh;
+  window._sbRefresh = function() {
+    if (typeof _origSbRefreshFP === 'function') _origSbRefreshFP();
+    setTimeout(_updateFavPanelPos, 50);
+  };
+
+  // inicia quando o DOM estiver pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(_startObs, 200); });
+  } else {
+    setTimeout(_startObs, 200);
+  }
+
 })();
 </script>
 </body>
