@@ -9355,8 +9355,8 @@ canvas.addEventListener('mousedown', e => {
     isPanning = true; panLastMouse = {x: e.clientX, y: e.clientY}; return;
   }
   if (e.button !== 0) return;
-  // Ignorar cliques na área do painel lateral esquerdo
-  if (leftPanelNode && e.clientX < 302) return;
+  // Ignorar cliques na área do painel lateral esquerdo (exceto visitante — precisa orbitar livremente)
+  if (leftPanelNode && e.clientX < 302 && !canvas._viewerMode) return;
   mouseDownPos = {x: e.clientX, y: e.clientY};
   mouseMovedSinceDown = false;
   if (dragMode) {
