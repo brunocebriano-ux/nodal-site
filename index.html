@@ -23455,10 +23455,14 @@ function projMigrateExistingData() {
 }
 
 // ── Boot ──────────────────────────────────────────────
-async function loadSharedProject(token) {
+async function loadSharedProject(identifier) {
   try {
-    // Primeiro faz o await — quando a resposta chegar, o DOM inteiro já está montado
-    const { data, error } = await _sb.from('public_shares').select('proj_name,proj_data').eq('token', token).single();
+    // Tenta por slug primeiro (links novos), depois por token (links antigos)
+    let data, error;
+    ({ data, error } = await _sb.from('public_shares').select('proj_name,proj_data').eq('slug', identifier).single());
+    if (error || !data) {
+      ({ data, error } = await _sb.from('public_shares').select('proj_name,proj_data').eq('token', identifier).single());
+    }
     if (error || !data) throw new Error('Link inválido ou expirado');
 
     // DOM já está pronto: captura os elementos AGORA
@@ -23524,26 +23528,86 @@ if (window._pendingShareToken) {
   loadSharedProject(_t);
 }
 
+function _generateSlug(name) {
+  const suffix = Array.from(crypto.getRandomValues(new Uint8Array(2))).map(b => b.toString(36).padStart(2,'0')).join('').slice(0,4);
+  const base = (name || 'projeto')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+  return base + '-' + suffix;
+}
+
 async function projGenerateShareLink(projId) {
   try {
     const { data: { session } } = await _sb.auth.getSession();
     if (!session) { toast('Faça login para compartilhar'); return; }
     const proj = allProjects.find(p => p.id === projId);
     if (!proj) { toast('Projeto não encontrado'); return; }
-    toast('Gerando link...');
-    let pd = null;
-    try { const { data, error } = await _sb.from('proj_data').select('data').eq('id', projId).single(); if (!error && data) pd = data.data; } catch(e) {}
-    if (!pd) { try { const raw = localStorage.getItem(PROJ_DATA_KEY(projId)); pd = raw ? JSON.parse(raw) : null; } catch(e) {} }
-    if (!pd) { toast('Nenhum dado para compartilhar'); return; }
-    const tokenBytes = crypto.getRandomValues(new Uint8Array(9));
-    const token = Array.from(tokenBytes).map(b => b.toString(36).padStart(2,'0')).join('').slice(0,14);
-    const { error } = await _sb.from('public_shares').insert({ token, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
-    if (error) throw error;
-    const url = window.location.origin + window.location.pathname + '?share=' + token;
-    try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
+
+    const autoSlug = _generateSlug(proj.sub || proj.name);
+
+    // Modal
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    overlay.innerHTML = `
+      <div style="background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px 28px 22px;width:360px;font-family:var(--mono);color:#eee;">
+        <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.5;margin-bottom:18px;">Compartilhar projeto</div>
+        <div style="font-size:10px;opacity:0.6;margin-bottom:7px;letter-spacing:0.06em;">Link personalizado</div>
+        <input id="_share-slug-input" type="text" value="${autoSlug}"
+          style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:5px;padding:8px 10px;color:#fff;font-family:var(--mono);font-size:11px;outline:none;letter-spacing:0.04em;" />
+        <div id="_share-slug-err" style="font-size:9px;color:#ff6b6b;margin-top:5px;min-height:13px;letter-spacing:0.04em;"></div>
+        <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+          <button id="_share-cancel-btn" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:transparent;color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Cancelar</button>
+          <button id="_share-confirm-btn" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.5);border-radius:4px;background:rgba(255,255,255,0.1);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Gerar link</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const slugInput = overlay.querySelector('#_share-slug-input');
+    const errEl = overlay.querySelector('#_share-slug-err');
+    slugInput.focus();
+    slugInput.select();
+
+    overlay.querySelector('#_share-cancel-btn').onclick = () => overlay.remove();
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    overlay.querySelector('#_share-confirm-btn').onclick = async () => {
+      const slug = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
+      if (!slug || slug.length < 3) { errEl.textContent = 'Slug muito curto (mín. 3 caracteres)'; return; }
+      errEl.textContent = '';
+      slugInput.disabled = true;
+      overlay.querySelector('#_share-confirm-btn').textContent = 'Salvando…';
+
+      try {
+        // Verifica colisão
+        const { data: existing } = await _sb.from('public_shares').select('slug').eq('slug', slug).single();
+        if (existing) { errEl.textContent = 'Slug já em uso — escolha outro'; slugInput.disabled = false; overlay.querySelector('#_share-confirm-btn').textContent = 'Gerar link'; return; }
+
+        let pd = null;
+        try { const { data, error } = await _sb.from('proj_data').select('data').eq('id', projId).single(); if (!error && data) pd = data.data; } catch(e) {}
+        if (!pd) { try { const raw = localStorage.getItem(PROJ_DATA_KEY(projId)); pd = raw ? JSON.parse(raw) : null; } catch(e) {} }
+        if (!pd) { errEl.textContent = 'Nenhum dado para compartilhar'; slugInput.disabled = false; overlay.querySelector('#_share-confirm-btn').textContent = 'Gerar link'; return; }
+
+        const tokenBytes = crypto.getRandomValues(new Uint8Array(9));
+        const token = Array.from(tokenBytes).map(b => b.toString(36).padStart(2,'0')).join('').slice(0,14);
+        const { error } = await _sb.from('public_shares').insert({ token, slug, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
+        if (error) throw error;
+
+        overlay.remove();
+        const url = window.location.origin + window.location.pathname + '?share=' + slug;
+        try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
+      } catch(e) {
+        console.error('[NODAL] projGenerateShareLink erro:', e);
+        errEl.textContent = 'Erro: ' + (e.message || 'tente novamente');
+        slugInput.disabled = false;
+        overlay.querySelector('#_share-confirm-btn').textContent = 'Gerar link';
+      }
+    };
   } catch(e) {
     console.error('[NODAL] projGenerateShareLink erro:', e);
-    toast('Erro ao gerar link: ' + (e.message || ''));
+    toast('Erro ao abrir compartilhamento: ' + (e.message || ''));
   }
 }
 
