@@ -5997,6 +5997,51 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #fav-search:focus { border-color: var(--accent); }
   html.light #fav-search { background: rgba(0,0,0,0.04); }
 
+  /* ── Collections bar ── */
+  #fav-collections-bar {
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 14px 2px; overflow-x: auto; flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  #fav-collections-bar::-webkit-scrollbar { display: none; }
+  .fav-col-tab {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 10px; border-radius: 99px; white-space: nowrap; flex-shrink: 0;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.07em;
+    border: 1px solid var(--border); background: var(--glass-light);
+    color: var(--text3); cursor: pointer; transition: all 0.15s;
+  }
+  .fav-col-tab:hover { color: var(--text); border-color: var(--accent); }
+  .fav-col-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,0.12); }
+  .fav-col-del {
+    background: none; border: none; cursor: pointer; padding: 0 0 0 2px;
+    color: var(--text3); font-size: 9px; line-height: 1; opacity: 0.5;
+  }
+  .fav-col-del:hover { color: #f87171; opacity: 1; }
+  .fav-col-add {
+    flex-shrink: 0; width: 20px; height: 20px; border-radius: 99px;
+    border: 1px dashed var(--border); background: none; color: var(--text3);
+    cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .fav-col-add:hover { border-color: var(--accent); color: var(--accent); }
+  .fav-m-col-label {
+    font-family: var(--mono); font-size: 9px; color: var(--text3);
+    letter-spacing: 0.08em; text-transform: uppercase; margin: 8px 0 4px;
+  }
+  #fav-m-collection {
+    width: 100%; padding: 7px 10px; margin-bottom: 4px;
+    background: var(--glass-light); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em;
+  }
+  .fav-card-col {
+    display: inline-block; margin: 3px 0 0 21px;
+    font-size: 8px; font-family: var(--mono); letter-spacing: 0.05em;
+    color: var(--accent); background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.2); border-radius: 99px; padding: 1px 7px;
+  }
+
   /* ── Tags bar ── */
   #fav-tags-bar {
     display: flex; flex-wrap: wrap; gap: 5px;
@@ -7100,6 +7145,8 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <button class="fav-panel-close-btn" onclick="_favPanelClose()" title="Fechar">✕</button>
   </div>
 
+  <div id="fav-collections-bar"></div>
+
   <div id="fav-search-wrap">
     <input type="text" id="fav-search" placeholder="Buscar favoritos..." oninput="_favFilter()" autocomplete="off">
   </div>
@@ -7134,6 +7181,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <input id="fav-m-title" type="text" placeholder="Título *" autocomplete="off">
       <input id="fav-m-url"   type="text" placeholder="URL ou referência (opcional)" autocomplete="off">
       <textarea id="fav-m-desc" placeholder="Descrição (opcional)"></textarea>
+
+      <div class="fav-m-col-label">Coleção</div>
+      <select id="fav-m-collection"></select>
 
       <div class="fav-m-tag-label">Tags</div>
       <div id="fav-m-tags-display"></div>
@@ -23494,7 +23544,7 @@ const _SYNC_KEYS = [
   'neural-proj-badge-label','neural-proj-badge-emoji',
   'neural-hover-anim','neural-pres-theme','neural-fonts',
   'neural-logo-colors','neural-logo-typo','neural-typo-global',
-  'neural-panorama-data'
+  'neural-panorama-data','neural-fav-collections'
 ];
 let _settingsSaveTimer = null;
 function _scheduleSettingsSync() {
@@ -27218,6 +27268,7 @@ setTimeout(() => {
       tags:        data.tags || [],
       node_ref:    data.node_ref || null,
       pinned:      false,
+      collection:  data.collection || 'Geral',
       project_id:  (typeof activeProjectId !== 'undefined') ? activeProjectId : null,
       project_name:(typeof window._favActiveProjectName !== 'undefined') ? window._favActiveProjectName : null,
       created_at:  Date.now(),
@@ -27274,7 +27325,12 @@ setTimeout(() => {
   function _favFiltered() {
     var q = (document.getElementById('fav-search') || {}).value || '';
     q = q.toLowerCase().trim();
+    var activeCol = window._favActiveCol || 'all';
     return _favs.filter(function(f) {
+      // filtro por coleção ativa
+      if (activeCol !== 'all') {
+        if ((f.collection || 'Geral') !== activeCol) return false;
+      }
       // filtro por tags ativas
       if (_favActiveTags.length > 0) {
         var ok = _favActiveTags.every(function(t){ return (f.tags || []).indexOf(t) !== -1; });
@@ -27293,6 +27349,7 @@ setTimeout(() => {
 
   /* ── Render painel ──────────────────────────────── */
   function _favRender() {
+    if (typeof window._favRenderCollBar === 'function') window._favRenderCollBar();
     _favRenderTagsBar();
     _favRenderList();
     _favUpdateCount();
@@ -27361,6 +27418,7 @@ setTimeout(() => {
         '</div>' +
       '</div>' +
       urlHtml + descHtml + tagsRow + nodeRefHtml + projBadge +
+      (f.collection && f.collection !== 'Geral' ? '<div class="fav-card-col">📁 ' + _esc(f.collection) + '</div>' : '') +
     '</div>';
   }
 
@@ -27513,6 +27571,10 @@ setTimeout(() => {
     document.getElementById('fav-m-title').value       = prefill.title       || '';
     document.getElementById('fav-m-url').value         = prefill.url         || '';
     document.getElementById('fav-m-desc').value        = prefill.description || '';
+    if (typeof window._colPopulateSelect === 'function') {
+      var preCol = prefill.collection || (window._favActiveCol !== 'all' ? window._favActiveCol : 'Geral');
+      window._colPopulateSelect(preCol);
+    }
     document.getElementById('fav-m-tag-input').value   = '';
 
     _favModalRenderTags();
@@ -27551,11 +27613,13 @@ setTimeout(() => {
   window._favModalSave = function() {
     var title = (document.getElementById('fav-m-title').value || '').trim();
     if (!title) { document.getElementById('fav-m-title').focus(); return; }
+    var _colSel = document.getElementById('fav-m-collection');
     var data = {
       title:       title,
       url:         (document.getElementById('fav-m-url').value  || '').trim(),
       description: (document.getElementById('fav-m-desc').value || '').trim(),
-      tags:        _favModalTags.slice()
+      tags:        _favModalTags.slice(),
+      collection:  _colSel ? (_colSel.value || 'Geral') : 'Geral'
     };
     if (_favEditing) {
       _favUpdate(_favEditing, data);
@@ -28475,6 +28539,146 @@ window.addEventListener('resize', function() {
 
 
 
+
+<script>
+/* ── Coleções de Favoritos (Opção A) ────────────────────────────────────────
+   Lista de coleções salva em localStorage por projeto e sincronizada com
+   Supabase via user_settings (chave neural-fav-collections).
+   Estrutura: { "projectId": ["Referências", "Técnica"], ... }
+   Coleções vazias persistem — comportamento idêntico ao Raindrop.io.
+────────────────────────────────────────────────────────────────────────── */
+(function(){
+  'use strict';
+
+  var COLS_KEY = 'neural-fav-collections';
+  window._favActiveCol = 'all';
+
+  function _esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+  }
+
+  function _pid() {
+    return (typeof activeProjectId !== 'undefined' && activeProjectId) ? activeProjectId : '__global__';
+  }
+
+  function _colLoad() {
+    try { return JSON.parse(localStorage.getItem(COLS_KEY) || '{}'); } catch(e) { return {}; }
+  }
+
+  function _colSave(all) {
+    try { localStorage.setItem(COLS_KEY, JSON.stringify(all)); } catch(e) {}
+    if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
+  }
+
+  // retorna lista de coleções do projeto atual (sempre inclui 'Geral')
+  function _colGetAll() {
+    var all = _colLoad();
+    var pid = _pid();
+    var cols = all[pid] || [];
+    if (cols.indexOf('Geral') === -1) cols = ['Geral'].concat(cols);
+    return cols;
+  }
+
+  function _colSetAll(cols) {
+    var all = _colLoad();
+    all[_pid()] = cols.filter(function(c){ return c !== 'Geral'; }); // Geral é sempre implícita
+    _colSave(all);
+  }
+
+  window._favRenderCollBar = function() {
+    var bar = document.getElementById('fav-collections-bar');
+    if (!bar) return;
+    var cols = _colGetAll();
+    var html = '<span class="fav-col-tab' + (window._favActiveCol === 'all' ? ' active' : '') +
+               '" onclick="window._favSetCol(\'all\')">Todas</span>';
+    cols.forEach(function(name) {
+      var active = window._favActiveCol === name ? ' active' : '';
+      var del = name !== 'Geral'
+        ? '<button class="fav-col-del" onclick="event.stopPropagation();window._favDelCol(\'' + _esc(name) + '\')" title="Remover">✕</button>'
+        : '';
+      html += '<span class="fav-col-tab' + active + '" onclick="window._favSetCol(\'' + _esc(name) + '\')">' +
+              _esc(name) + del + '</span>';
+    });
+    html += '<button class="fav-col-add" onclick="window._favNewCol()" title="Nova coleção">+</button>';
+    bar.innerHTML = html;
+  };
+
+  window._colPopulateSelect = function(current) {
+    var sel = document.getElementById('fav-m-collection');
+    if (!sel) return;
+    var cols = _colGetAll();
+    sel.innerHTML = cols.map(function(name) {
+      return '<option value="' + _esc(name) + '"' + (name === (current || 'Geral') ? ' selected' : '') + '>' + _esc(name) + '</option>';
+    }).join('');
+  };
+
+  window._favSetCol = function(name) {
+    window._favActiveCol = name;
+    window._favRenderCollBar();
+    if (typeof window._favFilter === 'function') window._favFilter();
+  };
+
+  window._favNewCol = function() {
+    var name = prompt('Nome da nova coleção:');
+    if (!name) return;
+    name = name.trim();
+    if (!name) return;
+    var cols = _colGetAll();
+    if (cols.indexOf(name) !== -1) { window._favSetCol(name); return; }
+    cols.push(name);
+    _colSetAll(cols);
+    window._favRenderCollBar();
+    window._colPopulateSelect(name);
+    window._favSetCol(name);
+    if (typeof toast === 'function') toast('📁 Coleção "' + name + '" criada');
+  };
+
+  window._favDelCol = function(name) {
+    if (name === 'Geral') return;
+    if (!confirm('Remover coleção "' + name + '"?\nOs favoritos dela voltam para Geral.')) return;
+    var cols = _colGetAll().filter(function(c){ return c !== name && c !== 'Geral'; });
+    _colSetAll(cols);
+    // move favoritos desta coleção+projeto para Geral no Supabase
+    var pid = typeof activeProjectId !== 'undefined' ? activeProjectId : null;
+    if (typeof _sb !== 'undefined') {
+      _sb.auth.getSession().then(function(r) {
+        var uid = r && r.data && r.data.session && r.data.session.user && r.data.session.user.id;
+        if (!uid) return;
+        var q = _sb.from('favorites').update({ collection: 'Geral' }).eq('user_id', uid).eq('collection', name);
+        if (pid) q = q.eq('project_id', pid);
+        q.then(function(){ if (typeof window._favLoad === 'function') window._favLoad(); });
+      });
+    }
+    if (window._favActiveCol === name) window._favActiveCol = 'all';
+    window._favRenderCollBar();
+    if (typeof toast === 'function') toast('Coleção removida');
+  };
+
+  // reseta ao trocar de projeto
+  var _origProjOpen = window.projOpen;
+  if (typeof _origProjOpen === 'function') {
+    window.projOpen = function() {
+      window._favActiveCol = 'all';
+      return _origProjOpen.apply(this, arguments);
+    };
+  }
+
+  // re-renderiza barra após trocar projeto (favoritos recarregados)
+  var _origFavLoad = window._favLoad;
+  if (typeof _origFavLoad === 'function') {
+    window._favLoad = function() {
+      var r = _origFavLoad.apply(this, arguments);
+      setTimeout(function(){ if (typeof window._favRenderCollBar === 'function') window._favRenderCollBar(); }, 200);
+      return r;
+    };
+  }
+
+  setTimeout(function() {
+    window._favRenderCollBar();
+    window._colPopulateSelect('Geral');
+  }, 600);
+})();
+</script>
 
 <script>
 /* ── Peso estrutural nas conexões (grau do nó) ──────────────────────────────
