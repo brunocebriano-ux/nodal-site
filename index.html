@@ -5913,10 +5913,11 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     box-shadow: 0 12px 48px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.7);
   }
 
-  /* ── Modo Visitante: esconde sidebar e painel de favoritos ── */
+  /* ── Modo Visitante: esconde sidebar, favoritos e notas ── */
   html.viewer-mode #nodal-sidebar,
   html.viewer-mode #fav-panel,
-  html.viewer-mode #sidebar-fav-btn { display: none !important; }
+  html.viewer-mode #sidebar-fav-btn,
+  html.viewer-mode #btn-notepad { display: none !important; }
   html.light #sidebar-toggle {
     background: rgba(235,235,252,0.96);
     border-color: var(--border2);
@@ -23497,6 +23498,12 @@ async function loadSharedProject(token) {
             if (!_panoData.items) _panoData.items = [];
           }
         } catch(e) {}
+      }
+      // ── Restaurar artigos dos nós ────────────────────────────────────────
+      if (pd.articlesData && typeof pd.articlesData === 'object') {
+        Object.entries(pd.articlesData).forEach(([nodeId, articles]) => {
+          try { localStorage.setItem('neural-articles-' + nodeId, JSON.stringify(articles)); } catch(e) {}
+        });
       }
     }
     updateStats();
