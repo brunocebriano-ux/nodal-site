@@ -23091,24 +23091,29 @@ function _renderTabContent(p) {
   }
   const _unused_meta = ''
   document.getElementById('proj-tab-empty').textContent = '';
-  // Botão compartilhar (só no modo editor)
-  const _oldShareBtn = tabContent.querySelector('.proj-share-btn');
+  // Botão compartilhar / revogar (só no modo editor)
+  const _oldShareBtn = tabContent.querySelector('.proj-share-area');
   if (_oldShareBtn) _oldShareBtn.remove();
   if (_isEdDel) {
+    const _shareArea = document.createElement('div');
+    _shareArea.className = 'proj-share-area';
+    _shareArea.style.cssText = 'position:absolute;bottom:28px;left:28px;';
     const _shareBtn = document.createElement('button');
     _shareBtn.className = 'proj-share-btn';
     _shareBtn.textContent = '↗ compartilhar';
     _shareBtn.title = 'Gerar link público para visualização';
-    _shareBtn.style.cssText = 'position:absolute;bottom:28px;left:28px;padding:6px 14px;border:1px solid rgba(255,255,255,0.55);border-radius:4px;background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.9);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;';
+    _shareBtn.style.cssText = 'padding:6px 14px;border:1px solid rgba(255,255,255,0.55);border-radius:4px;background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.9);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;';
     _shareBtn.onmouseover = function(){ this.style.background='rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.9)'; };
     _shareBtn.onmouseout  = function(){ this.style.background='rgba(0,0,0,0.15)'; this.style.borderColor='rgba(255,255,255,0.55)'; };
     _shareBtn.onclick = function(e){ e.stopPropagation(); projGenerateShareLink(p.id); };
-    tabContent.appendChild(_shareBtn);
+    _shareArea.appendChild(_shareBtn);
+    tabContent.appendChild(_shareArea);
+    projUpdateShareBtn(p.id);
   }
 
   // Clique no painel → abre mapa
   tabContent.onclick = (e) => {
-    if (!e.target.closest('#proj-tab-add-btn') && !e.target.closest('.proj-share-btn')) {
+    if (!e.target.closest('#proj-tab-add-btn') && !e.target.closest('.proj-share-area')) {
       projOpenAndGoToMap(p.id);
     }
   };
@@ -23117,6 +23122,74 @@ function _renderTabContent(p) {
 }
 
 function projFilterGrid(q) { renderProjectsGrid(q); }
+
+async function projUpdateShareBtn(projId) {
+  const area = document.querySelector('#proj-tab-content .proj-share-area');
+  if (!area) return;
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) return;
+    const { data } = await _sb.from('public_shares').select('slug,token').eq('proj_id', projId).eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(1).single();
+    if (!data) return;
+    const identifier = data.slug || data.token;
+    area.innerHTML = '';
+    const revokeBtn = document.createElement('button');
+    revokeBtn.className = 'proj-revoke-btn';
+    revokeBtn.title = 'Clique para copiar o link · Segure para revogar';
+    revokeBtn.textContent = '⚬ link ativo';
+    revokeBtn.style.cssText = 'padding:6px 14px;border:1px solid rgba(120,220,120,0.5);border-radius:4px;background:rgba(0,0,0,0.15);color:rgba(120,220,120,0.9);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;';
+    revokeBtn.onmouseover = function(){ this.style.background='rgba(0,0,0,0.35)'; };
+    revokeBtn.onmouseout  = function(){ this.style.background='rgba(0,0,0,0.15)'; this.textContent='⚬ link ativo'; this.style.color='rgba(120,220,120,0.9)'; this.style.borderColor='rgba(120,220,120,0.5)'; };
+    let _holdTimer = null;
+    revokeBtn.onmousedown = function(e) {
+      e.stopPropagation();
+      _holdTimer = setTimeout(() => { this.textContent = 'solte p/ revogar'; this.style.color='rgba(255,100,100,0.9)'; this.style.borderColor='rgba(255,100,100,0.5)'; }, 600);
+    };
+    revokeBtn.onmouseup = function(e) {
+      e.stopPropagation();
+      if (_holdTimer) { clearTimeout(_holdTimer); _holdTimer = null; }
+    };
+    revokeBtn.onclick = function(e) {
+      e.stopPropagation();
+      const url = window.location.origin + window.location.pathname + '?share=' + identifier;
+      try { navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(err) { prompt('Copie o link:', url); }
+    };
+    revokeBtn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); projRevokeShareLink(projId); });
+    // Segura 800ms para revogar
+    let _pressStart = 0;
+    revokeBtn.addEventListener('pointerdown', e => { e.stopPropagation(); _pressStart = Date.now(); });
+    revokeBtn.addEventListener('pointerup', e => {
+      e.stopPropagation();
+      if (Date.now() - _pressStart >= 800) projRevokeShareLink(projId);
+    });
+    area.appendChild(revokeBtn);
+  } catch(e) {}
+}
+
+async function projRevokeShareLink(projId) {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) return;
+    const { error } = await _sb.from('public_shares').delete().eq('proj_id', projId).eq('user_id', session.user.id);
+    if (error) throw error;
+    toast('Link revogado');
+    const area = document.querySelector('#proj-tab-content .proj-share-area');
+    if (!area) return;
+    area.innerHTML = '';
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'proj-share-btn';
+    shareBtn.textContent = '↗ compartilhar';
+    shareBtn.title = 'Gerar link público para visualização';
+    shareBtn.style.cssText = 'padding:6px 14px;border:1px solid rgba(255,255,255,0.55);border-radius:4px;background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.9);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;';
+    shareBtn.onmouseover = function(){ this.style.background='rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.9)'; };
+    shareBtn.onmouseout  = function(){ this.style.background='rgba(0,0,0,0.15)'; this.style.borderColor='rgba(255,255,255,0.55)'; };
+    shareBtn.onclick = function(e){ e.stopPropagation(); projGenerateShareLink(projId); };
+    area.appendChild(shareBtn);
+  } catch(e) {
+    console.error('[NODAL] projRevokeShareLink erro:', e);
+    toast('Erro ao revogar link');
+  }
+}
 
 // ── Mini node preview ─────────────────────────────────
 function projBuildMiniPreview(p) {
@@ -23574,7 +23647,7 @@ async function projGenerateShareLink(projId) {
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
     overlay.querySelector('#_share-confirm-btn').onclick = async () => {
-      const slug = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
+      const slug = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
       if (!slug || slug.length < 3) { errEl.textContent = 'Slug muito curto (mín. 3 caracteres)'; return; }
       errEl.textContent = '';
       slugInput.disabled = true;
@@ -23592,10 +23665,11 @@ async function projGenerateShareLink(projId) {
 
         const tokenBytes = crypto.getRandomValues(new Uint8Array(9));
         const token = Array.from(tokenBytes).map(b => b.toString(36).padStart(2,'0')).join('').slice(0,14);
-        const { error } = await _sb.from('public_shares').insert({ token, slug, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
+        const { error } = await _sb.from('public_shares').insert({ token, slug, proj_id: projId, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
         if (error) throw error;
 
         overlay.remove();
+        projUpdateShareBtn(projId);
         const url = window.location.origin + window.location.pathname + '?share=' + slug;
         try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
       } catch(e) {
