@@ -23499,12 +23499,9 @@ async function loadSharedProject(token) {
           }
         } catch(e) {}
       }
-      // ── Restaurar artigos dos nós ────────────────────────────────────────
-      if (pd.articlesData && typeof pd.articlesData === 'object') {
-        Object.entries(pd.articlesData).forEach(([nodeId, articles]) => {
-          try { localStorage.setItem('neural-articles-' + nodeId, JSON.stringify(articles)); } catch(e) {}
-        });
-      }
+      // ── Restaurar artigos dos nós (cache em memória — não depende de localStorage) ──
+      window._sharedArticlesCache = (pd.articlesData && typeof pd.articlesData === 'object')
+        ? pd.articlesData : {};
     }
     updateStats();
     toast('Visualizando: ' + (data.proj_name || 'Projeto'));
@@ -28766,6 +28763,17 @@ window.addEventListener('resize', function() {
 </script>
 
 <script>
+/* ── Artigos em modo visitante: cache em memória, sem depender de localStorage ── */
+(function() {
+  'use strict';
+  var _origGNA = window.getNodeArticles;
+  window.getNodeArticles = function(nodeId) {
+    var cache = window._sharedArticlesCache;
+    if (cache && cache[nodeId] && cache[nodeId].length) return cache[nodeId];
+    return typeof _origGNA === 'function' ? _origGNA(nodeId) : [];
+  };
+})();
+
 /* ── Favorites panel position: acompanha largura real do sidebar ── */
 (function() {
   'use strict';
