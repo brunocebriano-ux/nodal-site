@@ -23571,6 +23571,9 @@ async function _loadSettingsFromCloud() {
     if (typeof loadSavedGlassSettings === 'function') loadSavedGlassSettings();
     if (typeof applyLockDesign === 'function') applyLockDesign();
     if (typeof loadSavedFonts === 'function') loadSavedFonts();
+    // re-aplica sidebar imediatamente após sync — elimina o flash de primeiro acesso
+    if (typeof window._sbRefresh === 'function') window._sbRefresh();
+    if (typeof window._sbRefreshDesign === 'function') window._sbRefreshDesign();
     // Atualiza _panoData em memória para o Panorama refletir o que veio do Supabase
     if (data.data['neural-panorama-data'] && typeof _panoData !== 'undefined') {
       try {
@@ -26884,6 +26887,7 @@ setTimeout(() => {
   /* ── Init ───────────────────────────────── */
   _sbApply();
   _sbLoadProfile();
+  window._sbRefresh = function() { _sbApply(); _sbLoadProfile(); };
 
 })();
 </script>
@@ -27112,6 +27116,7 @@ setTimeout(() => {
 
   /* ── Init ───────────────────────────── */
   _sbApplyDesign(_sbDLoad());
+  window._sbRefreshDesign = function() { _sbApplyDesign(_sbDLoad()); };
 
 })();
 </script>
