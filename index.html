@@ -5550,112 +5550,239 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #notepad-overlay {
     display: none; position: fixed; inset: 0; z-index: 150;
     background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     align-items: center; justify-content: center;
   }
   #notepad-overlay.open { display: flex; }
-  #notepad-panel {
-    width: min(520px, 94vw); max-height: 88vh;
-    display: flex; flex-direction: column;
-    border-radius: 3px;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 2px 0 rgba(255,255,255,0.05);
-    overflow: hidden; position: relative;
-    animation: notepadIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
-  }
   @keyframes notepadIn {
     from { transform: scale(0.94) translateY(14px); opacity: 0; }
     to   { transform: scale(1) translateY(0); opacity: 1; }
   }
-  #notepad-header {
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── PANEL ── */
+  .panel {
+    width: min(860px, 96vw); height: 520px;
+    border-radius: 24px; display: flex; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.35); transition: box-shadow 0.4s;
+    animation: notepadIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  html.light .panel { box-shadow: 0 8px 48px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.55); }
+  html:not(.light) .panel { box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 260px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    transition: background 0.4s;
+  }
+  html.light .sidebar {
+    background: rgba(100,135,168,0.42);
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    border-right: 1px solid rgba(255,255,255,0.25);
+  }
+  html:not(.light) .sidebar {
+    background: rgba(10,14,28,0.58);
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    border-right: 1px solid rgba(255,255,255,0.07);
+  }
+  .sidebar-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 14px 10px 16px; flex-shrink: 0;
-    border-bottom: 1px solid rgba(0,0,0,0.12);
+    padding: 20px 16px 14px; flex-shrink: 0;
   }
-  #notepad-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; }
-  #notepad-close-btn {
-    background: none; border: none; cursor: pointer;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
-    padding: 4px 8px; border-radius: 3px; transition: all 0.12s;
+  html.light .sidebar-header { border-bottom: 1px solid rgba(255,255,255,0.22); }
+  html:not(.light) .sidebar-header { border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .sidebar-title-row { display: flex; align-items: center; gap: 8px; }
+  .sidebar-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  #notepad-style-bar { display: flex; flex-shrink: 0; }
-  .notepad-style-btn {
-    flex: 1; height: 28px; border: none; cursor: pointer;
-    font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
-    text-transform: uppercase; font-weight: 700; transition: all 0.15s;
-    border-bottom: 2px solid transparent;
+  html.light .sidebar-icon { background: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.4); }
+  html:not(.light) .sidebar-icon { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); }
+  .sidebar-icon i { font-size: 13px; }
+  html.light .sidebar-icon i { color: rgba(255,255,255,0.9); }
+  html:not(.light) .sidebar-icon i { color: rgba(255,255,255,0.7); }
+  .sidebar-title { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  html.light .sidebar-title { color: rgba(255,255,255,0.97); }
+  html:not(.light) .sidebar-title { color: rgba(255,255,255,0.9); }
+  .btn-new {
+    width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    background: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4);
   }
-  #notepad-body { flex: 1; overflow-y: auto; position: relative; }
-  #notepad-text {
-    width: 100%; min-height: 360px; resize: none;
-    border: none; outline: none;
-    font-size: 14px; line-height: 1.8; padding: 22px 28px;
-    box-sizing: border-box; background: transparent; font-family: inherit;
+  .btn-new:hover { background: #1d4ed8; transform: scale(1.06); }
+  .btn-new i { font-size: 14px; color: #fff; }
+  .sidebar-search {
+    display: flex; align-items: center; gap: 8px;
+    margin: 12px 12px 8px; padding: 8px 12px; border-radius: 10px;
+    flex-shrink: 0; transition: all 0.2s;
   }
-  #notepad-footer {
+  html.light .sidebar-search { background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.38); }
+  html:not(.light) .sidebar-search { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-search i { font-size: 13px; flex-shrink: 0; }
+  html.light .sidebar-search i { color: rgba(255,255,255,0.55); }
+  html:not(.light) .sidebar-search i { color: rgba(255,255,255,0.3); }
+  .search-inp {
+    flex: 1; background: transparent; border: none;
+    font-family: inherit; font-size: 11.5px; font-weight: 400;
+  }
+  html.light .search-inp { color: rgba(255,255,255,0.9); }
+  html:not(.light) .search-inp { color: rgba(255,255,255,0.8); }
+  html.light .search-inp::placeholder { color: rgba(255,255,255,0.42); }
+  html:not(.light) .search-inp::placeholder { color: rgba(255,255,255,0.25); }
+  .notes-list {
+    flex: 1; overflow-y: auto;
+    padding: 4px 8px 10px; display: flex; flex-direction: column; gap: 1px;
+  }
+  .notes-list::-webkit-scrollbar { width: 3px; }
+  .notes-list::-webkit-scrollbar-track { background: transparent; }
+  html.light .notes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.55); border-radius: 99px; }
+  html:not(.light) .notes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 99px; }
+  html.light .notes-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.75); }
+  html:not(.light) .notes-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.42); }
+  .note-item {
+    padding: 10px; border-radius: 11px; cursor: pointer;
+    transition: background 0.15s; border: 1px solid transparent;
+    position: relative; animation: fadeIn 0.12s ease both;
+  }
+  html.light .note-item:hover { background: rgba(255,255,255,0.2); }
+  html:not(.light) .note-item:hover { background: rgba(255,255,255,0.07); }
+  html.light .note-item.active { background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.4); }
+  html:not(.light) .note-item.active { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.14); }
+  .note-item-title {
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
+  }
+  html.light .note-item-title { color: rgba(255,255,255,0.9); }
+  html:not(.light) .note-item-title { color: rgba(255,255,255,0.78); }
+  html.light .note-item.active .note-item-title { color: #fff; }
+  html:not(.light) .note-item.active .note-item-title { color: rgba(255,255,255,0.95); }
+  .note-item-preview {
+    font-size: 10.5px; font-weight: 400;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  html.light .note-item-preview { color: rgba(255,255,255,0.48); }
+  html:not(.light) .note-item-preview { color: rgba(255,255,255,0.28); }
+  .note-item-date { font-size: 9px; font-weight: 500; margin-top: 4px; opacity: 0.7; }
+  html.light .note-item-date { color: rgba(255,255,255,0.45); }
+  html:not(.light) .note-item-date { color: rgba(255,255,255,0.25); }
+  .sidebar-footer {
+    padding: 0 12px; flex-shrink: 0;
+    height: 52px; display: flex; align-items: center; justify-content: center;
+  }
+  html.light .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.22); }
+  html:not(.light) .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.07); }
+  .notes-count { font-size: 10px; font-weight: 500; text-align: center; }
+  html.light .notes-count { color: rgba(255,255,255,0.38); }
+  html:not(.light) .notes-count { color: rgba(255,255,255,0.22); }
+
+  /* ── MAIN EDITOR ── */
+  .main {
+    flex: 1; display: flex; flex-direction: column;
+    transition: background 0.4s; min-width: 0;
+  }
+  html.light .main {
+    background: rgba(200,215,228,0.28);
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+  }
+  html:not(.light) .main {
+    background: rgba(28,34,55,0.38);
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+  }
+  .editor-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 16px; flex-shrink: 0;
-    font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
-    border-top: 1px solid rgba(0,0,0,0.1);
+    padding: 18px 20px 14px; flex-shrink: 0;
   }
-  #notepad-save-btn {
-    background: none; border: 1px solid currentColor; cursor: pointer;
-    font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
-    text-transform: uppercase; padding: 4px 10px; border-radius: 2px;
-    transition: all 0.12s; color: inherit; opacity: 0.7;
+  html.light .editor-header { border-bottom: 1px solid rgba(255,255,255,0.22); }
+  html:not(.light) .editor-header { border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .editor-title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .editor-title-input {
+    background: transparent; border: none;
+    font-family: inherit; font-size: 15px; font-weight: 700;
+    letter-spacing: -0.01em; min-width: 0; flex: 1; transition: color 0.2s;
   }
-  #notepad-save-btn:hover { opacity: 1; }
-
-  /* Estilo: Amarelo */
-  #notepad-panel.style-yellow { background: #fdf3a7; }
-  #notepad-panel.style-yellow #notepad-header { background: #f7e44d; border-bottom-color: rgba(0,0,0,0.1); }
-  #notepad-panel.style-yellow #notepad-title { color: #7a6a00; }
-  #notepad-panel.style-yellow #notepad-close-btn { color: #7a6a00; }
-  #notepad-panel.style-yellow #notepad-close-btn:hover { background: rgba(0,0,0,0.08); }
-  #notepad-panel.style-yellow #notepad-style-bar { background: #f7e44d; }
-  #notepad-panel.style-yellow .notepad-style-btn { background: #f7e44d; color: #7a6a00; }
-  #notepad-panel.style-yellow .notepad-style-btn:hover { background: #f0d820; }
-  #notepad-panel.style-yellow .notepad-style-btn.active { background: #f0d820; border-bottom-color: #c8a800; }
-  #notepad-panel.style-yellow #notepad-text { color: #3a2e00; font-family: 'DM Sans', sans-serif; }
-  #notepad-panel.style-yellow #notepad-footer { background: #f7e44d; color: #9a8a00; border-top-color: rgba(0,0,0,0.1); }
-
-  /* Estilo: Caderno (linhas) */
-  #notepad-panel.style-lined { background: #fff; }
-  #notepad-panel.style-lined #notepad-header { background: #e8efff; border-bottom: 3px solid #4a6fa5; }
-  #notepad-panel.style-lined #notepad-title { color: #1a3a6a; }
-  #notepad-panel.style-lined #notepad-close-btn { color: #1a3a6a; }
-  #notepad-panel.style-lined #notepad-close-btn:hover { background: rgba(0,0,100,0.08); }
-  #notepad-panel.style-lined #notepad-style-bar { background: #e8efff; }
-  #notepad-panel.style-lined .notepad-style-btn { background: #e8efff; color: #1a3a6a; }
-  #notepad-panel.style-lined .notepad-style-btn:hover { background: #d0dcf5; }
-  #notepad-panel.style-lined .notepad-style-btn.active { background: #d0dcf5; border-bottom-color: #4a6fa5; }
-  #notepad-panel.style-lined #notepad-body {
-    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 27px, rgba(74,111,165,0.18) 28px, rgba(74,111,165,0.18) 28px);
+  html.light .editor-title-input { color: rgba(255,255,255,0.97); }
+  html:not(.light) .editor-title-input { color: rgba(255,255,255,0.92); }
+  html.light .editor-title-input::placeholder { color: rgba(255,255,255,0.35); }
+  html:not(.light) .editor-title-input::placeholder { color: rgba(255,255,255,0.2); }
+  .editor-header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .btn-icon {
+    width: 30px; height: 30px; border-radius: 9px; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
   }
-  #notepad-panel.style-lined #notepad-body::before {
-    content: ''; position: absolute; top: 0; left: 48px; bottom: 0;
-    width: 1.5px; background: rgba(220,80,80,0.28); pointer-events: none;
+  html.light .btn-icon { background: rgba(255,255,255,0.2); }
+  html:not(.light) .btn-icon { background: rgba(255,255,255,0.06); }
+  html.light .btn-icon:hover { background: rgba(255,255,255,0.34); }
+  html:not(.light) .btn-icon:hover { background: rgba(255,255,255,0.14); }
+  .btn-icon i { font-size: 14px; }
+  html.light .btn-icon i { color: rgba(255,255,255,0.7); }
+  html:not(.light) .btn-icon i { color: rgba(255,255,255,0.45); }
+  .btn-icon.danger:hover i { color: #f87171 !important; }
+  html.light .btn-icon.danger:hover { background: rgba(248,113,113,0.15) !important; }
+  html:not(.light) .btn-icon.danger:hover { background: rgba(248,113,113,0.12) !important; }
+  .btn-close-panel {
+    width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
   }
-  #notepad-panel.style-lined #notepad-text { color: #1a1a2e; font-family: 'DM Sans', sans-serif; line-height: 28px; padding-top: 24px; padding-left: 60px; }
-  #notepad-panel.style-lined #notepad-footer { background: #e8efff; color: #4a6fa5; border-top-color: #d0dcf5; }
-
-  /* Estilo: Quadriculado */
-  #notepad-panel.style-grid { background: #f8f9ff; }
-  #notepad-panel.style-grid #notepad-header { background: #1a1a2e; border-bottom-color: rgba(167,139,250,0.3); }
-  #notepad-panel.style-grid #notepad-title { color: rgba(167,139,250,0.9); }
-  #notepad-panel.style-grid #notepad-close-btn { color: rgba(255,255,255,0.5); }
-  #notepad-panel.style-grid #notepad-close-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
-  #notepad-panel.style-grid #notepad-style-bar { background: #1a1a2e; }
-  #notepad-panel.style-grid .notepad-style-btn { background: #1a1a2e; color: rgba(167,139,250,0.7); }
-  #notepad-panel.style-grid .notepad-style-btn:hover { background: rgba(167,139,250,0.1); }
-  #notepad-panel.style-grid .notepad-style-btn.active { background: rgba(167,139,250,0.15); border-bottom-color: #a78bfa; color: #a78bfa; }
-  #notepad-panel.style-grid #notepad-body {
-    background:
-      linear-gradient(rgba(167,139,250,0.12) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(167,139,250,0.12) 1px, transparent 1px),
-      #f8f9ff;
-    background-size: 24px 24px;
+  html.light .btn-close-panel { background: rgba(255,255,255,0.22); }
+  html:not(.light) .btn-close-panel { background: rgba(255,255,255,0.07); }
+  html.light .btn-close-panel:hover { background: rgba(255,255,255,0.38); }
+  html:not(.light) .btn-close-panel:hover { background: rgba(255,255,255,0.15); }
+  .btn-close-panel i { font-size: 14px; }
+  html.light .btn-close-panel i { color: rgba(255,255,255,0.7); }
+  html:not(.light) .btn-close-panel i { color: rgba(255,255,255,0.45); }
+  .editor-body { flex: 1; overflow: hidden; position: relative; }
+  .editor-textarea {
+    width: 100%; height: 100%; padding: 20px 22px;
+    background: transparent; border: none; resize: none;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px; font-weight: 400; line-height: 1.72;
   }
-  #notepad-panel.style-grid #notepad-text { color: #1a1a2e; font-family: 'Space Mono', monospace; font-size: 13px; }
-  #notepad-panel.style-grid #notepad-footer { background: #1a1a2e; color: rgba(167,139,250,0.6); border-top-color: rgba(167,139,250,0.2); }
+  html.light .editor-textarea { color: rgba(30,40,60,0.82); }
+  html:not(.light) .editor-textarea { color: rgba(255,255,255,0.75); }
+  html.light .editor-textarea::placeholder { color: rgba(30,40,60,0.3); }
+  html:not(.light) .editor-textarea::placeholder { color: rgba(255,255,255,0.2); }
+  .editor-empty {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; pointer-events: none;
+  }
+  .editor-empty i { font-size: 28px; }
+  html.light .editor-empty i { color: rgba(255,255,255,0.2); }
+  html:not(.light) .editor-empty i { color: rgba(255,255,255,0.1); }
+  .editor-empty span { font-size: 12px; }
+  html.light .editor-empty span { color: rgba(255,255,255,0.32); }
+  html:not(.light) .editor-empty span { color: rgba(255,255,255,0.18); }
+  .editor-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; flex-shrink: 0; height: 52px;
+  }
+  html.light .editor-footer { border-top: 1px solid rgba(255,255,255,0.2); }
+  html:not(.light) .editor-footer { border-top: 1px solid rgba(255,255,255,0.07); }
+  .char-count { font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  html.light .char-count { color: rgba(30,40,60,0.32); }
+  html:not(.light) .char-count { color: rgba(255,255,255,0.22); }
+  .save-indicator {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .save-indicator i { font-size: 11px; }
+  html.light .save-indicator { color: rgba(30,40,60,0.38); }
+  html:not(.light) .save-indicator { color: rgba(255,255,255,0.28); }
+  .save-indicator.unsaved { color: #f59e0b !important; }
+  .save-indicator.saved-flash { color: #4ade80 !important; }
+  .btn-save {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 22px; border-radius: 11px; border: none; cursor: pointer;
+    font-family: inherit; font-size: 12.5px; font-weight: 600; transition: all 0.2s;
+    background: #2563eb; color: #fff;
+    box-shadow: 0 2px 10px rgba(37,99,235,0.38);
+  }
+  .btn-save:hover { background: #1d4ed8; box-shadow: 0 4px 16px rgba(37,99,235,0.52); transform: translateY(-1px); }
+  .btn-save:active { transform: translateY(0); }
+  .btn-save i { font-size: 14px; }
 
   /* ═══════════════════════════════════════
      REDEFINIÇÃO DE SENHA
@@ -27873,23 +28000,75 @@ function showIsolatedNodes() {
 
 <!-- ══ BLOCO DE NOTAS ══ -->
 <div id="notepad-overlay" onclick="if(event.target===this)closeNotepad()">
-  <div id="notepad-panel" class="style-yellow">
-    <div id="notepad-header">
-      <span id="notepad-title">✎ Notas</span>
-      <button id="notepad-close-btn" onclick="closeNotepad()">✕ fechar</button>
+  <div id="notepad-panel" class="panel">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header" id="notepad-header">
+        <div class="sidebar-title-row">
+          <div class="sidebar-icon"><i class="ti ti-notebook"></i></div>
+          <span class="sidebar-title" id="notepad-title">Notas</span>
+        </div>
+        <button class="btn-new" title="Nova nota">
+          <i class="ti ti-plus"></i>
+        </button>
+      </div>
+      <div class="sidebar-search">
+        <i class="ti ti-search"></i>
+        <input
+          class="search-inp"
+          id="searchNotepad"
+          type="text"
+          placeholder="Buscar notas..."
+          autocomplete="off"
+        />
+      </div>
+      <div class="notes-list" id="notepad-notes-list"></div>
+      <div class="sidebar-footer">
+        <div class="notes-count" id="notepad-notes-count">1 nota</div>
+      </div>
     </div>
-    <div id="notepad-style-bar">
-      <button class="notepad-style-btn active" id="nps-yellow" onclick="switchNotepadStyle('yellow')" title="Papel amarelo">☀ Amarelo</button>
-      <button class="notepad-style-btn" id="nps-lined" onclick="switchNotepadStyle('lined')" title="Caderno de linhas">≡ Caderno</button>
-      <button class="notepad-style-btn" id="nps-grid" onclick="switchNotepadStyle('grid')" title="Papel quadriculado">⊞ Grade</button>
+
+    <!-- EDITOR -->
+    <div class="main">
+      <div class="editor-header">
+        <div class="editor-title-wrap">
+          <input
+            class="editor-title-input"
+            id="notepad-editor-title"
+            type="text"
+            placeholder="Título da nota…"
+          />
+        </div>
+        <div class="editor-header-actions" id="notepad-style-bar">
+          <button class="btn-icon" id="nps-lined" title="Mais opções"><i class="ti ti-dots"></i></button>
+          <button class="btn-icon danger" id="nps-grid" title="Excluir nota"><i class="ti ti-trash"></i></button>
+          <button class="btn-close-panel" id="notepad-close-btn" title="Fechar" onclick="closeNotepad()"><i class="ti ti-x"></i></button>
+          <button id="nps-yellow" style="display:none" aria-hidden="true"></button>
+        </div>
+      </div>
+      <div class="editor-body" id="notepad-body">
+        <textarea
+          class="editor-textarea"
+          id="notepad-text"
+          placeholder="Comece a escrever…"
+          oninput="notepadAutoSave()"
+        ></textarea>
+      </div>
+      <div class="editor-footer">
+        <span class="char-count" id="notepad-char-count">0 caracteres</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="save-indicator" id="notepad-save-indicator">
+            <i class="ti ti-check"></i> Salvo
+          </span>
+          <button class="btn-save" id="notepad-save-btn" onclick="saveNotepad()">
+            <i class="ti ti-device-floppy"></i>
+            Salvar
+          </button>
+        </div>
+      </div>
     </div>
-    <div id="notepad-body">
-      <textarea id="notepad-text" placeholder="Escreva suas anotações aqui…" oninput="notepadAutoSave()"></textarea>
-    </div>
-    <div id="notepad-footer">
-      <span id="notepad-char-count">0 caracteres</span>
-      <button id="notepad-save-btn" onclick="saveNotepad()">✓ Salvo</button>
-    </div>
+
   </div>
 </div>
 
