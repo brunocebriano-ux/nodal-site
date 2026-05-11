@@ -6130,52 +6130,148 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   ══════════════════════════════════════════════════ */
   #txt2graph-overlay {
     display: none; position: fixed; inset: 0; z-index: 270;
-    background: rgba(0,0,8,0.82);
-    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    background: rgba(0,0,8,0.28);
     align-items: center; justify-content: center;
   }
   #txt2graph-overlay.open { display: flex; }
   #txt2graph-modal {
-    background: var(--glass-heavy);
-    border: 1px solid var(--border2);
-    border-radius: 16px; padding: 28px 30px;
-    width: 620px; max-width: 96vw; max-height: 90vh;
-    display: flex; flex-direction: column; gap: 16px;
-    backdrop-filter: blur(40px); box-shadow: var(--shadow-panel);
+    width: 600px; max-width: 96vw; max-height: 90vh;
+    border-radius: 24px; overflow: hidden auto;
+    border: 1px solid rgba(255,255,255,0.18);
+    display: flex; flex-direction: column;
+    backdrop-filter: blur(48px) saturate(2.0);
+    -webkit-backdrop-filter: blur(48px) saturate(2.0);
+    box-shadow: 0 8px 56px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+    background: rgba(14,18,36,0.52);
   }
-  #txt2graph-modal h3 {
-    font-family: var(--display); font-size: 18px; font-weight: 800;
-    color: var(--text); margin: 0;
+  html.light #txt2graph-modal {
+    background: rgba(210,225,240,0.42);
+    box-shadow: 0 8px 56px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.75);
+    border-color: rgba(255,255,255,0.65);
   }
+  /* Inner padding wrapper */
+  .t2g-inner {
+    display: flex; flex-direction: column; gap: 20px;
+    padding: 28px 26px 24px;
+  }
+  /* Header */
+  .t2g-header { display: flex; flex-direction: column; gap: 6px; }
+  .t2g-header-top { display: flex; align-items: center; gap: 8px; }
+  .t2g-icon {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 15px;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);
+  }
+  html.light .t2g-icon {
+    background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.5);
+  }
+  .t2g-title {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+    color: rgba(255,255,255,0.92); font-family: var(--sans);
+  }
+  html.light .t2g-title { color: rgba(255,255,255,0.97); }
+  .t2g-title .t2g-arrow { font-weight: 400; opacity: 0.7; margin: 0 2px; }
   #txt2graph-modal .t2g-sub {
-    font-size: 10px; color: var(--text3); font-family: var(--mono);
-    letter-spacing: 0.09em; margin-top: -10px;
+    font-size: 12px; line-height: 1.55; font-weight: 400;
+    font-family: var(--sans); letter-spacing: 0; text-transform: none;
+    margin: 0; color: rgba(255,255,255,0.38);
+  }
+  html.light #txt2graph-modal .t2g-sub { color: rgba(255,255,255,0.68); }
+  /* Separator */
+  .t2g-sep {
+    height: 1px; margin: 0 -26px;
+    background: rgba(255,255,255,0.07);
+  }
+  html.light .t2g-sep { background: rgba(255,255,255,0.24); }
+  /* Textarea wrapper */
+  .t2g-textarea-wrap {
+    position: relative; border-radius: 14px; transition: all 0.2s;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  }
+  html.light .t2g-textarea-wrap {
+    background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.50);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .t2g-textarea-wrap:focus-within {
+    border-color: rgba(99,140,255,0.45);
+    box-shadow: 0 0 0 3px rgba(59,100,255,0.12);
+  }
+  html.light .t2g-textarea-wrap:focus-within {
+    border-color: rgba(255,255,255,0.70);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.18), inset 0 1px 2px rgba(0,0,0,0.04);
   }
   #txt2graph-textarea {
-    width: 100%; height: 200px; resize: vertical;
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--sans); font-size: 13px;
-    line-height: 1.7; padding: 14px 16px; border-radius: 10px;
-    outline: none; transition: border-color 0.15s; box-sizing: border-box;
+    width: 100%; min-height: 160px; height: auto; resize: vertical;
+    padding: 14px 16px 44px; border: none; background: transparent;
+    font-family: var(--sans); font-size: 13px; line-height: 1.65;
+    border-radius: 14px; outline: none; box-sizing: border-box;
+    color: rgba(255,255,255,0.85); transition: none;
   }
-  #txt2graph-textarea:focus { border-color: rgba(167,139,250,0.45); }
-  #txt2graph-textarea::placeholder { color: var(--text3); }
+  html.light #txt2graph-textarea { color: rgba(30,40,60,0.88); }
+  #txt2graph-textarea::placeholder { color: rgba(255,255,255,0.28); }
+  html.light #txt2graph-textarea::placeholder { color: rgba(30,40,60,0.38); }
+  #txt2graph-textarea:focus { border-color: transparent; box-shadow: none; }
+  .t2g-textarea-footer {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 8px 12px; border-radius: 0 0 13px 13px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(0,0,0,0.12); border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  html.light .t2g-textarea-footer {
+    background: rgba(255,255,255,0.18); border-top-color: rgba(255,255,255,0.30);
+  }
+  .t2g-char-count {
+    font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums;
+    color: rgba(255,255,255,0.25);
+  }
+  html.light .t2g-char-count { color: rgba(30,40,60,0.35); }
+  .t2g-send-btn {
+    width: 28px; height: 28px; border-radius: 50%; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    background: #2563eb; box-shadow: 0 2px 10px rgba(37,99,235,0.45);
+    transition: all 0.2s; flex-shrink: 0; color: #fff; font-size: 16px; line-height: 1;
+  }
+  .t2g-send-btn:hover {
+    background: #1d4ed8; transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.55);
+  }
+  /* Options grid */
   .t2g-options {
-    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
   }
+  .t2g-opt-group { display: flex; flex-direction: column; gap: 5px; }
   .t2g-opt-label {
-    font-size: 9px; color: var(--text3); font-family: var(--mono);
-    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px;
-    display: block;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.11em;
+    text-transform: uppercase; display: block;
+    color: rgba(255,255,255,0.32);
   }
+  html.light .t2g-opt-label { color: rgba(255,255,255,0.62); }
   .t2g-select {
-    height: 34px; padding: 0 10px;
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--mono); font-size: 11px;
-    border-radius: 6px; outline: none; cursor: pointer;
-    -webkit-appearance: none; appearance: none;
+    appearance: none; -webkit-appearance: none;
+    width: 100%; padding: 9px 30px 9px 12px; height: auto;
+    border-radius: 11px; font-size: 12px; font-weight: 500;
+    font-family: var(--sans); cursor: pointer; transition: all 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.55)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    background-color: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.78);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
   }
-  .t2g-select:focus { border-color: rgba(167,139,250,0.45); }
+  html.light .t2g-select {
+    background-color: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.48);
+    color: rgba(255,255,255,0.92); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .t2g-select:hover { background-color: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.20); }
+  html.light .t2g-select:hover { background-color: rgba(255,255,255,0.42); border-color: rgba(255,255,255,0.65); }
+  .t2g-select:focus { border-color: rgba(99,140,255,0.5); outline: none; }
+  .t2g-select option { background: #1e2840; color: rgba(255,255,255,0.85); }
+  html.light .t2g-select option { background: #e0e8f0; color: rgba(20,30,50,0.9); }
+  /* Status and preview */
   #txt2graph-status {
     font-size: 11px; font-family: var(--mono); color: var(--text3);
     min-height: 18px; letter-spacing: 0.06em;
@@ -6186,39 +6282,50 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     max-height: 160px; overflow-y: auto;
     background: rgba(255,255,255,0.02); border: 1px solid var(--border);
     border-radius: 8px; padding: 12px 14px; display: none;
-    font-size: 11px; font-family: var(--mono); color: var(--text2);
-    line-height: 1.8;
+    font-size: 11px; font-family: var(--mono); color: var(--text2); line-height: 1.8;
   }
   .t2g-preview.visible { display: block; }
   .t2g-preview-node { color: var(--text); }
   .t2g-preview-conn { color: var(--text3); font-size: 10px; }
+  /* Footer buttons */
   .t2g-footer { display: flex; gap: 10px; margin-top: 4px; }
   .t2g-btn-primary {
-    flex: 1; height: 42px;
-    background: rgba(0,0,0,0.08);
-    border: 1px solid rgba(0,0,0,0.18); color: rgba(0,0,0,0.75);
-    font-family: var(--display); font-size: 13px; font-weight: 800;
-    letter-spacing: 0.04em; cursor: pointer; border-radius: 8px;
-    transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    flex: 1; height: 46px;
+    background: #2563eb; border: none; color: #fff;
+    font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+    letter-spacing: -0.01em; cursor: pointer; border-radius: 13px;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 18px rgba(37,99,235,0.38);
   }
-  html:not(.light) .t2g-btn-primary {
-    background: rgba(255,255,255,0.10);
-    border-color: rgba(255,255,255,0.20);
+  .t2g-btn-primary:hover:not(:disabled) {
+    background: #1d4ed8; transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(37,99,235,0.52);
+  }
+  .t2g-btn-primary:active { transform: translateY(0); box-shadow: 0 2px 10px rgba(37,99,235,0.35); }
+  .t2g-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  html:not(.light) .t2g-btn-primary { background: #2563eb; border: none; color: #fff; }
+  .t2g-btn-cancel {
+    height: 46px; padding: 0 20px;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.50);
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    cursor: pointer; border-radius: 13px; transition: all 0.2s;
+    display: flex; align-items: center; gap: 7px;
+  }
+  html.light .t2g-btn-cancel {
+    background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.38);
     color: rgba(255,255,255,0.85);
   }
-  .t2g-btn-primary:hover:not(:disabled) { background: rgba(0,0,0,0.14); border-color: rgba(0,0,0,0.30); }
-  html:not(.light) .t2g-btn-primary:hover:not(:disabled) { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.32); }
-  .t2g-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
-  .t2g-btn-cancel {
-    height: 42px; padding: 0 18px;
-    background: transparent; border: 1px solid var(--border);
-    color: var(--text3); font-family: var(--mono); font-size: 10px;
-    cursor: pointer; border-radius: 8px; transition: all 0.12s;
+  .t2g-btn-cancel:hover {
+    background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.75);
+    border-color: rgba(255,255,255,0.20);
   }
-  .t2g-btn-cancel:hover { color: var(--text2); border-color: var(--border2); }
+  html.light .t2g-btn-cancel:hover {
+    background: rgba(255,255,255,0.34); color: rgba(255,255,255,0.97);
+  }
   .t2g-spinner {
-    width: 14px; height: 14px; border: 2px solid rgba(167,139,250,0.3);
-    border-top-color: rgba(167,139,250,0.9); border-radius: 50%;
+    width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: rgba(255,255,255,0.9); border-radius: 50%;
     animation: t2g-spin 0.7s linear infinite; display: none;
   }
   .t2g-spinner.visible { display: block; }
@@ -26071,56 +26178,76 @@ console.log('[v55] Onboarding editor loaded ✓  — Projeto → Editor do onboa
 <!-- ── Importar Texto → Grafo ─────────────────────── -->
 <div id="txt2graph-overlay" onclick="if(event.target===this)closeTxt2Graph()">
   <div id="txt2graph-modal">
-    <div>
-      <h3>✦ Texto → Grafo</h3>
-      <div class="t2g-sub">Cole qualquer texto — artigo, resumo, roteiro, notas — e a IA gera os nós e conexões automaticamente.</div>
-    </div>
+    <div class="t2g-inner">
 
-    <textarea id="txt2graph-textarea"
-      placeholder="Cole aqui seu texto... Ex: 'Antonioni explora o vazio emocional em A Aventura. A protagonista Anna desaparece misteriosamente, deixando Sandro e Claudia em busca. O filme examina a alienação moderna, influenciando a nouvelle vague e cineastas como Godard...'"></textarea>
-
-    <div class="t2g-options">
-      <div>
-        <span class="t2g-opt-label">Profundidade</span>
-        <select id="t2g-depth" class="t2g-select">
-          <option value="minimo">Mínimo (3–5 nós)</option>
-          <option value="compacto">Compacto (5–10 nós)</option>
-          <option value="medio" selected>Médio (10–20 nós)</option>
-          <option value="detalhado">Detalhado (20–35 nós)</option>
-          <option value="extenso">Extenso (35–50 nós)</option>
-          <option value="completo">Completo (50–80 nós)</option>
-        </select>
+      <!-- Header -->
+      <div class="t2g-header">
+        <div class="t2g-header-top">
+          <div class="t2g-icon">✦</div>
+          <div class="t2g-title">Texto <span class="t2g-arrow">→</span> Grafo</div>
+        </div>
+        <div class="t2g-sub">Cole qualquer texto — artigo, resumo, roteiro, notas — e a IA gera os nós e conexões automaticamente.</div>
       </div>
-      <div>
-        <span class="t2g-opt-label">Idioma dos nós</span>
-        <select id="t2g-lang" class="t2g-select">
-          <option value="portugues" selected>Português</option>
-          <option value="ingles">Inglês</option>
-          <option value="original">Manter original</option>
-        </select>
-      </div>
-      <div>
-        <span class="t2g-opt-label">Posição</span>
-        <select id="t2g-placement" class="t2g-select">
-          <option value="espalhar" selected>Espalhar na rede</option>
-          <option value="cluster">Agrupar próximos</option>
-        </select>
-      </div>
-    </div>
 
-    <div id="txt2graph-status"></div>
-    <div class="t2g-preview" id="t2g-preview"></div>
+      <div class="t2g-sep"></div>
 
-    <div class="t2g-footer">
-      <button class="t2g-btn-primary" id="t2g-generate-btn" onclick="txt2graphGenerate()">
-        <span class="t2g-spinner" id="t2g-spinner"></span>
-        <span id="t2g-btn-label">✦ Gerar grafo com IA</span>
-      </button>
-      <button class="t2g-btn-primary" id="t2g-confirm-btn" onclick="txt2graphConfirm()"
-        style="display:none;border-color:rgba(52,211,153,0.4);color:#a7f3d0;background:linear-gradient(135deg,rgba(52,211,153,0.15),rgba(16,185,129,0.1))">
-        ↗ Adicionar ao mapa
-      </button>
-      <button class="t2g-btn-cancel" onclick="closeTxt2Graph()">Cancelar</button>
+      <!-- Textarea -->
+      <div class="t2g-textarea-wrap">
+        <textarea id="txt2graph-textarea"
+          placeholder="Cole aqui seu texto... Ex: 'Antonioni explora o vazio emocional em A Aventura. A protagonista Anna desaparece misteriosamente, deixando Sandro e Claudia em busca. O filme examina a alienação moderna, influenciando a nouvelle vague e cineastas como Godard...'"
+          oninput="(function(el){var n=el.value.length;document.getElementById('t2g-char-count').textContent=n.toLocaleString('pt-BR')+' caractere'+(n===1?'':'s');})(this)"></textarea>
+        <div class="t2g-textarea-footer">
+          <span class="t2g-char-count" id="t2g-char-count">0 caracteres</span>
+          <button class="t2g-send-btn" title="Gerar grafo" onclick="txt2graphGenerate()">↑</button>
+        </div>
+      </div>
+
+      <!-- Selects grid -->
+      <div class="t2g-options">
+        <div class="t2g-opt-group">
+          <span class="t2g-opt-label">Profundidade</span>
+          <select id="t2g-depth" class="t2g-select">
+            <option value="minimo">Mínimo (3–5 nós)</option>
+            <option value="compacto">Compacto (5–10 nós)</option>
+            <option value="medio" selected>Médio (10–20 nós)</option>
+            <option value="detalhado">Detalhado (20–35 nós)</option>
+            <option value="extenso">Extenso (35–50 nós)</option>
+            <option value="completo">Completo (50–80 nós)</option>
+          </select>
+        </div>
+        <div class="t2g-opt-group">
+          <span class="t2g-opt-label">Idioma dos nós</span>
+          <select id="t2g-lang" class="t2g-select">
+            <option value="portugues" selected>Português</option>
+            <option value="ingles">Inglês</option>
+            <option value="original">Manter original</option>
+          </select>
+        </div>
+        <div class="t2g-opt-group">
+          <span class="t2g-opt-label">Posição</span>
+          <select id="t2g-placement" class="t2g-select">
+            <option value="espalhar" selected>Espalhar na rede</option>
+            <option value="cluster">Agrupar próximos</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="txt2graph-status"></div>
+      <div class="t2g-preview" id="t2g-preview"></div>
+
+      <!-- Footer -->
+      <div class="t2g-footer">
+        <button class="t2g-btn-primary" id="t2g-generate-btn" onclick="txt2graphGenerate()">
+          <span class="t2g-spinner" id="t2g-spinner"></span>
+          <span id="t2g-btn-label">✦ Gerar grafo com IA</span>
+        </button>
+        <button class="t2g-btn-primary" id="t2g-confirm-btn" onclick="txt2graphConfirm()"
+          style="display:none;border-color:rgba(52,211,153,0.4);color:#a7f3d0;background:linear-gradient(135deg,rgba(52,211,153,0.15),rgba(16,185,129,0.1))">
+          ↗ Adicionar ao mapa
+        </button>
+        <button class="t2g-btn-cancel" onclick="closeTxt2Graph()">Cancelar</button>
+      </div>
+
     </div>
   </div>
 </div>
