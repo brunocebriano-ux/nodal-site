@@ -2041,6 +2041,13 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .search-result-count { font-size:12px; font-weight:500; flex-shrink:0; color:rgba(255,255,255,0.45); font-variant-numeric:tabular-nums; }
   html:not(.light) .search-result-count { color:rgba(255,255,255,0.28); }
   .search-result.focused .search-result-count { color:rgba(255,255,255,0.72); }
+  .search-result-arrow {
+    font-size:14px; flex-shrink:0;
+    color:rgba(255,255,255,0.25);
+    opacity:0; transition:opacity 0.15s, color 0.15s;
+  }
+  .search-result:hover .search-result-arrow { opacity:1; color:rgba(255,255,255,0.7); }
+  .search-result.focused .search-result-arrow { opacity:1; color:rgba(255,255,255,0.9); }
   #search-empty { padding:48px 20px; text-align:center; font-size:12.5px; color:rgba(255,255,255,0.45); display:flex; flex-direction:column; align-items:center; gap:10px; }
   #search-empty i { font-size:28px; color:rgba(255,255,255,0.3); }
   html:not(.light) #search-empty { color:rgba(255,255,255,0.28); }
@@ -11894,7 +11901,8 @@ function buildSearchItem(nd, q, i) {
       <div class="search-result-meta" style="color:${catColor(nd.cat)}">${nd.cat}</div>
       ${descSnip?`<div class="search-result-desc">${highlight(descSnip,q)}</div>`:''}
     </div>
-    <span class="search-result-count">${connCount}⬡</span>
+    <span class="search-result-count">${connCount}</span>
+    <span class="search-result-arrow">→</span>
   </div>`;
 }
 
