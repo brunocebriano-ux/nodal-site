@@ -8907,15 +8907,16 @@ m-name {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 540px;
-  max-height: 84vh;
   z-index: 9001;
   border-radius: 24px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.35);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+#cat-manager-panel.open {
+  display: block;
   animation: cmpIn 0.22s cubic-bezier(.34,1.3,.64,1);
 }
-#cat-manager-panel.open { display: block; }
 html.dark #cat-manager-panel {
   box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.1);
@@ -8965,7 +8966,7 @@ html.dark  .cmp-title { color: rgba(255,255,255,0.92); }
 .cmp-btn-close {
   width: 28px; height: 28px; border-radius: 50%;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; flex-shrink: 0;
+  transition: all 0.2s; flex-shrink: 0; border: none;
 }
 html.light .cmp-btn-close { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); }
 html.dark  .cmp-btn-close { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); }
@@ -8979,7 +8980,10 @@ html.dark  .cmp-btn-close i  { color: rgba(255,255,255,0.5); }
 .cmp-body {
   display: flex; flex-direction: column; gap: 20px;
   padding: 20px 24px 24px; overflow-y: auto; flex: 1;
+  scrollbar-width: thin;
 }
+html.light .cmp-body { scrollbar-color: rgba(255,255,255,0.35) transparent; }
+html.dark  .cmp-body { scrollbar-color: rgba(255,255,255,0.14) transparent; }
 .cmp-body::-webkit-scrollbar { width: 4px; }
 html.light .cmp-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.35); border-radius: 4px; }
 html.dark  .cmp-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 4px; }
@@ -8993,71 +8997,110 @@ html.dark  .cmp-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1
 html.light .cmp-section-label { color: rgba(255,255,255,0.52); }
 html.dark  .cmp-section-label { color: rgba(255,255,255,0.30); }
 
-/* CAT LIST */
-.cmp-cat-list { display: flex; flex-direction: column; gap: 4px; }
-
-/* Cat items (injected by JS) — override JS inline styles via parent class */
-.cmp-cat-list > div {
-  display: flex !important; align-items: center !important; gap: 10px !important;
-  padding: 9px 12px !important; border-radius: 12px !important;
-  transition: background 0.15s, border-color 0.15s !important;
-  border: 1px solid transparent !important;
-}
-html.light .cmp-cat-list > div { background: rgba(255,255,255,0.22) !important; border-color: rgba(255,255,255,0.32) !important; }
-html.dark  .cmp-cat-list > div { background: rgba(255,255,255,0.06) !important; border-color: rgba(255,255,255,0.08) !important; }
-html.light .cmp-cat-list > div:hover { background: rgba(255,255,255,0.32) !important; border-color: rgba(255,255,255,0.46) !important; }
-html.dark  .cmp-cat-list > div:hover { background: rgba(255,255,255,0.11) !important; border-color: rgba(255,255,255,0.15) !important; }
-
-/* Dot inside cat items */
-.cmp-cat-list > div > span:first-child {
-  border-radius: 50% !important; flex-shrink: 0 !important;
-  box-shadow: 0 0 6px currentColor !important;
-}
-
-/* Text spans */
-.cmp-cat-list > div > span { font-size: 13px !important; font-family: inherit !important; font-weight: 500 !important; }
-html.light .cmp-cat-list > div > span { color: rgba(255,255,255,0.88) !important; }
-html.dark  .cmp-cat-list > div > span { color: rgba(255,255,255,0.75) !important; }
-
-/* Hex code span */
-.cmp-cat-list > div > span:last-of-type {
-  font-size: 11px !important; font-family: 'SF Mono','Fira Mono',monospace !important;
-  letter-spacing: 0.04em !important; font-weight: 500 !important;
-}
-html.light .cmp-cat-list > div > span:last-of-type { color: rgba(255,255,255,0.45) !important; }
-html.dark  .cmp-cat-list > div > span:last-of-type { color: rgba(255,255,255,0.28) !important; }
-
-/* Color input inside custom cats */
-.cmp-cat-list > div > input[type="color"] {
-  width: 22px !important; height: 22px !important;
-  padding: 2px !important; border-radius: 7px !important;
-  border: 1.5px solid rgba(255,255,255,0.35) !important;
-  background: transparent !important; cursor: pointer !important;
-}
-/* Delete button inside custom cats */
-.cmp-cat-list > div > button {
-  background: rgba(248,113,113,0.2) !important;
-  border: 1px solid rgba(248,113,113,0.35) !important;
-  color: #f87171 !important;
-  width: 22px !important; height: 22px !important;
-  border-radius: 7px !important; cursor: pointer !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  font-size: 12px !important; padding: 0 !important;
-  transition: all 0.15s !important;
-}
-.cmp-cat-list > div > button:hover {
-  background: rgba(248,113,113,0.4) !important;
-}
-
-/* Empty state */
-.cmp-cat-list > div[style*="font-size:9px"] {
-  background: transparent !important; border-color: transparent !important;
-}
-
 /* SEPARATOR */
 .cmp-sep { height: 1px; flex-shrink: 0; }
 html.light .cmp-sep { background: rgba(255,255,255,0.20); }
 html.dark  .cmp-sep { background: rgba(255,255,255,0.07); }
+
+/* CAT LIST */
+.cmp-cat-list { display: flex; flex-direction: column; gap: 4px; }
+
+/* CAT ITEM — base */
+.cmp-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+  position: relative;
+}
+html.light .cmp-cat-item { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.32); }
+html.dark  .cmp-cat-item { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+html.light .cmp-cat-item:hover { background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.46); }
+html.dark  .cmp-cat-item:hover { background: rgba(255,255,255,0.11); border-color: rgba(255,255,255,0.15); }
+
+/* DOT */
+.cmp-cat-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  flex-shrink: 0; box-shadow: 0 0 6px currentColor;
+}
+
+/* NAME */
+.cmp-cat-name { flex: 1; font-size: 13px; font-weight: 500; }
+html.light .cmp-cat-name { color: rgba(255,255,255,0.88); }
+html.dark  .cmp-cat-name { color: rgba(255,255,255,0.75); }
+
+/* HEX */
+.cmp-cat-hex {
+  font-size: 11px; font-weight: 500;
+  font-family: 'SF Mono','Fira Mono',monospace;
+  letter-spacing: 0.04em; flex-shrink: 0;
+  transition: opacity 0.18s;
+}
+html.light .cmp-cat-hex { color: rgba(255,255,255,0.45); }
+html.dark  .cmp-cat-hex { color: rgba(255,255,255,0.28); }
+
+/* Hide hex when actions are shown (hover on builtin, always on custom) */
+.cmp-cat-item:hover .cmp-cat-hex { opacity: 0; pointer-events: none; }
+.cmp-cat-custom .cmp-cat-hex { opacity: 0; pointer-events: none; }
+
+/* CAT ACTIONS — hidden by default, shown on hover (builtin) */
+.cmp-cat-actions {
+  position: absolute; right: 12px;
+  display: flex; align-items: center; gap: 5px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.18s;
+}
+.cmp-cat-item:hover .cmp-cat-actions { opacity: 1; pointer-events: all; }
+
+/* Custom cats: actions always visible */
+.cmp-cat-actions-always {
+  opacity: 1 !important;
+  pointer-events: all !important;
+  position: absolute; right: 12px;
+}
+
+/* Color swatch inside actions */
+.cmp-cat-color-wrap {
+  position: relative;
+  width: 26px; height: 26px;
+  border-radius: 8px; overflow: hidden;
+  cursor: pointer; flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.cmp-cat-color-wrap:hover { transform: scale(1.1); }
+html.light .cmp-cat-color-wrap { border: 1.5px solid rgba(255,255,255,0.55); box-shadow: 0 1px 5px rgba(0,0,0,0.15); }
+html.dark  .cmp-cat-color-wrap { border: 1.5px solid rgba(255,255,255,0.22); box-shadow: 0 1px 5px rgba(0,0,0,0.3); }
+.cmp-cat-swatch-preview {
+  width: 100%; height: 100%;
+  border-radius: 6px; pointer-events: none;
+}
+.cmp-cat-color-wrap input[type="color"] {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: none; padding: 0; cursor: pointer; opacity: 0;
+}
+
+/* Delete button (custom only) */
+.cmp-cat-del {
+  width: 26px; height: 26px; border-radius: 8px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; flex-shrink: 0; border: none;
+}
+html.light .cmp-cat-del { background: rgba(248,113,113,0.2); border: 1px solid rgba(248,113,113,0.35); }
+html.dark  .cmp-cat-del { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.28); }
+html.light .cmp-cat-del:hover { background: rgba(248,113,113,0.4); }
+html.dark  .cmp-cat-del:hover { background: rgba(239,68,68,0.35); }
+.cmp-cat-del i { font-size: 11px; color: #f87171; }
+
+/* Empty state */
+.cmp-cat-empty {
+  font-size: 12px; padding: 4px 2px;
+}
+html.light .cmp-cat-empty { color: rgba(255,255,255,0.45); }
+html.dark  .cmp-cat-empty { color: rgba(255,255,255,0.28); }
 
 /* NEW CAT ROW */
 .cmp-new-row { display: flex; align-items: center; gap: 10px; }
@@ -9080,6 +9123,7 @@ html.dark  .cmp-glass-input::placeholder { color: rgba(255,255,255,0.28); }
 html.light .cmp-glass-input:focus { border-color: rgba(255,255,255,0.7); box-shadow: 0 0 0 3px rgba(255,255,255,0.18); }
 html.dark  .cmp-glass-input:focus { border-color: rgba(99,140,255,0.45); box-shadow: 0 0 0 3px rgba(59,100,255,0.12); }
 
+/* New cat color swatch (larger) */
 .cmp-color-swatch-wrap {
   position: relative; width: 36px; height: 36px;
   border-radius: 10px; overflow: hidden;
@@ -9109,7 +9153,7 @@ html.dark .cmp-btn-criar {
   color: rgba(255,255,255,0.78);
 }
 html.light .cmp-btn-criar:hover { background: rgba(255,255,255,0.42); border-color: rgba(255,255,255,0.65); }
-html.dark  .cmp-btn-criar:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.95); }
+html.dark  .cmp-btn-criar:hover { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.95); }
 
 /* CONEXÃO RÁPIDA */
 .cmp-conn-desc { font-size: 12px; line-height: 1.55; margin-bottom: 10px; }
@@ -9135,7 +9179,7 @@ html.dark .cmp-glass-select {
   color: rgba(255,255,255,0.78);
 }
 html.light .cmp-glass-select:hover { background-color: rgba(255,255,255,0.42); border-color: rgba(255,255,255,0.65); }
-html.dark  .cmp-glass-select:hover { background-color: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+html.dark  .cmp-glass-select:hover { background-color: rgba(255,255,255,0.12); }
 .cmp-glass-select option { background: #1e2840; color: rgba(255,255,255,0.85); }
 html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20,30,50,0.9); }
 
@@ -10975,7 +11019,7 @@ html.dark  .cmp-conn-arrow { color: rgba(255,255,255,0.28); }
         <div class="cmp-section-label">Nova Categoria</div>
         <div class="cmp-new-row">
           <input class="cmp-glass-input" type="text" id="new-cat-name" placeholder="Nome da categoria..." onkeydown="if(event.key==='Enter')addCustomCat()"/>
-          <div class="cmp-color-swatch-wrap" title="Escolher cor" id="cmp-swatch-wrap">
+          <div class="cmp-color-swatch-wrap" title="Escolher cor">
             <div class="cmp-color-swatch-preview" id="cmp-swatch-preview" style="background:#c084fc"></div>
             <input type="color" id="new-cat-color" value="#c084fc" oninput="document.getElementById('cmp-swatch-preview').style.background=this.value"/>
           </div>
@@ -11350,27 +11394,39 @@ function closeCatManager() {
 }
 
 function renderCatManager() {
-  // Built-in list
+  // Built-in list — hex visível, swatch aparece no hover
   const bEl = document.getElementById('builtin-cat-list');
   bEl.innerHTML = Object.entries(BUILTIN_CATS).map(([k, c]) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--cell-bg);border:1px solid var(--border);border-radius:3px">
-      <span style="width:10px;height:10px;border-radius:50%;background:${c};flex-shrink:0;display:inline-block"></span>
-      <span style="flex:1;font-size:10px;color:var(--text2);font-family:var(--mono);letter-spacing:0.06em">${k}</span>
-      <span style="font-size:8px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase">${c}</span>
+    <div class="cmp-cat-item" data-key="${k}">
+      <span class="cmp-cat-dot" style="background:${c};color:${c}"></span>
+      <span class="cmp-cat-name">${k}</span>
+      <span class="cmp-cat-hex">${c.toUpperCase()}</span>
+      <div class="cmp-cat-actions">
+        <div class="cmp-cat-color-wrap" title="Mudar cor">
+          <div class="cmp-cat-swatch-preview" style="background:${c}"></div>
+          <input type="color" value="${c}" oninput="updateBuiltinCatColor('${k}',this.value,this)">
+        </div>
+      </div>
     </div>`).join('');
 
-  // Custom list
+  // Custom list — swatch + botão X sempre visíveis à direita
   const cEl = document.getElementById('custom-cat-list');
   const entries = Object.entries(customCats);
   if (!entries.length) {
-    cEl.innerHTML = '<div style="font-size:9px;color:var(--text3);padding:4px 0">Nenhuma categoria personalizada</div>';
+    cEl.innerHTML = '<div class="cmp-cat-empty">Nenhuma categoria personalizada</div>';
   } else {
     cEl.innerHTML = entries.map(([k, c]) => `
-      <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--cell-bg);border:1px solid ${c}44;border-radius:3px">
-        <span style="width:10px;height:10px;border-radius:50%;background:${c};flex-shrink:0;display:inline-block"></span>
-        <span style="flex:1;font-size:10px;color:${c};font-family:var(--mono);letter-spacing:0.06em;font-weight:700">${k}</span>
-        <input type="color" value="${c}" onchange="updateCustomCatColor('${k}',this.value)" style="width:22px;height:22px;padding:1px;border:1px solid var(--border);border-radius:2px;background:transparent;cursor:pointer"/>
-        <button onclick="removeCustomCat('${k}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 2px;font-family:var(--mono)" title="Remover">✕</button>
+      <div class="cmp-cat-item cmp-cat-custom" data-key="${k}">
+        <span class="cmp-cat-dot" style="background:${c};color:${c}"></span>
+        <span class="cmp-cat-name">${k}</span>
+        <span class="cmp-cat-hex">${c.toUpperCase()}</span>
+        <div class="cmp-cat-actions cmp-cat-actions-always">
+          <div class="cmp-cat-color-wrap" title="Mudar cor">
+            <div class="cmp-cat-swatch-preview" style="background:${c}"></div>
+            <input type="color" value="${c}" oninput="updateCustomCatColor('${k}',this.value,this)">
+          </div>
+          <button class="cmp-cat-del" onclick="removeCustomCat('${k}')" title="Remover"><i class="ti ti-x"></i></button>
+        </div>
       </div>`).join('');
   }
 
@@ -11393,11 +11449,39 @@ function addCustomCat() {
   toast('Categoria criada: ' + key);
 }
 
-function updateCustomCatColor(key, color) {
+function updateBuiltinCatColor(key, color, input) {
+  BUILTIN_CATS[key] = color;
+  // Update nodes that use this category
+  nodes.forEach(nd => { if (nd.cat === key) { nd.color = color; rebuildNodeMesh(nd); } });
+  // Update dot and swatch preview live without re-rendering
+  const item = input.closest('.cmp-cat-item');
+  if (item) {
+    const dot = item.querySelector('.cmp-cat-dot');
+    const preview = item.querySelector('.cmp-cat-swatch-preview');
+    const hex = item.querySelector('.cmp-cat-hex');
+    if (dot) { dot.style.background = color; dot.style.color = color; }
+    if (preview) preview.style.background = color;
+    if (hex) hex.textContent = color.toUpperCase();
+  }
+  saveSettings(); save();
+}
+
+function updateCustomCatColor(key, color, input) {
   customCats[key] = color;
   // Update nodes that use this category
   nodes.forEach(nd => { if (nd.cat === key) { nd.color = color; rebuildNodeMesh(nd); } });
-  renderCatManager();
+  // Update dot and swatch preview live without re-rendering
+  if (input) {
+    const item = input.closest('.cmp-cat-item');
+    if (item) {
+      const dot = item.querySelector('.cmp-cat-dot');
+      const preview = item.querySelector('.cmp-cat-swatch-preview');
+      const hex = item.querySelector('.cmp-cat-hex');
+      if (dot) { dot.style.background = color; dot.style.color = color; }
+      if (preview) preview.style.background = color;
+      if (hex) hex.textContent = color.toUpperCase();
+    }
+  }
   saveSettings(); save();
   toast('Cor atualizada: ' + key);
 }
