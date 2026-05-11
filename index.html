@@ -6513,12 +6513,16 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
      BLOCO DE NOTAS
   ═══════════════════════════════════════ */
   #notepad-overlay {
-    display: none; position: fixed; inset: 0; z-index: 150;
-    background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    display: flex; position: fixed; inset: 0; z-index: 150;
+    background: rgba(0,0,0,0.18); backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
     align-items: center; justify-content: center;
+    visibility: hidden; opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0.18s ease;
   }
-  #notepad-overlay.open { display: flex; }
+  #notepad-overlay.open {
+    visibility: visible; opacity: 1; pointer-events: auto;
+  }
   @keyframes notepadIn {
     from { transform: scale(0.94) translateY(14px); opacity: 0; }
     to   { transform: scale(1) translateY(0); opacity: 1; }
@@ -6542,9 +6546,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     transition: background 0.4s;
   }
   html.light .sidebar {
-    background: rgba(100,135,168,0.42);
-    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
-    border-right: 1px solid rgba(255,255,255,0.25);
+    background: rgba(100,135,168,0.22);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    border-right: 1px solid rgba(255,255,255,0.22);
   }
   html:not(.light) .sidebar {
     background: rgba(10,14,28,0.58);
@@ -6647,8 +6651,8 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     transition: background 0.4s; min-width: 0;
   }
   html.light .main {
-    background: rgba(200,215,228,0.28);
-    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    background: rgba(200,215,228,0.14);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   }
   html:not(.light) .main {
     background: rgba(28,34,55,0.38);
@@ -8012,18 +8016,17 @@ m-name {
   }
   html.light #glass-settings-overlay { background: rgba(0,0,0,0.10) !important; }
   #glass-settings-modal {
-    background: rgba(242,242,247,0.94) !important;
-    border: 1px solid rgba(0,0,0,0.07) !important;
-    backdrop-filter: blur(60px) saturate(2.5) !important;
-    -webkit-backdrop-filter: blur(60px) saturate(2.5) !important;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.98) inset !important;
+    background: transparent !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
     border-radius: 22px !important;
-    box-shadow: 16px 16px 40px rgba(0,0,0,0.12), -8px -8px 20px rgba(255,255,255,0.85), 0 1px 0 rgba(255,255,255,0.98) inset !important;
   }
   html:not(.light) #glass-settings-modal {
-    background: rgba(22,22,30,0.90) !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.52), 0 1px 0 rgba(255,255,255,0.12) inset !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
   #gs-modal-header {
     background: transparent !important;
@@ -8604,17 +8607,21 @@ m-name {
     border-color: rgba(0,0,0,0.07) !important;
     box-shadow: 0 16px 50px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.98) inset !important;
   }
-  /* Notepad panel */
+  /* Notepad panel — mesmo estilo do fav-panel (transparente, glass nos filhos) */
   #notepad-panel {
-    background: rgba(20,20,28,0.84) !important;
-    border: 1px solid rgba(255,255,255,0.16) !important;
-    backdrop-filter: blur(50px) saturate(2.0) !important;
-    -webkit-backdrop-filter: blur(50px) saturate(2.0) !important;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.50), 0 1px 0 rgba(255,255,255,0.12) inset !important;
-    border-radius: 18px !important;
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    border-radius: 24px !important;
   }
-  html.light #notepad-panel { background: rgba(255,251,230,0.96) !important; border-color: rgba(0,0,0,0.08) !important; }
-  #notepad-panel.style-yellow { background: #fdf6c3 !important; }
+  html.light #notepad-panel {
+    background: transparent !important;
+    border-color: rgba(255,255,255,0.35) !important;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.55) !important;
+  }
+  /* style-yellow removido — notepad usa glassmorphism translúcido */
   /* Timeline v2 */
   #timeline-v2-panel {
     background: rgba(18,18,26,0.88) !important;
@@ -8799,10 +8806,8 @@ m-name {
 
   /* Base: blur e saturação máximos em painéis glass */
   #quick-capture-panel,
-  #notepad-panel,
   #timeline-v2-panel,
   #tutorial-modal,
-  #glass-settings-modal,
   #lp-glass {
     backdrop-filter: blur(80px) saturate(3.2) brightness(1.05) !important;
     -webkit-backdrop-filter: blur(80px) saturate(3.2) brightness(1.05) !important;
@@ -8810,7 +8815,6 @@ m-name {
 
   /* Dark mode: painéis glass */
   html:not(.light) #quick-capture-panel,
-  html:not(.light) #notepad-panel,
   html:not(.light) #timeline-v2-panel,
   html:not(.light) #tutorial-modal {
     background: rgba(30,30,42,0.72) !important;
@@ -8819,12 +8823,20 @@ m-name {
       0 32px 80px rgba(0,0,0,0.65),
       0 1px 0 rgba(255,255,255,0.28) inset !important;
   }
+  /* notepad-panel dark: transparente como fav-panel, glass nos filhos .sidebar e .main */
+  html:not(.light) #notepad-panel {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
   html:not(.light) #glass-settings-modal {
-    background: rgba(242,242,247,0.90) !important;
-    border: 1px solid rgba(0,0,0,0.08) !important;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.40) !important;
-    backdrop-filter: blur(80px) saturate(3.2) !important;
-    -webkit-backdrop-filter: blur(80px) saturate(3.2) !important;
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
   html:not(.light) #lp-glass {
     background: rgba(26,26,38,0.78) !important;
@@ -8835,7 +8847,6 @@ m-name {
 
   /* Light mode: vidro branco leitoso */
   html.light #quick-capture-panel,
-  html.light #notepad-panel,
   html.light #timeline-v2-panel,
   html.light #tutorial-modal {
     background: rgba(248,248,254,0.75) !important;
@@ -8843,6 +8854,14 @@ m-name {
     box-shadow: 0 24px 60px rgba(0,0,0,0.14), 0 1px 0 rgba(255,255,255,0.95) inset !important;
     backdrop-filter: blur(72px) saturate(2.8) !important;
     -webkit-backdrop-filter: blur(72px) saturate(2.8) !important;
+  }
+  /* notepad-panel light: mesmo estilo do fav-panel */
+  html.light #notepad-panel {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.35) !important;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.55) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   /* FIX 4 - Painel de Favoritos: estilo visionOS (novo layout) */
@@ -27156,6 +27175,9 @@ async function projOpen(id) {
     if (data.notepad !== undefined) {
       try { localStorage.setItem('notepad_' + id, data.notepad); } catch(e) {}
     }
+    if (data.notepadNotes && Array.isArray(data.notepadNotes)) {
+      try { localStorage.setItem('notepad_notes_' + id, JSON.stringify(data.notepadNotes)); } catch(e) {}
+    }
   } else {
     // Empty project — site name is always NODAL, subtitle = project name
     projectName = 'NODAL';
@@ -27196,7 +27218,8 @@ async function projSaveCurrentState() {
     projectName: 'NODAL', projectSub,
     articlesData: _articlesData,
     panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
-    notepad: (function(){ try { return localStorage.getItem('notepad_' + activeProjectId) || ''; } catch(e){ return ''; } })()
+    notepad: (function(){ try { return localStorage.getItem('notepad_' + activeProjectId) || ''; } catch(e){ return ''; } })(),
+    notepadNotes: (function(){ try { const r = localStorage.getItem('notepad_notes_' + activeProjectId); return r ? JSON.parse(r) : null; } catch(e){ return null; } })()
   };
 
   proj.nodeCount = nodes.length;
@@ -29753,10 +29776,150 @@ function showIsolatedNodes() {
 
 <script>
 // ══════════════════════════════════════════════════════
-//  BLOCO DE NOTAS
+//  BLOCO DE NOTAS — MULTI-NOTAS
 // ══════════════════════════════════════════════════════
 let _notepadStyle = 'yellow';
 let _notepadSaveTimer = null;
+let _notepadNotes = [];       // array de { id, title, text, date }
+let _notepadActiveId = null;  // id da nota ativa
+
+function _notepadStorageKey() {
+  const pid = (typeof activeProjectId !== 'undefined' && activeProjectId) ? activeProjectId : 'global';
+  return 'notepad_notes_' + pid;
+}
+
+function _notepadLoadNotes() {
+  try {
+    const raw = localStorage.getItem(_notepadStorageKey());
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  // Migrar nota única legada, se existir
+  const pid = (typeof activeProjectId !== 'undefined' && activeProjectId) ? activeProjectId : 'global';
+  const legacy = localStorage.getItem('notepad_' + pid) || '';
+  if (legacy) {
+    return [{ id: Date.now(), title: 'Nota 1', text: legacy, date: Date.now() }];
+  }
+  return [];
+}
+
+function _notepadSaveNotes() {
+  try {
+    localStorage.setItem(_notepadStorageKey(), JSON.stringify(_notepadNotes));
+    // Manter compatibilidade: salvar texto da nota ativa no campo legado (usado pelo Supabase)
+    const active = _notepadNotes.find(n => n.id === _notepadActiveId);
+    const pid = (typeof activeProjectId !== 'undefined' && activeProjectId) ? activeProjectId : 'global';
+    localStorage.setItem('notepad_' + pid, active ? active.text : '');
+  } catch(e) {}
+}
+
+function _notepadRenderList() {
+  const list = document.getElementById('notepad-notes-list');
+  const search = (document.getElementById('searchNotepad')?.value || '').toLowerCase().trim();
+  if (!list) return;
+  list.innerHTML = '';
+  const filtered = search
+    ? _notepadNotes.filter(n => n.title.toLowerCase().includes(search) || n.text.toLowerCase().includes(search))
+    : _notepadNotes;
+
+  filtered.forEach(note => {
+    const item = document.createElement('div');
+    item.className = 'note-item' + (note.id === _notepadActiveId ? ' active' : '');
+    item.onclick = () => _notepadSelectNote(note.id);
+    const preview = note.text.slice(0, 60).replace(/\n/g, ' ') || '(vazia)';
+    const d = new Date(note.date);
+    const dateStr = d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+    item.innerHTML = `
+      <div class="note-item-title">${note.title || 'Sem título'}</div>
+      <div class="note-item-preview">${preview}</div>
+      <div class="note-item-date">${dateStr}</div>
+    `;
+    list.appendChild(item);
+  });
+
+  const countEl = document.getElementById('notepad-notes-count');
+  if (countEl) {
+    const total = _notepadNotes.length;
+    countEl.textContent = total + ' nota' + (total !== 1 ? 's' : '');
+  }
+}
+
+function _notepadSelectNote(id) {
+  // Salvar nota atual antes de trocar
+  _notepadFlushActive();
+  _notepadActiveId = id;
+  const note = _notepadNotes.find(n => n.id === id);
+  if (!note) return;
+  const ta = document.getElementById('notepad-text');
+  const titleEl = document.getElementById('notepad-editor-title');
+  if (ta) ta.value = note.text;
+  if (titleEl) titleEl.value = note.title;
+  notepadUpdateCount();
+  _notepadRenderList();
+  _notepadShowSaved();
+}
+
+function _notepadFlushActive() {
+  if (!_notepadActiveId) return;
+  const note = _notepadNotes.find(n => n.id === _notepadActiveId);
+  if (!note) return;
+  const ta = document.getElementById('notepad-text');
+  const titleEl = document.getElementById('notepad-editor-title');
+  if (ta) note.text = ta.value;
+  if (titleEl) note.title = titleEl.value || 'Sem título';
+}
+
+function _notepadShowSaved() {
+  const ind = document.getElementById('notepad-save-indicator');
+  const btn = document.getElementById('notepad-save-btn');
+  if (ind) { ind.innerHTML = '<i class="ti ti-check"></i> SALVO'; ind.style.opacity = '1'; }
+  if (btn) { btn.innerHTML = '<i class="ti ti-device-floppy"></i> Salvo'; }
+}
+
+function notepadAddNote() {
+  _notepadFlushActive();
+  const newNote = {
+    id: Date.now(),
+    title: 'Nova nota',
+    text: '',
+    date: Date.now()
+  };
+  _notepadNotes.unshift(newNote);
+  _notepadActiveId = newNote.id;
+  _notepadSaveNotes();
+  _notepadRenderList();
+  const ta = document.getElementById('notepad-text');
+  const titleEl = document.getElementById('notepad-editor-title');
+  if (ta) ta.value = '';
+  if (titleEl) { titleEl.value = 'Nova nota'; titleEl.focus(); titleEl.select(); }
+  notepadUpdateCount();
+}
+
+function notepadDeleteNote() {
+  if (!_notepadActiveId) return;
+  const idx = _notepadNotes.findIndex(n => n.id === _notepadActiveId);
+  if (idx === -1) return;
+  const total = _notepadNotes.length;
+  if (total === 1) {
+    // Última nota: limpar conteúdo mas não deletar
+    _notepadNotes[0] = { id: _notepadNotes[0].id, title: 'Nova nota', text: '', date: Date.now() };
+    _notepadSelectNote(_notepadNotes[0].id);
+    _notepadSaveNotes();
+    return;
+  }
+  if (!confirm('Excluir esta nota?')) return;
+  _notepadNotes.splice(idx, 1);
+  const nextNote = _notepadNotes[Math.min(idx, _notepadNotes.length - 1)];
+  _notepadActiveId = nextNote ? nextNote.id : null;
+  _notepadSaveNotes();
+  _notepadRenderList();
+  if (_notepadActiveId) _notepadSelectNote(_notepadActiveId);
+  else {
+    const ta = document.getElementById('notepad-text');
+    const titleEl = document.getElementById('notepad-editor-title');
+    if (ta) ta.value = '';
+    if (titleEl) titleEl.value = '';
+  }
+}
 
 function openNotepad() {
   loadNotepad();
@@ -29774,18 +29937,17 @@ function switchNotepadStyle(style) {
   panel.classList.remove('style-yellow','style-lined','style-grid');
   panel.classList.add('style-' + style);
   ['yellow','lined','grid'].forEach(s => {
-    document.getElementById('nps-' + s).classList.toggle('active', s === style);
+    const el = document.getElementById('nps-' + s);
+    if (el) el.classList.toggle('active', s === style);
   });
   localStorage.setItem('notepad_style', style);
 }
 
 async function saveNotepad() {
-  const text = document.getElementById('notepad-text').value;
+  _notepadFlushActive();
+  _notepadSaveNotes();
+  _notepadShowSaved();
   const _pid = (typeof activeProjectId !== 'undefined' && activeProjectId) ? activeProjectId : null;
-  const key = 'notepad_' + (_pid || 'global');
-  localStorage.setItem(key, text);
-  const btn = document.getElementById('notepad-save-btn');
-  if (btn) { btn.textContent = '✓ Salvo'; }
   if (_pid && typeof projSaveCurrentState === 'function') {
     if (typeof _favShowSync === 'function') _favShowSync('saving', '☁ Salvando notas...');
     try {
@@ -29799,20 +29961,55 @@ async function saveNotepad() {
 }
 
 function loadNotepad() {
-  const key = 'notepad_' + (typeof activeProjectId !== 'undefined' && activeProjectId ? activeProjectId : 'global');
-  const saved = localStorage.getItem(key) || '';
-  const ta = document.getElementById('notepad-text');
-  ta.value = saved;
-  notepadUpdateCount();
+  _notepadNotes = _notepadLoadNotes();
+  if (_notepadNotes.length === 0) {
+    _notepadNotes = [{ id: Date.now(), title: 'Nova nota', text: '', date: Date.now() }];
+  }
+  // Selecionar nota ativa (primeira se não há ativa válida)
+  const hasActive = _notepadNotes.some(n => n.id === _notepadActiveId);
+  if (!hasActive) _notepadActiveId = _notepadNotes[0].id;
+
+  _notepadRenderList();
+  _notepadSelectNote(_notepadActiveId);
 
   const savedStyle = localStorage.getItem('notepad_style') || 'yellow';
   switchNotepadStyle(savedStyle);
+
+  // Bind search
+  const searchEl = document.getElementById('searchNotepad');
+  if (searchEl && !searchEl._notepadBound) {
+    searchEl._notepadBound = true;
+    searchEl.addEventListener('input', _notepadRenderList);
+  }
+  // Bind title input
+  const titleEl = document.getElementById('notepad-editor-title');
+  if (titleEl && !titleEl._notepadBound) {
+    titleEl._notepadBound = true;
+    titleEl.addEventListener('input', () => {
+      const note = _notepadNotes.find(n => n.id === _notepadActiveId);
+      if (note) { note.title = titleEl.value || 'Sem título'; _notepadRenderList(); }
+    });
+  }
+  // Bind delete button
+  const delBtn = document.getElementById('nps-grid');
+  if (delBtn && !delBtn._notepadBound) {
+    delBtn._notepadBound = true;
+    delBtn.addEventListener('click', notepadDeleteNote);
+  }
+  // Bind new note button
+  const newBtn = document.querySelector('#notepad-panel .btn-new');
+  if (newBtn && !newBtn._notepadBound) {
+    newBtn._notepadBound = true;
+    newBtn.addEventListener('click', notepadAddNote);
+  }
 }
 
 function notepadAutoSave() {
   notepadUpdateCount();
+  const ind = document.getElementById('notepad-save-indicator');
   const btn = document.getElementById('notepad-save-btn');
-  if (btn) btn.textContent = '● Salvar';
+  if (ind) ind.innerHTML = '● Editando';
+  if (btn) btn.innerHTML = '<i class="ti ti-device-floppy"></i> Salvar';
   clearTimeout(_notepadSaveTimer);
   _notepadSaveTimer = setTimeout(saveNotepad, 1200);
 }
@@ -30531,6 +30728,10 @@ function _applyProjectDataExtras(data, projectId) {
     const pid = projectId || (typeof activeProjectId !== 'undefined' ? activeProjectId : null);
     if (pid) {
       try { localStorage.setItem('notepad_' + pid, data.notepad); } catch(e) {}
+      // Restaurar array de múltiplas notas se existir no Supabase
+      if (data.notepadNotes && Array.isArray(data.notepadNotes)) {
+        try { localStorage.setItem('notepad_notes_' + pid, JSON.stringify(data.notepadNotes)); } catch(e) {}
+      }
       const ta = document.getElementById('notepad-text');
       if (ta && document.getElementById('notepad-overlay')?.classList.contains('open')) {
         ta.value = data.notepad;
