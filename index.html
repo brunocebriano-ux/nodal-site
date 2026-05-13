@@ -2921,7 +2921,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #sm-content {
     flex: 1; min-height: 0; overflow-y: auto; padding: 0;
     scrollbar-width: thin; scrollbar-color: var(--separator) transparent;
+    position: relative; /* anchor for sm-video-panel */
   }
+  #sm-content.video-open { overflow: hidden; } /* freeze scroll while video is open */
   #sm-content::-webkit-scrollbar { width: 4px; }
   #sm-content::-webkit-scrollbar-track { background: transparent; }
   #sm-content::-webkit-scrollbar-thumb { background: var(--separator); border-radius: 4px; }
@@ -3114,6 +3116,111 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   .sm-photo-zoom-icon { display: none; }
 
+  /* Photo card action buttons (edit/delete) */
+  .sm-photo-actions {
+    position: absolute; bottom: 8px; right: 8px;
+    display: flex; gap: 4px;
+    opacity: 0; transition: opacity 0.18s; z-index: 2;
+  }
+  .sm-photo-item:hover .sm-photo-actions { opacity: 1; }
+  .sm-photo-act-btn {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(8px); color: rgba(255,255,255,0.85);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .sm-photo-act-btn svg { width: 12px; height: 12px; pointer-events: none; }
+  .sm-photo-act-btn:hover { background: rgba(0,0,0,0.65); border-color: rgba(255,255,255,0.55); }
+  .sm-photo-act-btn.del:hover { background: rgba(239,68,68,0.5); border-color: rgba(239,68,68,0.7); }
+
+  /* Photo caption overlay at bottom */
+  .sm-photo-caption-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+    padding: 22px 10px 8px; font-size: 11px; font-weight: 500;
+    color: rgba(255,255,255,0.9); text-align: center; pointer-events: none;
+  }
+
+  /* Video card action buttons */
+  .sm-video-actions {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 10px; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.18s;
+  }
+  .sm-video-item:hover .sm-video-actions { opacity: 1; }
+  .sm-video-act-btn {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 1px solid var(--sm-input-border); background: transparent;
+    color: var(--text-label); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .sm-video-act-btn svg { width: 13px; height: 13px; pointer-events: none; }
+  .sm-video-act-btn:hover { background: var(--tab-active-bg); border-color: var(--tab-active-border); color: var(--text-primary); }
+  .sm-video-act-btn.del:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); color: #f87171; }
+
+  /* Video player panel — overlays inside modal */
+  #sm-video-panel {
+    display: none; position: absolute; inset: 0; z-index: 20;
+    background: var(--sm-panel-bg); flex-direction: column;
+    overflow: hidden;
+    animation: sm-appear 0.22s cubic-bezier(0.2,0,0,1) both;
+  }
+  #sm-video-panel.open { display: flex; }
+  #sm-video-panel-top { display: none; }
+  #sm-video-panel-title { display: none; }
+  #sm-video-panel-top-spacer { display: none; }
+
+  /* Barra fixa ACIMA do iframe — nunca sobreposta */
+  #sm-video-panel-close {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 16px; border: none; border-bottom: 1px solid var(--separator);
+    background: var(--sm-panel-bg); color: var(--text-label);
+    cursor: pointer; font-size: 12px; font-weight: 600;
+    font-family: 'Inter', sans-serif; transition: all 0.15s;
+    text-align: left; width: 100%; box-sizing: border-box;
+  }
+  #sm-video-panel-close svg { width: 14px; height: 14px; flex-shrink: 0; }
+  #sm-video-panel-close:hover { background: var(--sm-input-bg); color: var(--text-primary); }
+
+  #sm-video-panel-body {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px; overflow-y: auto; min-height: 0;
+  }
+  #sm-video-panel-body > div { width: 100%; }
+  #sm-video-panel-body video { width: 100%; border-radius: 10px; background: #000; }
+
+  /* Video duration badge */
+  .sm-video-duration {
+    position: absolute; bottom: 6px; right: 6px;
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em;
+    background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.9);
+    padding: 2px 6px; border-radius: 5px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Video source badge */
+  .sm-video-source-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--node-color);
+    display: flex; align-items: center; gap: 4px; margin-bottom: 2px;
+  }
+
+  /* Video meta url */
+  .sm-video-url {
+    font-size: 10.5px; color: var(--text-label);
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
+  }
+
+  /* Video meta */
+  .sm-video-submeta { font-size: 11px; color: var(--text-label); }
+
+  /* Video thumb width update */
+  .sm-video-thumb { width: 160px !important; }
+
   /* Video grid */
   .sm-video-grid { display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
   .sm-video-item {
@@ -3151,7 +3258,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   /* ── Professional Lightbox ── */
   #sm-lightbox {
-    display: none; position: fixed; inset: 0; z-index: 200;
+    display: none; position: fixed; inset: 0; z-index: 10000;
     background: rgba(0,0,0,0.92); backdrop-filter: blur(20px);
     align-items: center; justify-content: center;
     flex-direction: column;
@@ -3495,7 +3602,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   /* lightbox for gallery — override block */
   #sm-lightbox {
-    display: none; position: fixed; inset: 0; z-index: 200;
+    display: none; position: fixed; inset: 0; z-index: 10000;
     background: rgba(0,0,0,0.92); backdrop-filter: blur(8px);
     align-items: center; justify-content: center; flex-direction: column;
   }
@@ -15923,71 +16030,26 @@ function smRenderView() {
   const nd = smCurrentNode;
   const media = nd.richMedia || [];
 
-  // ── Aba Texto: apenas imagens. Vídeos ficam exclusivamente na Galeria ──
-  const images = media.filter(m => m.type === 'image');
-
+  // Fotos e vídeos ficam EXCLUSIVAMENTE na aba Galeria — não aparecem na aba Texto
   const heroImg    = document.getElementById('sm-view-hero-img');
   const heroVid    = document.getElementById('sm-view-hero-video');
   const heroIframe = document.getElementById('sm-view-hero-iframe');
-
-  // Always hide video/iframe elements in this tab
-  heroVid.style.display = heroIframe.style.display = 'none';
-  heroVid.src = '';
-  heroIframe.src = '';
-  heroImg.style.display = 'none';
-
-  // Show first image as hero (if any)
-  if (images.length) {
-    const firstImg = images[0];
-    const firstIdx = media.indexOf(firstImg);
-    heroImg.src = firstImg.url;
-    heroImg.style.display = 'block';
-    heroImg.onclick = () => smOpenLightboxAt(firstIdx);
-    heroImg.style.cursor = 'zoom-in';
-  }
+  if (heroImg)    { heroImg.style.display = 'none'; heroImg.src = ''; }
+  if (heroVid)    { heroVid.style.display = 'none'; heroVid.src = ''; }
+  if (heroIframe) { heroIframe.style.display = 'none'; heroIframe.src = ''; }
 
   const body = document.getElementById('sm-view-body');
   const html = nd.richContent || '';
 
-  if (!html && !images.length) {
+  if (!html) {
     body.innerHTML = `<div class="sm-view-empty">
       <div class="sm-view-empty-icon">◈</div>
-      <p>Nenhum texto ainda.<br>Clique em <b>✎ Editar</b> para escrever o conteúdo deste nó.<br><span style="font-size:10px;opacity:.6">Vídeos estão disponíveis na aba ⊞ Galeria.</span></p>
+      <p>Nenhum texto ainda.<br>Clique em <b>✎ Editar</b> para escrever o conteúdo deste nó.<br><span style="font-size:10px;opacity:.6">Fotos e vídeos estão na aba ⊞ Galeria.</span></p>
     </div>`;
     return;
   }
 
-  body.innerHTML = html || '';
-
-  // Render remaining images (index 1+) as a grid below the text — no videos
-  const extraImages = images.slice(1);
-  if (extraImages.length) {
-    const extra = document.createElement('div');
-    extra.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px;';
-    extraImages.forEach(m => {
-      const gi = media.indexOf(m);
-      const card = document.createElement('div');
-      card.style.cssText = 'border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .18s;';
-      card.onmouseenter = () => card.style.transform = 'translateY(-2px)';
-      card.onmouseleave = () => card.style.transform = '';
-      card.onclick = () => smOpenLightboxAt(gi);
-
-      const img = document.createElement('img');
-      img.src = m.url;
-      img.style.cssText = 'width:100%;display:block;height:180px;object-fit:cover';
-      img.onerror = () => card.style.display = 'none';
-      card.appendChild(img);
-
-      if (m.caption) {
-        const cap = document.createElement('div');
-        cap.style.cssText = 'padding:8px 10px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em';
-        cap.textContent = m.caption;
-        card.appendChild(cap);
-      }
-      extra.appendChild(card);
-    });
-    body.appendChild(extra);
-  }
+  body.innerHTML = html;
 }
 
 // ── Gallery Renderer ──────────────────────────────
@@ -16067,6 +16129,145 @@ function smGalleryAddVideo() {
   toast('Vídeo adicionado');
 }
 
+function smRemoveMediaAt(gi) {
+  if (!smCurrentNode || !smCurrentNode.richMedia) return;
+  if (!confirm('Remover esta mídia?')) return;
+  smCurrentNode.richMedia.splice(gi, 1);
+  smMarkDirty();
+  smRenderGallery();
+  smRenderImageList();
+  smRenderVideoList();
+  toast('Mídia removida');
+}
+
+function smPhotoEditCaption(gi) {
+  if (!smCurrentNode || !smCurrentNode.richMedia) return;
+  const m = smCurrentNode.richMedia[gi];
+  if (!m) return;
+  const cap = prompt('Legenda da foto:', m.caption || '');
+  if (cap === null) return;
+  m.caption = cap;
+  smMarkDirty();
+  smRenderGallery();
+  toast('Legenda atualizada');
+}
+
+function smVideoEditCaption(gi) {
+  if (!smCurrentNode || !smCurrentNode.richMedia) return;
+  const m = smCurrentNode.richMedia[gi];
+  if (!m) return;
+  const cap = prompt('Título/legenda do vídeo:', m.caption || '');
+  if (cap === null) return;
+  m.caption = cap;
+  smMarkDirty();
+  smRenderGallery();
+  toast('Legenda atualizada');
+}
+
+// ── YouTube video panel (iframe + postMessage error detection) ──────────────
+let _ytMsgListener = null; // active postMessage listener, cleaned up on close
+
+function smOpenVideoPanel(gi) {
+  if (!smCurrentNode || !smCurrentNode.richMedia) return;
+  const m = smCurrentNode.richMedia[gi];
+  if (!m) return;
+  const panel = document.getElementById('sm-video-panel');
+  const title = document.getElementById('sm-video-panel-title');
+  const body  = document.getElementById('sm-video-panel-body');
+  if (!panel || !body) return;
+
+  // Clean up any previous listener
+  if (_ytMsgListener) { window.removeEventListener('message', _ytMsgListener); _ytMsgListener = null; }
+
+  title.textContent = m.caption || (m.type === 'youtube' ? 'YouTube' : 'Vídeo');
+  body.innerHTML = '';
+
+  if (m.type === 'youtube') {
+    const ytUrl    = `https://www.youtube.com/watch?v=${m.ytId}`;
+    const playerId = 'yt-' + Date.now();
+    // enablejsapi=1 makes YouTube send postMessage events (errors, state changes)
+    const embedUrl = `https://www.youtube-nocookie.com/embed/${m.ytId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&playerapiid=${playerId}`;
+
+    // Wrapper — keeps 16:9 ratio and stacks iframe + fallback
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'width:100%;aspect-ratio:16/9;position:relative;border-radius:10px;overflow:hidden;background:#000';
+
+    // The actual player iframe
+    const ifr = document.createElement('iframe');
+    ifr.src = embedUrl;
+    ifr.style.cssText = 'width:100%;height:100%;border:none;display:block;';
+    ifr.setAttribute('allowfullscreen', '');
+    ifr.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+
+    // Fallback shown only if YouTube sends an error event (e.g. error 153)
+    const fallback = document.createElement('div');
+    fallback.style.cssText = 'display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(0,0,0,0.88);color:#fff;font-family:Inter,sans-serif;padding:24px;text-align:center;border-radius:10px;';
+    fallback.innerHTML = `
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="rgba(255,255,255,0.3)"/></svg>
+      <p style="font-size:13px;font-weight:600;margin:0">Este vídeo não permite incorporação</p>
+      <p style="font-size:11px;margin:0;color:rgba(255,255,255,0.5);max-width:280px">O proprietário desativou a reprodução em outros sites.</p>
+      <a href="${ytUrl}" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:7px;background:#ff0000;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M23 7s-.3-1.9-1.2-2.7c-1.1-1.2-2.4-1.2-3-1.3C16.2 3 12 3 12 3s-4.2 0-6.8.1c-.6.1-1.9.1-3 1.3C1.3 5.2 1 7 1 7S.7 9.1.7 11.3v2c0 2.2.3 4.3.3 4.3s.3 1.9 1.2 2.7c1.1 1.2 2.6 1.1 3.3 1.2C7.2 21.7 12 21.7 12 21.7s4.2 0 6.8-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.7 1.2-2.7s.3-2.1.3-4.3v-2C23.3 9.1 23 7 23 7zM9.7 15.5V8.4l8.1 3.6-8.1 3.5z"/></svg>
+        Abrir no YouTube
+      </a>`;
+
+    function showFallback() {
+      ifr.style.display = 'none';
+      fallback.style.display = 'flex';
+    }
+
+    // Listen for YouTube postMessage errors without needing the IFrame API script
+    _ytMsgListener = function(e) {
+      const origin = e.origin || '';
+      if (!origin.includes('youtube')) return;
+      try {
+        const d = JSON.parse(typeof e.data === 'string' ? e.data : JSON.stringify(e.data));
+        // YouTube sends {event:"onError", info: <code>} or {id:<playerId>, event:"onError"}
+        const isOurs = !d.id || d.id === playerId;
+        if (isOurs && d.event === 'onError') {
+          showFallback();
+          window.removeEventListener('message', _ytMsgListener);
+          _ytMsgListener = null;
+        }
+      } catch(_) {}
+    };
+    window.addEventListener('message', _ytMsgListener);
+
+    wrap.appendChild(ifr);
+    wrap.appendChild(fallback);
+    body.appendChild(wrap);
+
+    // Subtle external link below player
+    const extBtn = document.createElement('a');
+    extBtn.href = ytUrl; extBtn.target = '_blank'; extBtn.rel = 'noopener';
+    extBtn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:12px;color:rgba(255,255,255,0.38);text-decoration:none;font-family:Inter,sans-serif;transition:color 0.15s;';
+    extBtn.onmouseenter = () => extBtn.style.color = 'rgba(255,255,255,0.75)';
+    extBtn.onmouseleave = () => extBtn.style.color = 'rgba(255,255,255,0.38)';
+    extBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Abrir no YouTube`;
+    body.appendChild(extBtn);
+
+  } else {
+    const vid = document.createElement('video');
+    vid.src = m.url; vid.controls = true; vid.autoplay = true; vid.playsinline = true;
+    vid.style.cssText = 'width:100%;border-radius:10px;background:#000;';
+    body.appendChild(vid);
+  }
+
+  panel.classList.add('open');
+  document.getElementById('sm-content')?.classList.add('video-open');
+}
+
+function smCloseVideoPanel() {
+  const panel = document.getElementById('sm-video-panel');
+  if (!panel) return;
+  const body = document.getElementById('sm-video-panel-body');
+  if (body) { const v = body.querySelector('video'); if (v) v.pause(); const i = body.querySelector('iframe'); if (i) i.src=''; }
+  if (_ytMsgListener) { window.removeEventListener('message', _ytMsgListener); _ytMsgListener = null; }
+  panel.classList.remove('open');
+  document.getElementById('sm-content')?.classList.remove('video-open');
+}
+
 function smRenderGallery() {
   if (!smCurrentNode) return;
   const media = smCurrentNode.richMedia || [];
@@ -16080,24 +16281,32 @@ function smRenderGallery() {
   const videoBadge = document.getElementById('sm-video-badge');
   if (videoBadge) videoBadge.textContent = videos.length + ' ' + (videos.length === 1 ? 'VÍDEO' : 'VÍDEOS');
 
-  // ── Photo Grid (masonry) ──────────────────────
+  // ── Photo Grid ──────────────────────────────────
   const photoWrap = document.getElementById('sm-photo-grid-wrap');
   if (!photos.length) {
     photoWrap.innerHTML = `<div class="sm-gallery-empty">
-      <div class="sm-gallery-empty-icon">◻</div>
-      Nenhuma foto adicionada ainda.<br>Vá em <b>✎ Editar → Imagens</b> e adicione URLs ou faça upload.
+      <div class="sm-gallery-empty-icon" style="font-size:28px;opacity:0.15;margin-bottom:14px">◻</div>
+      Nenhuma foto adicionada ainda.<br>Clique em <b>+ Inserir Foto</b> para adicionar.
     </div>`;
   } else {
-    photoWrap.innerHTML = photos.map(m => {
+    photoWrap.innerHTML = photos.map((m, pi) => {
       const gi = media.indexOf(m);
+      const captionAttr = (m.caption||'').replace(/"/g,'&quot;');
       return `<div class="sm-photo-item" onclick="smOpenLightboxAt(${gi})">
-        <img src="${m.url}" alt="${(m.caption||'').replace(/"/g,'')}"
-          onerror="this.closest('.sm-photo-item').style.display='none'"
-          loading="lazy"/>
-        <div class="sm-photo-overlay">
-          <span class="sm-photo-overlay-label">${m.caption||''}</span>
+        <img src="${m.url}" alt="${captionAttr}" loading="lazy"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:var(--sm-input-bg)">
+          <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.2' style='width:32px;height:32px;opacity:0.2'><rect x='3' y='3' width='18' height='18' rx='2'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>
         </div>
-        <span class="sm-photo-zoom-icon">⊕</span>
+        ${m.caption ? `<div class="sm-photo-caption-label">${m.caption}</div>` : ''}
+        <div class="sm-photo-actions" onclick="event.stopPropagation()">
+          <button class="sm-photo-act-btn" onclick="smPhotoEditCaption(${gi})" title="Editar legenda">
+            <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/><path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'/></svg>
+          </button>
+          <button class="sm-photo-act-btn del" onclick="smRemoveMediaAt(${gi})" title="Remover">
+            <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/></svg>
+          </button>
+        </div>
       </div>`;
     }).join('');
   }
@@ -16106,21 +16315,23 @@ function smRenderGallery() {
   const videoWrap = document.getElementById('sm-video-grid-wrap');
   if (!videos.length) {
     videoWrap.innerHTML = `<div class="sm-gallery-empty">
-      <div class="sm-gallery-empty-icon">▷</div>
-      Nenhum vídeo adicionado ainda.<br>Vá em <b>✎ Editar → Vídeos</b> e adicione links YouTube ou arquivos .mp4.
+      <div class="sm-gallery-empty-icon" style="font-size:28px;opacity:0.15;margin-bottom:14px">▷</div>
+      Nenhum vídeo adicionado ainda.<br>Clique em <b>+ Inserir Vídeo</b> para adicionar.
     </div>`;
   } else {
     videoWrap.innerHTML = videos.map(m => {
       const gi = media.indexOf(m);
-      const typeLabel = m.type === 'youtube' ? 'YouTube' : 'Vídeo';
+      const typeLabel = m.type === 'youtube' ? 'YouTube' : m.type === 'vimeo' ? 'Vimeo' : 'Vídeo';
       const thumbInner = m.type === 'youtube'
         ? `<img src="https://img.youtube.com/vi/${m.ytId}/hqdefault.jpg"
             style="width:100%;height:100%;object-fit:cover;display:block"
             onerror="this.src='https://img.youtube.com/vi/${m.ytId}/mqdefault.jpg'"/>`
         : `<video src="${m.url}" style="width:100%;height:100%;object-fit:cover;display:block"
             muted preload="metadata"></video>`;
-      return `<div class="sm-video-item" onclick="smOpenLightboxAt(${gi})">
-        <div class="sm-video-thumb">
+      const displayTitle = m.caption || (m.type==='youtube' ? 'YouTube' : m.url);
+      const shortUrl = m.url ? m.url.replace(/^https?:\/\//, '').split('?')[0].substring(0, 40) : '';
+      return `<div class="sm-video-item">
+        <div class="sm-video-thumb" onclick="smOpenVideoPanel(${gi})" style="cursor:pointer">
           ${thumbInner}
           <div class="sm-video-play-btn">
             <div class="sm-video-play-circle">
@@ -16128,9 +16339,18 @@ function smRenderGallery() {
             </div>
           </div>
         </div>
-        <div class="sm-video-meta">
-          <div class="sm-video-type">${typeLabel}</div>
-          <div class="sm-video-caption">${m.caption || (m.type==='youtube' ? 'YouTube' : m.url)}</div>
+        <div class="sm-video-meta" onclick="smOpenVideoPanel(${gi})" style="cursor:pointer">
+          <div class="sm-video-source-badge">${typeLabel}</div>
+          <div class="sm-video-caption">${displayTitle}</div>
+          <div class="sm-video-url">${shortUrl}</div>
+        </div>
+        <div class="sm-video-actions">
+          <button class="sm-video-act-btn" onclick="smVideoEditCaption(${gi})" title="Editar legenda">
+            <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/><path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'/></svg>
+          </button>
+          <button class="sm-video-act-btn del" onclick="smRemoveMediaAt(${gi})" title="Remover">
+            <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/></svg>
+          </button>
         </div>
       </div>`;
     }).join('');
@@ -18210,6 +18430,15 @@ function closeArticleViewer() {
         <div id="sm-video-list" style="display:none"></div>
 
       </div><!-- /sm-edit-tab -->
+
+      <!-- VIDEO PANEL — overlays modal content when a video is clicked -->
+      <div id="sm-video-panel">
+        <button id="sm-video-panel-close" onclick="smCloseVideoPanel()" title="Voltar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Voltar
+        </button>
+        <div id="sm-video-panel-body"></div>
+      </div>
 
       <!-- FICHA TÉCNICA TAB -->
       <div id="sm-ficha-tab">
