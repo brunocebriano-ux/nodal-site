@@ -3171,18 +3171,27 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #sm-video-panel-title { display: none; }
   #sm-video-panel-top-spacer { display: none; }
 
-  /* Barra fixa ACIMA do iframe — nunca sobreposta */
+  /* Barra fixa ACIMA do iframe — glassmorphism */
   #sm-video-panel-close {
     flex-shrink: 0;
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 10px 16px; border: none; border-bottom: 1px solid var(--separator);
-    background: var(--sm-panel-bg); color: var(--text-label);
-    cursor: pointer; font-size: 12px; font-weight: 600;
-    font-family: 'Inter', sans-serif; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 18px;
+    border: none; border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(10,10,20,0.55);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    color: rgba(255,255,255,0.82);
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    font-family: 'Inter', sans-serif; transition: background 0.18s, color 0.18s;
     text-align: left; width: 100%; box-sizing: border-box;
+    letter-spacing: 0.01em;
   }
-  #sm-video-panel-close svg { width: 14px; height: 14px; flex-shrink: 0; }
-  #sm-video-panel-close:hover { background: var(--sm-input-bg); color: var(--text-primary); }
+  #sm-video-panel-close svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.75; }
+  #sm-video-panel-close:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+  #sm-video-panel-close:hover svg { opacity: 1; }
 
   #sm-video-panel-body {
     flex: 1; display: flex; flex-direction: column;
@@ -16179,7 +16188,7 @@ function smOpenVideoPanel(gi) {
   // Clean up any previous listener
   if (_ytMsgListener) { window.removeEventListener('message', _ytMsgListener); _ytMsgListener = null; }
 
-  title.textContent = m.caption || (m.type === 'youtube' ? 'YouTube' : 'Vídeo');
+  if (title) title.textContent = m.caption || (m.type === 'youtube' ? 'YouTube' : 'Vídeo');
   body.innerHTML = '';
 
   if (m.type === 'youtube') {
