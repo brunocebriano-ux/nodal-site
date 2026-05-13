@@ -5782,168 +5782,347 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   /* ── 6. AI CONNECTION SUGGESTIONS ── */
   #ai-suggest-overlay {
     display: none; position: fixed; inset: 0; z-index: 85;
-    background: rgba(0,0,8,0.75); backdrop-filter: blur(18px);
+    background: rgba(0,0,8,0.55); backdrop-filter: blur(18px);
     align-items: center; justify-content: center;
   }
   #ai-suggest-overlay.open { display: flex; }
+  html.light #ai-suggest-overlay { background: rgba(0,0,0,0.25); }
+
   #ai-suggest-modal {
-    background: rgba(5,5,14,0.97); border: 1px solid rgba(167,139,250,0.25);
-    border-radius: 16px; width: 680px; max-width: 94vw; max-height: 88vh;
-    display: flex; flex-direction: column;
-    backdrop-filter: blur(40px);
-    box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(167,139,250,0.08);
-    overflow: hidden;
+    border-radius: 24px; width: 560px; max-width: 94vw; max-height: 88vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
   }
+  html.light #ai-suggest-modal { border-color: rgba(255,255,255,0.35); box-shadow: 0 8px 48px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.55); }
+
+  #ai-suggest-modal-inner {
+    display: flex; flex-direction: column; flex: 1; overflow: hidden;
+    backdrop-filter: blur(40px) saturate(1.8);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    background: rgba(18,24,44,0.55);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  html.light #ai-suggest-modal-inner { background: rgba(200,215,228,0.30); }
+
   #ai-suggest-header {
-    padding: 22px 26px 16px; border-bottom: 1px solid rgba(167,139,250,0.15);
-    display: flex; align-items: center; gap: 14px; flex-shrink: 0;
-    background: linear-gradient(135deg, rgba(167,139,250,0.05) 0%, transparent 60%);
+    padding: 22px 24px 18px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
   }
-  #ai-suggest-header h3 { font-family: var(--display); font-size: 16px; font-weight: 800; color: var(--text); }
-  .ai-suggest-badge {
-    font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase;
-    padding: 2px 10px; border-radius: 20px;
-    background: rgba(167,139,250,0.15); color: rgba(167,139,250,0.9);
-    border: 1px solid rgba(167,139,250,0.25);
+  html.light #ai-suggest-header { border-bottom-color: rgba(255,255,255,0.22); }
+  #ai-suggest-header-left { display: flex; align-items: center; gap: 10px; }
+  #ai-suggest-header-icon {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);
   }
+  html.light #ai-suggest-header-icon { background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.5); }
+  #ai-suggest-header-icon i { font-size: 15px; color: rgba(255,255,255,0.78); }
+  html.light #ai-suggest-header-icon i { color: rgba(255,255,255,0.95); }
+  #ai-suggest-header-title {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+    color: rgba(255,255,255,0.92);
+  }
+  html.light #ai-suggest-header-title { color: rgba(255,255,255,0.97); }
   #ai-suggest-close {
-    margin-left: auto; background: none; border: none; color: var(--text3);
-    font-size: 15px; cursor: pointer; font-family: var(--mono); padding: 4px 8px;
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.5); font-size: 13px; transition: all 0.2s;
   }
-  #ai-suggest-close:hover { color: #fff; }
-  #ai-suggest-body {
-    flex: 1; overflow-y: auto; padding: 16px 26px;
-    scrollbar-width: thin; scrollbar-color: rgba(167,139,250,0.12) transparent;
-  }
-  #ai-suggest-body::-webkit-scrollbar { width: 3px; }
-  #ai-suggest-body::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.12); }
+  html.light #ai-suggest-close { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.75); }
+  #ai-suggest-close:hover { background: rgba(255,255,255,0.16); color: rgba(255,255,255,0.9); }
+  html.light #ai-suggest-close:hover { background: rgba(255,255,255,0.42); }
+
   .ai-suggest-intro {
-    font-size: 11px; color: var(--text2); line-height: 1.8; margin-bottom: 18px;
-    padding: 12px 16px; background: rgba(167,139,250,0.06);
-    border-radius: 8px; border-left: 3px solid rgba(167,139,250,0.3);
+    margin: 18px 20px 4px; padding: 14px 16px; border-radius: 13px;
+    font-size: 12.5px; line-height: 1.6;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+    color: rgba(255,255,255,0.50);
   }
+  html.light .ai-suggest-intro { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.34); color: rgba(255,255,255,0.75); }
+  .ai-suggest-intro i { font-size: 13px; vertical-align: -2px; margin-right: 5px; color: rgba(255,255,255,0.38); }
+  html.light .ai-suggest-intro i { color: rgba(255,255,255,0.65); }
+
+  #ai-suggest-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  #ai-suggest-list {
+    flex: 1; overflow-y: auto; padding: 14px 20px;
+    display: flex; flex-direction: column; gap: 8px;
+    scrollbar-width: thin;
+  }
+  #ai-suggest-list::-webkit-scrollbar { width: 4px; }
+  #ai-suggest-list::-webkit-scrollbar-track { background: transparent; }
+  #ai-suggest-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+  html.light #ai-suggest-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
+
   .ai-conn-card {
-    background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
-    transition: all 0.15s; cursor: default;
-    position: relative; overflow: hidden;
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    transition: background 0.2s; cursor: default;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    animation: ai-card-in 0.22s ease both;
   }
-  .ai-conn-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent);
+  @keyframes ai-card-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+  html.light .ai-conn-card { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.32); }
+  .ai-conn-card:hover { background: rgba(255,255,255,0.08); }
+  html.light .ai-conn-card:hover { background: rgba(255,255,255,0.28); }
+
+  .ai-conn-pair { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .ai-conn-node-name {
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;
   }
-  .ai-conn-card:hover { background: rgba(255,255,255,0.045); border-color: rgba(167,139,250,0.2); }
-  .ai-conn-pair {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  html.light .ai-conn-node-name { color: rgba(255,255,255,0.92); }
+  .ai-conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
+  .ai-conn-arrow { display: flex; align-items: center; flex-shrink: 0; opacity: 0.38; color: rgba(255,255,255,0.8); }
+  .ai-conn-arrow i { font-size: 14px; }
+
+  .ai-score-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px;
+    letter-spacing: 0.04em; flex-shrink: 0;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.68);
   }
-  .ai-conn-node-pill {
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px; padding: 4px 12px;
-    font-family: var(--mono); font-size: 10px; color: var(--text2);
-    transition: all 0.12s;
-  }
-  .ai-conn-node-pill:hover { background: rgba(255,255,255,0.1); color: var(--text); }
-  .ai-conn-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .ai-conn-arrow { color: rgba(167,139,250,0.5); font-size: 14px; }
-  .ai-conn-reason { font-size: 11px; color: var(--text2); line-height: 1.7; margin-bottom: 10px; }
-  .ai-conn-score {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .ai-score-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-  .ai-score-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
-  .ai-score-val { font-size: 9px; color: var(--text3); font-family: var(--mono); min-width: 28px; }
-  .ai-conn-actions { display: flex; gap: 6px; margin-top: 10px; }
+  html.light .ai-score-badge { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.45); color: rgba(255,255,255,0.85); }
+
   .ai-conn-accept {
-    background: rgba(134,239,172,0.1); border: 1px solid rgba(134,239,172,0.25);
-    color: #86efac; font-family: var(--mono); font-size: 9px;
-    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
-    padding: 5px 14px; border-radius: 5px; transition: all 0.12s;
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 12px; border-radius: 9px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+    background: #2563eb; color: #fff; border: none;
+    box-shadow: 0 2px 10px rgba(37,99,235,0.35);
   }
-  .ai-conn-accept:hover { background: rgba(134,239,172,0.2); }
-  .ai-conn-dismiss {
-    background: transparent; border: 1px solid rgba(255,255,255,0.08);
-    color: var(--text3); font-family: var(--mono); font-size: 9px;
-    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
-    padding: 5px 12px; border-radius: 5px; transition: all 0.12s;
+  .ai-conn-accept:hover { background: #1d4ed8; box-shadow: 0 4px 16px rgba(37,99,235,0.52); transform: translateY(-1px); }
+  .ai-conn-accept:active { transform: translateY(0); }
+  .ai-conn-accept.connected {
+    background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.35);
+    color: #34d399; box-shadow: none;
   }
-  .ai-conn-dismiss:hover { border-color: rgba(255,255,255,0.2); color: var(--text2); }
-  #ai-suggest-footer { padding: 14px 26px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+  .ai-conn-accept i { font-size: 12px; }
+  .ai-conn-dismiss { display: none; }
+
+  .ai-suggest-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 36px 24px; text-align: center;
+  }
+  .ai-suggest-empty-icon {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  }
+  html.light .ai-suggest-empty-icon { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.32); }
+  .ai-suggest-empty-icon i { font-size: 20px; color: rgba(255,255,255,0.35); }
+  html.light .ai-suggest-empty-icon i { color: rgba(255,255,255,0.55); }
+  .ai-suggest-empty-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.48); }
+  html.light .ai-suggest-empty-title { color: rgba(255,255,255,0.72); }
+  .ai-suggest-empty-sub { font-size: 12px; line-height: 1.55; max-width: 280px; color: rgba(255,255,255,0.30); }
+  html.light .ai-suggest-empty-sub { color: rgba(255,255,255,0.45); }
+
+  #ai-suggest-sep { height: 1px; background: rgba(255,255,255,0.07); flex-shrink: 0; }
+  html.light #ai-suggest-sep { background: rgba(255,255,255,0.20); }
+
+  #ai-suggest-footer {
+    padding: 16px 20px 18px; display: flex; align-items: center;
+    justify-content: space-between; gap: 10px; flex-shrink: 0;
+  }
   #ai-suggest-run-btn {
-    background: linear-gradient(135deg, rgba(167,139,250,0.2) 0%, rgba(96,165,250,0.15) 100%);
-    border: 1px solid rgba(167,139,250,0.35); color: #c4b5fd;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
-    text-transform: uppercase; cursor: pointer; padding: 9px 22px;
-    border-radius: 8px; transition: all 0.15s;
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 16px; border-radius: 11px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.01em;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.75);
   }
-  #ai-suggest-run-btn:hover { background: linear-gradient(135deg, rgba(167,139,250,0.3) 0%, rgba(96,165,250,0.22) 100%); }
-  .ai-spin { display: inline-block; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  html.light #ai-suggest-run-btn { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.42); color: rgba(255,255,255,0.9); }
+  #ai-suggest-run-btn:hover { background: rgba(255,255,255,0.14); }
+  html.light #ai-suggest-run-btn:hover { background: rgba(255,255,255,0.36); }
+  #ai-suggest-run-btn.spinning i { animation: ai-icon-spin 1s linear infinite; }
+  @keyframes ai-icon-spin { to { transform: rotate(360deg); } }
+  #ai-suggest-close-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 18px; border-radius: 11px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.82);
+  }
+  html.light #ai-suggest-close-btn { background: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.52); color: rgba(255,255,255,0.95); }
+  #ai-suggest-close-btn:hover { background: rgba(255,255,255,0.18); }
+  html.light #ai-suggest-close-btn:hover { background: rgba(255,255,255,0.45); }
+  .ai-spin { display: inline-block; animation: ai-icon-spin 0.8s linear infinite; }
 
   /* ── 7. COMMUNITY DETECTION ── */
   #community-overlay {
     display: none; position: fixed; inset: 0; z-index: 85;
-    background: rgba(0,0,8,0.75); backdrop-filter: blur(18px);
+    background: rgba(0,0,8,0.55); backdrop-filter: blur(18px);
     align-items: center; justify-content: center;
   }
   #community-overlay.open { display: flex; }
+  html.light #community-overlay { background: rgba(0,0,0,0.25); }
+
   #community-modal {
-    background: rgba(5,5,14,0.97); border: 1px solid var(--border2);
-    border-radius: 16px; width: 680px; max-width: 94vw; max-height: 88vh;
+    border-radius: 24px; width: 520px; max-width: 94vw; max-height: 88vh;
     display: flex; flex-direction: column; overflow: hidden;
-    backdrop-filter: blur(40px); box-shadow: var(--shadow-hover);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
   }
+  html.light #community-modal { border-color: rgba(255,255,255,0.35); box-shadow: 0 8px 48px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.55); }
+
+  #community-modal-inner {
+    display: flex; flex-direction: column; flex: 1; overflow: hidden;
+    backdrop-filter: blur(40px) saturate(1.8);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    background: rgba(18,24,44,0.55);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  html.light #community-modal-inner { background: rgba(200,215,228,0.30); }
+
   #community-header {
-    padding: 22px 26px 16px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+    padding: 22px 24px 18px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
   }
-  #community-header h3 { font-family: var(--display); font-size: 16px; font-weight: 800; color: var(--text); }
+  html.light #community-header { border-bottom-color: rgba(255,255,255,0.22); }
+
+  #community-header-left { display: flex; align-items: center; gap: 10px; }
+  #community-header-icon {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15);
+  }
+  html.light #community-header-icon { background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.5); }
+  #community-header-icon i { font-size: 15px; color: rgba(255,255,255,0.78); }
+  html.light #community-header-icon i { color: rgba(255,255,255,0.95); }
+  #community-header-title {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+    color: rgba(255,255,255,0.92);
+  }
+  html.light #community-header-title { color: rgba(255,255,255,0.97); }
+  #community-header-count {
+    font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.13);
+    color: rgba(255,255,255,0.65);
+  }
+  html.light #community-header-count { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.45); color: rgba(255,255,255,0.85); }
+  #community-header-count i { font-size: 12px; }
+
   #community-close {
-    margin-left: auto; background: none; border: none; color: var(--text3);
-    font-size: 15px; cursor: pointer; font-family: var(--mono); padding: 4px 8px;
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.5); transition: all 0.2s; flex-shrink: 0;
   }
-  #community-close:hover { color: #fff; }
-  #community-body { flex: 1; overflow-y: auto; padding: 20px 26px; scrollbar-width: thin; }
-  .community-group-card {
-    border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
-    border: 1px solid rgba(255,255,255,0.07); position: relative; overflow: hidden;
-    transition: all 0.15s;
+  html.light #community-close { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.75); }
+  #community-close:hover { background: rgba(255,255,255,0.16); color: rgba(255,255,255,0.9); }
+  html.light #community-close:hover { background: rgba(255,255,255,0.42); }
+  #community-close i { font-size: 14px; }
+
+  #community-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  #community-list {
+    flex: 1; overflow-y: auto; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+    scrollbar-width: thin;
   }
-  .community-group-card::before {
-    content: ''; position: absolute; inset: 0;
-    background: inherit; opacity: 0.06;
+  #community-list::-webkit-scrollbar { width: 4px; }
+  #community-list::-webkit-scrollbar-track { background: transparent; }
+  #community-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+  html.light #community-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
+
+  .community-card {
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: all 0.2s; cursor: default;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    animation: comm-card-in 0.25s ease both;
   }
-  .community-group-card:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,0,0,0.35); }
-  .community-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .community-group-color { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-  .community-group-name { font-family: var(--display); font-size: 14px; font-weight: 800; color: var(--text); }
-  .community-group-count { font-size: 9px; color: var(--text3); letter-spacing: 0.1em; margin-left: auto; }
-  .community-nodes-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-  .community-node-tag {
-    display: flex; align-items: center; gap: 5px;
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px; padding: 3px 10px;
-    font-family: var(--mono); font-size: 10px; color: var(--text2);
-    cursor: pointer; transition: all 0.12s;
+  @keyframes comm-card-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  html.light .community-card { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.32); }
+  .community-card:hover { background: rgba(255,255,255,0.08); }
+  html.light .community-card:hover { background: rgba(255,255,255,0.28); }
+
+  .comm-card-top { display: flex; align-items: center; justify-content: space-between; }
+  .comm-card-identity { display: flex; align-items: center; gap: 10px; }
+  .comm-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
   }
-  .community-node-tag:hover { background: rgba(255,255,255,0.1); color: var(--text); }
-  .community-node-dot { width: 6px; height: 6px; border-radius: 50%; }
-  #community-footer { padding: 14px 26px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+  .comm-name { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; color: rgba(255,255,255,0.90); }
+  html.light .comm-name { color: rgba(255,255,255,0.95); }
+  .comm-count { font-size: 11px; font-weight: 500; opacity: 0.55; letter-spacing: 0.04em; color: rgba(255,255,255,0.6); }
+  html.light .comm-count { color: rgba(255,255,255,0.8); }
+
+  .node-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .node-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.11);
+    color: rgba(255,255,255,0.72); transition: all 0.15s; cursor: pointer;
+  }
+  html.light .node-chip { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.42); color: rgba(255,255,255,0.88); }
+  .node-chip:hover { background: rgba(255,255,255,0.13); }
+  html.light .node-chip:hover { background: rgba(255,255,255,0.4); }
+  .node-chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .comm-empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 40px 24px; text-align: center;
+  }
+  .comm-empty-icon {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  }
+  html.light .comm-empty-icon { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.32); }
+  .comm-empty-icon i { font-size: 20px; color: rgba(255,255,255,0.35); }
+  html.light .comm-empty-icon i { color: rgba(255,255,255,0.55); }
+  .comm-empty-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.48); }
+  html.light .comm-empty-title { color: rgba(255,255,255,0.72); }
+  .comm-empty-sub { font-size: 12px; line-height: 1.5; max-width: 260px; color: rgba(255,255,255,0.30); }
+  html.light .comm-empty-sub { color: rgba(255,255,255,0.45); }
+
+  #community-sep { height: 1px; background: rgba(255,255,255,0.07); flex-shrink: 0; }
+  html.light #community-sep { background: rgba(255,255,255,0.20); }
+
+  #community-footer {
+    padding: 16px 20px 18px; display: flex; align-items: center;
+    justify-content: space-between; gap: 10px; flex-shrink: 0;
+  }
   #community-run-btn {
-    background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.3);
-    color: #93c5fd; font-family: var(--mono); font-size: 10px;
-    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
-    padding: 9px 22px; border-radius: 8px; transition: all 0.15s;
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 16px; border-radius: 11px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+    cursor: pointer; transition: all 0.2s;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.75);
   }
-  #community-run-btn:hover { background: rgba(96,165,250,0.2); }
-  #community-apply-btn {
-    background: rgba(134,239,172,0.1); border: 1px solid rgba(134,239,172,0.25);
-    color: #86efac; font-family: var(--mono); font-size: 10px;
-    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
-    padding: 9px 22px; border-radius: 8px; transition: all 0.15s; display: none;
+  html.light #community-run-btn { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.42); color: rgba(255,255,255,0.9); }
+  #community-run-btn:hover { background: rgba(255,255,255,0.14); }
+  html.light #community-run-btn:hover { background: rgba(255,255,255,0.36); }
+  #community-run-btn.spinning i { animation: comm-spin 1s linear infinite; }
+  @keyframes comm-spin { to { transform: rotate(360deg); } }
+
+  #community-apply-btn { display: none; }
+
+  #community-close-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 18px; border-radius: 11px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.82);
   }
-  #community-apply-btn:hover { background: rgba(134,239,172,0.2); }
+  html.light #community-close-btn { background: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.52); color: rgba(255,255,255,0.95); }
+  #community-close-btn:hover { background: rgba(255,255,255,0.18); }
+  html.light #community-close-btn:hover { background: rgba(255,255,255,0.45); }
 
   /* ── 8. SEMANTIC SEARCH ── */
   #semantic-overlay {
@@ -14852,7 +15031,7 @@ function populateEditor(nd) {
   document.getElementById('e-title').value  = nd.title;
   document.getElementById('e-cat').value    = nd.cat;
   document.getElementById('e-desc').value   = nd.desc;
-  document.getElementById('e-color').value  = nd.color;
+  document.getElementById('e-color').value  = nd.color || catColor(nd.cat);
   document.getElementById('e-size').value   = nd.size;
   document.getElementById('e-size-val').textContent = nd.size;
   document.getElementById('e-font').value   = nd.font;
@@ -26272,7 +26451,8 @@ function generateSuggestionReason(n1, n2, score) {
 
 function runAISuggestions() {
   const btn = document.getElementById('ai-suggest-run-btn');
-  btn.innerHTML = '<span class="ai-spin">◈</span> Analisando…';
+  btn.innerHTML = '<i class="ti ti-refresh ai-spin"></i> Analisando…';
+  btn.classList.add('spinning');
   btn.disabled = true;
 
   setTimeout(() => {
@@ -26296,7 +26476,8 @@ function runAISuggestions() {
     suggestions.sort((a,b) => b.score - a.score);
     aiSuggestResults = suggestions.slice(0, 15);
 
-    btn.innerHTML = '◈ Reanalisar conexões';
+    btn.innerHTML = '<i class="ti ti-refresh"></i> Reanalisar conexões';
+    btn.classList.remove('spinning');
     btn.disabled = false;
     renderAISuggestList(aiSuggestResults);
   }, 600);
@@ -26305,36 +26486,30 @@ function runAISuggestions() {
 function renderAISuggestList(suggestions) {
   const list = document.getElementById('ai-suggest-list');
   if (!suggestions.length) {
-    list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-size:11px;line-height:2">
-      ${nodes.length < 3 ? 'Adicione mais nós com descrições para obter sugestões.' : 'Nenhuma sugestão encontrada. Tente adicionar mais descrições aos nós.'}
+    list.innerHTML = `<div class="ai-suggest-empty">
+      <div class="ai-suggest-empty-icon"><i class="ti ti-link-off"></i></div>
+      <div class="ai-suggest-empty-title">Nenhuma sugestão encontrada</div>
+      <div class="ai-suggest-empty-sub">${nodes.length < 3 ? 'Adicione mais nós com descrições para obter sugestões.' : 'Tente adicionar mais descrições aos nós e clique em Reanalisar Conexões.'}</div>
     </div>`;
     return;
   }
-  list.innerHTML = suggestions.map(({n1, n2, score, key}) => {
+  list.innerHTML = suggestions.map(({n1, n2, score, key}, idx) => {
     const c1 = n1.color || catColor(n1.cat);
     const c2 = n2.color || catColor(n2.cat);
-    const pct = Math.round(score * 100 * 4); // amplify for display
-    const reason = generateSuggestionReason(n1, n2, score);
+    const pct = Math.min(99, Math.round(score * 100 * 4));
     return `
-    <div class="ai-conn-card" id="ai-card-${key.replace('|','-')}">
+    <div class="ai-conn-card" id="ai-card-${key.replace('|','-')}" style="animation-delay:${idx*45}ms">
       <div class="ai-conn-pair">
-        <div class="ai-conn-node-pill" onclick="focusNode('${n1.id}')">
-          <div class="ai-conn-dot" style="background:${c1}"></div>${n1.title}
-        </div>
-        <span class="ai-conn-arrow">⟵⟶</span>
-        <div class="ai-conn-node-pill" onclick="focusNode('${n2.id}')">
-          <div class="ai-conn-dot" style="background:${c2}"></div>${n2.title}
-        </div>
+        <span class="ai-conn-dot" style="background:${c1};color:${c1}"></span>
+        <span class="ai-conn-node-name">${n1.title}</span>
+        <span class="ai-conn-arrow"><i class="ti ti-arrows-exchange"></i></span>
+        <span class="ai-conn-dot" style="background:${c2};color:${c2}"></span>
+        <span class="ai-conn-node-name">${n2.title}</span>
       </div>
-      <div class="ai-conn-reason">${reason}</div>
-      <div class="ai-conn-score">
-        <div class="ai-score-bar"><div class="ai-score-fill" style="width:${Math.min(100,pct)}%;background:linear-gradient(90deg,${c1},${c2})"></div></div>
-        <span class="ai-score-val">${Math.min(99,pct)}%</span>
-      </div>
-      <div class="ai-conn-actions">
-        <button class="ai-conn-accept" onclick="acceptAISuggestion('${n1.id}','${n2.id}','${key}')">✓ Criar conexão</button>
-        <button class="ai-conn-dismiss" onclick="dismissAISuggestion('${key}')">✕ Ignorar</button>
-      </div>
+      <span class="ai-score-badge">${pct}%</span>
+      <button class="ai-conn-accept" onclick="acceptAISuggestion('${n1.id}','${n2.id}','${key}')">
+        <i class="ti ti-plug-connected"></i> Conectar
+      </button>
     </div>`;
   }).join('');
 }
@@ -26374,6 +26549,7 @@ let communityData = null;
 
 function openCommunityDetection() {
   document.getElementById('community-overlay').classList.add('open');
+  if (!communityData) renderCommunityResults([]);
 }
 
 function closeCommunityDetection() {
@@ -26382,14 +26558,15 @@ function closeCommunityDetection() {
 
 function runCommunityDetection() {
   const btn = document.getElementById('community-run-btn');
-  btn.textContent = '⬡ Analisando…';
+  btn.innerHTML = '<i class="ti ti-refresh"></i> Analisando…';
+  btn.classList.add('spinning');
   btn.disabled = true;
 
   setTimeout(() => {
     communityData = detectCommunities();
-    btn.textContent = '⬡ Reanalisar';
+    btn.innerHTML = '<i class="ti ti-refresh"></i> Reanalisar';
+    btn.classList.remove('spinning');
     btn.disabled = false;
-    document.getElementById('community-apply-btn').style.display = '';
     renderCommunityResults(communityData);
   }, 400);
 }
@@ -26476,23 +26653,38 @@ function generateCommunityName(members) {
 
 function renderCommunityResults(communities) {
   const list = document.getElementById('community-list');
-  if (!communities.length) { list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:11px">Adicione nós e conexões para detectar comunidades.</div>'; return; }
+  const countEl = document.getElementById('community-header-count');
 
-  list.innerHTML = communities.map((com, i) => `
-    <div class="community-group-card" style="background:${com.color}12;border-color:${com.color}22">
-      <div class="community-group-header">
-        <div class="community-group-color" style="background:${com.color}"></div>
-        <div class="community-group-name">${com.name}</div>
-        <div class="community-group-count">${com.members.length} nó${com.members.length!==1?'s':''}</div>
+  if (!communities.length) {
+    if (countEl) countEl.innerHTML = '<i class="ti ti-stack-2"></i> 0';
+    list.innerHTML = `<div class="comm-empty-state">
+      <div class="comm-empty-icon"><i class="ti ti-circles-relation"></i></div>
+      <div class="comm-empty-title">Nenhuma comunidade detectada</div>
+      <div class="comm-empty-sub">Clique em Reanalisar para detectar grupos de nós relacionados.</div>
+    </div>`;
+    return;
+  }
+
+  if (countEl) countEl.innerHTML = `<i class="ti ti-stack-2"></i> ${communities.length}`;
+
+  list.innerHTML = communities.map((com, i) => {
+    const nodeChipsHTML = com.members.map(nd => `
+      <span class="node-chip" onclick="focusNode('${nd.id}')">
+        <span class="node-chip-dot" style="background:${nd.color||catColor(nd.cat)}"></span>
+        ${nd.title}
+      </span>`).join('');
+    return `
+    <div class="community-card" style="animation-delay:${i*40}ms">
+      <div class="comm-card-top">
+        <div class="comm-card-identity">
+          <span class="comm-dot" style="background:${com.color};color:${com.color}"></span>
+          <span class="comm-name">${com.name}</span>
+        </div>
+        <span class="comm-count">${com.members.length} nó${com.members.length!==1?'s':''}</span>
       </div>
-      <div class="community-nodes-wrap">
-        ${com.members.map(nd => `
-          <div class="community-node-tag" onclick="focusNode('${nd.id}')">
-            <div class="community-node-dot" style="background:${nd.color||catColor(nd.cat)}"></div>
-            ${nd.title}
-          </div>`).join('')}
-      </div>
-    </div>`).join('');
+      <div class="node-chips">${nodeChipsHTML}</div>
+    </div>`;
+  }).join('');
 }
 
 function applyCommunityColors() {
@@ -26959,21 +27151,30 @@ toast('✦ v52 — 9 novas funcionalidades carregadas');
 <!-- 6. SUGESTÕES DE CONEXÃO IA -->
 <div id="ai-suggest-overlay" onclick="if(event.target===this)closeAISuggestions()">
   <div id="ai-suggest-modal">
-    <div id="ai-suggest-header">
-      <h3>◈ Sugestões de Conexão</h3>
-      <span class="ai-suggest-badge">IA Local</span>
-      <button id="ai-suggest-close" onclick="closeAISuggestions()">✕</button>
-    </div>
-    <div id="ai-suggest-body">
-      <div class="ai-suggest-intro">
-        A IA analisa os títulos e descrições dos nós para identificar relações semânticas ainda não conectadas. Quanto mais descrições detalhadas, melhores as sugestões.
+    <div id="ai-suggest-modal-inner">
+      <!-- Header -->
+      <div id="ai-suggest-header">
+        <div id="ai-suggest-header-left">
+          <div id="ai-suggest-header-icon"><i class="ti ti-sparkles"></i></div>
+          <span id="ai-suggest-header-title">Sugestão de Conexão</span>
+        </div>
+        <button id="ai-suggest-close" onclick="closeAISuggestions()" title="Fechar"><i class="ti ti-x"></i></button>
       </div>
-      <div id="ai-suggest-list"></div>
-    </div>
-    <div id="ai-suggest-footer">
-      <button id="ai-suggest-run-btn" onclick="runAISuggestions()">◈ Analisar conexões</button>
-      <div style="flex:1"></div>
-      <button class="btn" onclick="closeAISuggestions()">Fechar</button>
+      <!-- Info box -->
+      <div class="ai-suggest-intro">
+        <i class="ti ti-info-circle"></i>
+        Analisa os títulos e descrições dos nós para identificar relações semânticas ainda não conectadas. Quanto mais descrições detalhadas, melhores as sugestões.
+      </div>
+      <!-- Body -->
+      <div id="ai-suggest-body">
+        <div id="ai-suggest-list"></div>
+      </div>
+      <div id="ai-suggest-sep"></div>
+      <!-- Footer -->
+      <div id="ai-suggest-footer">
+        <button id="ai-suggest-run-btn" onclick="runAISuggestions()"><i class="ti ti-refresh"></i> Reanalisar Conexões</button>
+        <button id="ai-suggest-close-btn" onclick="closeAISuggestions()">Fechar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -26981,20 +27182,27 @@ toast('✦ v52 — 9 novas funcionalidades carregadas');
 <!-- 7. DETECÇÃO DE COMUNIDADES -->
 <div id="community-overlay" onclick="if(event.target===this)closeCommunityDetection()">
   <div id="community-modal">
-    <div id="community-header">
-      <h3>⬡ Comunidades Detectadas</h3>
-      <button id="community-close" onclick="closeCommunityDetection()">✕</button>
-    </div>
-    <div id="community-body">
-      <div id="community-list" style="color:var(--text3);font-size:11px;text-align:center;padding:40px 0">
-        Clique em "Detectar Comunidades" para analisar a estrutura do grafo.
+    <div id="community-modal-inner">
+      <!-- Header -->
+      <div id="community-header">
+        <div id="community-header-left">
+          <div id="community-header-icon"><i class="ti ti-circles-relation"></i></div>
+          <span id="community-header-title">Detectar Comunidades</span>
+          <span id="community-header-count"><i class="ti ti-stack-2"></i> 0</span>
+        </div>
+        <button id="community-close" onclick="closeCommunityDetection()" title="Fechar"><i class="ti ti-x"></i></button>
       </div>
-    </div>
-    <div id="community-footer">
-      <button id="community-run-btn" onclick="runCommunityDetection()">⬡ Detectar comunidades</button>
-      <button id="community-apply-btn" onclick="applyCommunityColors()">✓ Aplicar cores</button>
-      <div style="flex:1"></div>
-      <button class="btn" onclick="closeCommunityDetection()">Fechar</button>
+      <!-- Body -->
+      <div id="community-body">
+        <div id="community-list"></div>
+      </div>
+      <div id="community-sep"></div>
+      <!-- Footer -->
+      <div id="community-footer">
+        <button id="community-run-btn" onclick="runCommunityDetection()"><i class="ti ti-refresh"></i> Reanalisar</button>
+        <button id="community-apply-btn" onclick="applyCommunityColors()" style="display:none"></button>
+        <button id="community-close-btn" onclick="closeCommunityDetection()">Fechar</button>
+      </div>
     </div>
   </div>
 </div>
