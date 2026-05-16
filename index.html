@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="pt-BR" class="light">
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,12 +9,12 @@
 (function(){
   try {
     var s = JSON.parse(localStorage.getItem('neural-v5-settings') || '{}');
-    var tid = s.currentThemeId || 'paper';
-    var darkThemes = ['void','cosmos','forest','ember','amethyst','matrix'];
-    if (darkThemes.indexOf(tid) !== -1) {
-      document.documentElement.classList.remove('light');
-    } else {
+    var tid = s.currentThemeId || 'classic';
+    var lightThemes = ['blue','papel'];
+    if (lightThemes.indexOf(tid) !== -1) {
       document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
     }
   } catch(e) {}
 })();
@@ -1504,6 +1504,13 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     to { transform: scale(4); opacity: 0; }
   }
   #lock-error { font-size: 8px; color: #ff5555; letter-spacing: 0.12em; height: 12px; margin-bottom: 7px; }
+  #lock-tos-wrap { display:none; align-items:flex-start; gap:8px; margin:6px 0 10px; font-size:9px; color:rgba(255,255,255,0.42); letter-spacing:0.04em; line-height:1.6; }
+  #lock-tos-wrap.visible { display:flex; }
+  #lock-tos-check { width:14px; height:14px; margin-top:2px; flex-shrink:0; accent-color:var(--accent); cursor:pointer; }
+  #lock-tos-wrap a { color:rgba(255,255,255,0.62); text-decoration:underline; text-underline-offset:2px; }
+  #lock-tos-wrap a:hover { color:rgba(255,255,255,0.9); }
+  html.light #lock-tos-wrap { color:rgba(0,0,0,0.45); }
+  html.light #lock-tos-wrap a { color:rgba(0,47,167,0.75); }
   .lock-hint {
     font-size: 11px; color: var(--text2); letter-spacing: 0.04em;
     text-align: center; line-height: 1.9; width: 100%;
@@ -10640,13 +10647,14 @@ m-name {
 
   /* FIX 1 — HUD pill: posição mais baixa, pill menor, mais centrado */
   #hud-top > div:last-of-type {
-    height: 28px !important;
-    padding: 0 10px !important;
+    height: 30px !important;
+    padding: 0 16px !important;
   }
   #hud-top > div:last-of-type .btn,
   #hud-top > div:last-of-type .hud-menu-btn {
-    height: 24px !important;
+    height: 26px !important;
     font-size: 10.5px !important;
+    padding: 0 13px !important;
   }
 
   /* FIX 2 — Captura rápida: remover seleção roxa quando painel aberto */
@@ -11210,6 +11218,10 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
         <div class="lock-input-wrap"><input type="email" id="lock-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')document.getElementById('lock-password').focus()" autocomplete="email"/></div>
         <div class="lock-input-wrap"><input type="password" id="lock-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')_lockSubmitCurrent()" autocomplete="current-password"/></div>
         <div id="lock-error"></div>
+        <div id="lock-tos-wrap">
+          <input type="checkbox" id="lock-tos-check"/>
+          <label for="lock-tos-check">Li e concordo com os <a href="https://docs.google.com/document/d/1m4KfQTDAhIRaCPwcZ0Qpmg4ndNQA6I4yBUS5CN6kmbM/edit?usp=sharing" target="_blank">Termos de Uso</a> e <a href="https://docs.google.com/document/d/1m4KfQTDAhIRaCPwcZ0Qpmg4ndNQA6I4yBUS5CN6kmbM/edit?usp=sharing" target="_blank">Política de Privacidade</a></label>
+        </div>
         <button id="lock-submit" onclick="_lockSubmitCurrent();lockSubmitRipple(event)">→ Entrar</button>
         <div class="lock-hint">
           Sem senha? Apenas visualização disponível<br>
@@ -12360,6 +12372,9 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
           </div>
         </div>
         <div class="hud-drop-section">
+          <div class="hud-drop-item" onclick="exportFullBackup();hudMenuClose()">
+            <span class="hud-drop-icon">↑</span> Exportar backup completo
+          </div>
           <div class="hud-drop-item" onclick="openImportDialog();hudMenuClose()">
             <span class="hud-drop-icon">↓</span> Importar JSON
           </div>
@@ -12373,7 +12388,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     <!-- Menu Ver (todos) -->
     <div class="hud-menu-wrap">
       <button class="hud-menu-btn" id="menu-ver-btn" onclick="hudMenuToggle('ver')">
-        ◎ Explorar <span class="caret">▾</span>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="vertical-align:-1px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="1.5" x2="8" y2="3.2"/><line x1="8" y1="12.8" x2="8" y2="14.5"/><line x1="1.5" y1="8" x2="3.2" y2="8"/><line x1="12.8" y1="8" x2="14.5" y2="8"/><line x1="8" y1="8" x2="5.2" y2="5.2" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="8" x2="10.8" y2="10.8" stroke-width="1.2" stroke-linecap="round"/></svg> Explorar <span class="caret">▾</span>
       </button>
       <div class="hud-dropdown" id="hud-drop-ver">
         <div class="hud-drop-section">
@@ -12413,9 +12428,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
           <div class="hud-drop-item" onclick="openRadialView();hudMenuClose()">
             <span class="hud-drop-icon">◎</span> Vista radial do nó
           </div>
-          <div class="hud-drop-item" onclick="openPresentationThemes();hudMenuClose()">
-            <span class="hud-drop-icon">◑</span> Temas de apresentação
-          </div>
+
         </div>
         <div class="hud-drop-section">
           <div class="hud-drop-label">Análise & IA</div>
@@ -12441,7 +12454,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     <!-- Menu Layout -->
     <div class="hud-menu-wrap">
       <button class="hud-menu-btn" id="menu-layout-btn" onclick="hudMenuToggle('layout')">
-        ⊞ Layout <span class="caret">▾</span>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:-1px;flex-shrink:0"><rect x="0.5" y="0.5" width="6.5" height="6.5" rx="0.5"/><rect x="9" y="0.5" width="6.5" height="6.5" rx="0.5"/><rect x="0.5" y="9" width="6.5" height="6.5" rx="0.5"/><circle cx="12.25" cy="12.25" r="3.25"/></svg> Layout <span class="caret">▾</span>
       </button>
       <div class="hud-dropdown" id="hud-drop-layout">
         <div class="hud-drop-section">
@@ -12465,7 +12478,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     <!-- Menu Projeto -->
     <div class="hud-menu-wrap">
       <button class="hud-menu-btn" id="menu-projeto-btn" onclick="hudMenuToggle('projeto')">
-        ⊟ Núcleo <span class="caret">▾</span>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:-1px;flex-shrink:0"><path d="M11.1,2.6 A6.2,6.2 0 0,1 8,14.2" stroke-linecap="round"/><path d="M8,14.2 A6.2,6.2 0 0,1 1.8,8" stroke-linecap="round"/><path d="M1.8,8 A6.2,6.2 0 0,1 11.1,2.6" stroke-linecap="round"/><circle cx="11.1" cy="2.6" r="1.6" fill="currentColor" stroke="none"/><circle cx="1.8" cy="8" r="1.6" fill="currentColor" stroke="none"/><circle cx="8" cy="14.2" r="1.6" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="3"/></svg> Núcleo <span class="caret">▾</span>
       </button>
       <div class="hud-dropdown" id="hud-drop-projeto">
         <div class="hud-drop-section">
@@ -12530,13 +12543,13 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     </div>
 
     <!-- IA sempre visível -->
-    <button class="btn" id="btn-ai" onclick="toggleAiPanel()" title="Assistente Neural IA" style="border-color:rgba(167,139,250,0.35);color:rgba(167,139,250,0.7)">◈ IA</button>
+    <button class="btn" id="btn-ai" onclick="toggleAiPanel()" title="Assistente Neural IA" style="border-color:rgba(167,139,250,0.35);color:rgba(167,139,250,0.7)"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-1px;flex-shrink:0"><path d="M8,1 C8,1 7.1,6.4 8,8 C8.9,6.4 8,1 8,1Z"/><path d="M15,8 C15,8 9.6,7.1 8,8 C9.6,8.9 15,8 15,8Z"/><path d="M8,15 C8,15 8.9,9.6 8,8 C7.1,9.6 8,15 8,15Z"/><path d="M1,8 C1,8 6.4,8.9 8,8 C6.4,7.1 1,8 1,8Z"/></svg> IA</button>
 
     <!-- Panorama sempre visível -->
-    <button class="btn" id="btn-panorama" onclick="openPanoramaModal()" title="Panorama do projeto"><span id="panorama-btn-label">Panorama</span></button>
+    <button class="btn" id="btn-panorama" onclick="openPanoramaModal()" title="Panorama do projeto"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-1px;flex-shrink:0"><path d="M1,2 L4,3 L4,8 L1,7.5 Z"/><rect x="5.5" y="1.5" width="5" height="6.5" rx="0.3"/><path d="M12,3 L15,2 L15,7.5 L12,8 Z"/><path d="M1,9 L4,9.5 L4,14.5 L1,14 Z"/><rect x="5.5" y="9" width="5" height="6.5" rx="0.3"/><path d="M12,9.5 L15,9 L15,14 L12,14.5 Z"/></svg> <span id="panorama-btn-label">Panorama</span></button>
 
     <!-- Tutorial interativo -->
-    <button class="btn" id="btn-tutorial" onclick="openTutorialModal()" title="Guia interativo de funções">✦ Guia</button>
+    <button class="btn" id="btn-tutorial" onclick="openTutorialModal()" title="Guia interativo de funções"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="vertical-align:-1px;flex-shrink:0"><line x1="8" y1="3.5" x2="8" y2="13" stroke-linecap="round"/><path d="M8,3.5 C6,3 2.5,3.5 2,4.5 L2,13 C2.5,12 6,11.5 8,12 Z"/><path d="M8,3.5 C10,3 13.5,3.5 14,4.5 L14,13 C13.5,12 10,11.5 8,12 Z"/></svg> Guia</button>
 
     <!-- btn-notepad e btn-lock movidos para sidebar -->
     <span id="btn-notepad" style="display:none"></span>
@@ -13138,6 +13151,10 @@ function lockSwitchTab(mode) {
   if (mode === 'login') { btn.textContent = '→ Entrar'; hint.textContent = 'Entre com sua conta'; }
   else { btn.textContent = '→ Criar conta'; hint.textContent = 'Crie sua conta gratuita'; }
   document.getElementById('lock-error').textContent = '';
+  const tosWrap = document.getElementById('lock-tos-wrap');
+  if (tosWrap) tosWrap.classList.toggle('visible', mode === 'register');
+  const tosCheck = document.getElementById('lock-tos-check');
+  if (tosCheck) tosCheck.checked = false;
 }
 
 function _lockSubmitCurrent() {
@@ -13169,6 +13186,8 @@ async function registerUser() {
   const err   = document.getElementById('lock-error');
   if (!email || !pwd) { err.textContent = 'Preencha email e senha'; return; }
   if (pwd.length < 6) { err.textContent = 'Senha deve ter ao menos 6 caracteres'; return; }
+  const tosCheck = document.getElementById('lock-tos-check');
+  if (tosCheck && !tosCheck.checked) { err.textContent = 'Aceite os Termos de Uso para continuar'; return; }
   const btn = document.getElementById('lock-submit');
   btn.textContent = 'Criando conta...'; btn.disabled = true;
   try {
@@ -13782,7 +13801,7 @@ const THEMES = [
   { id:'paper',  name:'Papel',     desc:'Creme suave',      bg:'#f5f0e0', text:'#3d3529', text2:'#7a6840', panel:'#f5f0e0', border:'#d4c5a0', stars:'rgba(122,104,64,0.3)', fog:0xf5f0e0 },
   { id:'matrix', name:'Matrix',    desc:'Verde terminal',   bg:'#000a00', text:'#00ff41', text2:'#00aa22', panel:'#000a00', border:'#003300', stars:'#004400', fog:0x000a00 },
 ];
-let currentThemeId = 'papel';
+let currentThemeId = 'classic';
 
 // ── New visual themes data (modal cards + color preview) ──
 const tmThemes = {
@@ -14810,24 +14829,22 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
 const scene = new THREE.Scene();
 
-// Inicializar com a cor do tema salvo (padrão: paper = claro)
+// Inicializar com a cor do tema salvo (padrão: classic = escuro)
 (function(){
   try {
     var _s = JSON.parse(localStorage.getItem('neural-v5-settings') || '{}');
-    var _tid = _s.currentThemeId || 'paper';
+    var _tid = _s.currentThemeId || 'classic';
     var _thMap = {
-      void:'#04040a', cosmos:'#070818', forest:'#061208', ember:'#100804',
-      amethyst:'#0c0818', matrix:'#000a00', paper:'#f5f0e8', clean:'#f2f4f8',
-      sepia:'#f4efe6', blue:'#f0f4ff', rose:'#fff0f4', mint:'#f0f8f4',
-      slate:'#f4f6f8', amber:'#fdf8f0', lavender:'#f8f4ff', ocean:'#f0f7ff'
+      cosmos:'#0C1F41', classic:'#0A0A0A', green:'#2F472F',
+      aero:'#414141', blue:'#f4f6ff', papel:'#f5f0e0'
     };
-    var _bg = _thMap[_tid] || '#f5f0e8';
+    var _bg = _thMap[_tid] || '#0A0A0A';
     var _col = new THREE.Color(_bg);
     renderer.setClearColor(_col, 1);
     scene.fog = new THREE.FogExp2(_col, 0.003);
   } catch(e) {
-    renderer.setClearColor(0xf5f0e8, 1);
-    scene.fog = new THREE.FogExp2(0xf5f0e8, 0.003);
+    renderer.setClearColor(0x0A0A0A, 1);
+    scene.fog = new THREE.FogExp2(0x0A0A0A, 0.003);
   }
 })();
 
@@ -16299,6 +16316,90 @@ function exportJSON() {
   a.download = 'neural-' + Date.now() + '.json'; a.click(); toast('JSON exportado');
 }
 
+function exportFullBackup() {
+  try {
+    // 1. Nós completos (incluindo richContent, richMedia, tags, artigos)
+    const articlesData = {};
+    nodes.forEach(n => {
+      try {
+        const raw = localStorage.getItem('neural-articles-' + n.id);
+        if (raw) articlesData[n.id] = JSON.parse(raw);
+      } catch(e) {}
+    });
+
+    const nodesData = nodes.map(n => ({
+      id: n.id, title: n.title, desc: n.desc, cat: n.cat,
+      color: n.color, size: n.size, font: n.font || '', fontSize: n.fontSize || 13,
+      bold: !!n.bold, italic: !!n.italic, textShadow: n.textShadow !== false,
+      media: n.media || '', tags: n.tags || [], notes: n.notes || '',
+      richNotes: n.richNotes || '', richContent: n.richContent || '',
+      richMedia: n.richMedia || [], date: n.date || '',
+      shape: n.shape || 'sphere', x: n.x, y: n.y, z: n.z
+    }));
+
+    // 2. Conexões
+    const connsData = connections.map(c => ({
+      id: c.id, from: c.from, to: c.to, connType: c.connType || 'default'
+    }));
+
+    // 3. Notas (bloco de notas — todas as abas)
+    let notepadData = null;
+    try {
+      const raw = localStorage.getItem('notepad_notes_' + activeProjectId);
+      notepadData = raw ? JSON.parse(raw) : null;
+    } catch(e) {}
+    const notepadLegacy = localStorage.getItem('notepad_' + activeProjectId) || '';
+
+    // 4. Tags globais e categorias
+    const settingsRaw = localStorage.getItem('neural-v5-settings');
+    const settings = settingsRaw ? JSON.parse(settingsRaw) : {};
+
+    // 5. Favoritos (localStorage)
+    let favoritesData = [];
+    try {
+      const favRaw = localStorage.getItem('neural-fav-collections');
+      if (favRaw) favoritesData = JSON.parse(favRaw);
+    } catch(e) {}
+
+    // 6. Panorama
+    let panoramaData = {};
+    try {
+      const pRaw = localStorage.getItem('neural-panorama-data');
+      if (pRaw) panoramaData = JSON.parse(pRaw);
+    } catch(e) {}
+
+    const backup = {
+      _backupVersion: 1,
+      _exportedAt: new Date().toISOString(),
+      _projectId: activeProjectId,
+      projectName: typeof projectName !== 'undefined' ? projectName : '',
+      projectSub:  typeof projectSub  !== 'undefined' ? projectSub  : '',
+      nodes: nodesData,
+      connections: connsData,
+      articlesData,
+      notepad: notepadLegacy,
+      notepadNotes: notepadData,
+      globalTags:  settings.globalTags  || [],
+      customCats:  settings.customCats  || [],
+      currentThemeId: settings.currentThemeId || '',
+      panoramaData,
+      favorites: favoritesData
+    };
+
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const dateStr = new Date().toISOString().slice(0,10);
+    a.download = 'nodal-backup-' + dateStr + '.json';
+    a.click();
+    toast('✓ Backup completo exportado');
+  } catch(e) {
+    console.error('[NODAL] exportFullBackup error:', e);
+    toast('Erro ao exportar backup');
+  }
+}
+
 // ── Exportar site completo com tema e dados embutidos ──────────────────────
 function exportSite() {
   toast('Preparando site completo…');
@@ -16639,7 +16740,9 @@ function animate() {
           coreMat.emissiveIntensity = 0.2;
         }
       } else {
-        coreMat.emissiveIntensity = 0.2;
+        const _bl = (typeof _backlinkIds !== 'undefined' && _backlinkIds.size > 0);
+        const _targetEI = (_bl && !_backlinkIds.has(nd.id)) ? 0.03 : 0.2;
+        coreMat.emissiveIntensity += (_targetEI - coreMat.emissiveIntensity) * 0.08;
       }
     }
   });
@@ -16651,7 +16754,12 @@ function animate() {
 
     if (c.line) {
       // Opacity: elastic lerp — peso da conexão amplifica opacidade base
-      const baseOp   = 0.28 + Math.min(0.38, (c.displayWeight || 1) * 0.08);
+      const _blActive = (typeof _backlinkIds !== 'undefined' && _backlinkIds.size > 0 && selectedNode);
+      const _isBackConn = _blActive && (c.from === selectedNode.id || c.to === selectedNode.id);
+      const _isDimConn  = _blActive && !_isBackConn;
+      const baseOp = _isBackConn
+        ? 0.92
+        : (_isDimConn ? 0.04 : 0.28 + Math.min(0.38, (c.displayWeight || 1) * 0.08));
       const targetOp = c.lineHover ? 1.0 : baseOp;
       c.line.material.opacity += (targetOp - c.line.material.opacity) * 0.13;
 
@@ -16670,6 +16778,9 @@ function animate() {
       if (c.lineHover) {
         const bright = c.lineColor.clone().multiplyScalar(2.4 + 0.5*Math.sin(t*4));
         c.line.material.color.lerp(bright, 0.18);
+      } else if (_isBackConn) {
+        const bright = c.lineColor.clone().multiplyScalar(2.2 + 0.4*Math.sin(t*3));
+        c.line.material.color.lerp(bright, 0.14);
       } else {
         // Onda percorrendo: clareia e escurece ritmicamente
         const waveColor = c.lineColor.clone().multiplyScalar(0.7 + pulseIntensity * 1.1);
@@ -19224,6 +19335,11 @@ function closeArticleViewer() {
           </div>
           <!-- Main area -->
           <div class="sm-gallery-main">
+            <!-- Notice: external links only -->
+            <div style="font-size:9px;color:var(--text3);padding:8px 18px 6px;letter-spacing:0.03em;line-height:1.6;display:flex;align-items:flex-start;gap:6px;flex-shrink:0;border-bottom:1px solid var(--border);margin-bottom:4px">
+              <span style="opacity:0.6;flex-shrink:0;margin-top:1px">⚠</span>
+              <span>Use sempre <b style="font-weight:600;color:var(--text2)">URLs externas</b> (Google Drive, imgbb, YouTube...). Arquivos enviados diretamente do computador não sincronizam entre dispositivos.</span>
+            </div>
             <!-- Photo Gallery -->
             <div id="sm-photo-gallery" class="sm-gallery-section">
               <div class="sm-gallery-topbar">
@@ -19610,6 +19726,10 @@ function closeArticleViewer() {
               <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
             </svg>
           </button>
+        </div>
+        <div style="font-size:9px;color:var(--text3);margin-top:6px;letter-spacing:0.03em;line-height:1.6;display:flex;align-items:flex-start;gap:5px">
+          <span style="opacity:0.6;flex-shrink:0;margin-top:1px">⚠</span>
+          <span>Use uma URL externa (imgbb, Google Drive...) para garantir que a capa persista entre dispositivos.</span>
         </div>
       </div>
 
@@ -27233,6 +27353,27 @@ function ungroupNode(nd) {
   toast('Desagrupado: '+nd.title);
   saveSettings();
 }
+
+// ── Backlinks visual: highlight connected nodes/connections on select ──────
+let _backlinkIds = new Set();
+
+var _origSelectNodeBacklink = selectNode;
+selectNode = function(nd) {
+  _origSelectNodeBacklink(nd);
+  _backlinkIds = new Set(
+    connections
+      .filter(c => c.from === nd.id || c.to === nd.id)
+      .map(c => c.from === nd.id ? c.to : c.from)
+  );
+  // always include the selected node itself so it's never dimmed
+  _backlinkIds.add(nd.id);
+};
+
+var _origDeselectNodeBacklink = deselectNode;
+deselectNode = function() {
+  _origDeselectNodeBacklink.apply(this, arguments);
+  _backlinkIds = new Set();
+};
 
 // Patch selectNode to handle group toggle on click
 var _origSelectNodeGroup = selectNode;
@@ -36634,11 +36775,11 @@ function _favUpdateCount() {
   .vizc-node:hover .node-toggle { opacity:1; }
   #drop-viz-3d.viz-active, #drop-viz-cards.viz-active,
   #drop-viz-chord.viz-active, #drop-viz-radial.viz-active {
-    background:rgba(167,139,250,0.15) !important; color:#a78bfa !important;
+    background:rgba(255,255,255,0.10) !important; color:#fff !important;
   }
   html.light #drop-viz-3d.viz-active, html.light #drop-viz-cards.viz-active,
   html.light #drop-viz-chord.viz-active, html.light #drop-viz-radial.viz-active {
-    background:rgba(80,50,200,0.1) !important; color:#5032c8 !important;
+    background:rgba(0,0,0,0.05) !important; color:rgba(0,0,0,0.95) !important;
   }
 </style>
 
@@ -36990,6 +37131,25 @@ function _drawCardConns(svg, tc) {
   old.forEach(function(p){ p.remove(); });
   if (typeof connections === 'undefined') return;
 
+  // Per-color arrow markers — removes old ones and creates fresh per call
+  var defs = svg.querySelector('defs');
+  var oldDynMarkers = defs ? defs.querySelectorAll('marker[id^="vcam"]') : [];
+  oldDynMarkers.forEach(function(m){ m.remove(); });
+  var _colMarkers = {};
+  function _getMarker(col) {
+    if (_colMarkers[col]) return _colMarkers[col];
+    var mid = 'vcam' + Object.keys(_colMarkers).length;
+    var mk = document.createElementNS('http://www.w3.org/2000/svg','marker');
+    mk.setAttribute('id',mid); mk.setAttribute('markerWidth','8');
+    mk.setAttribute('markerHeight','8'); mk.setAttribute('refX','7');
+    mk.setAttribute('refY','3'); mk.setAttribute('orient','auto');
+    var mp = document.createElementNS('http://www.w3.org/2000/svg','path');
+    mp.setAttribute('d','M0,0 L0,6 L8,3 z'); mp.setAttribute('fill',col);
+    mk.appendChild(mp); if (defs) defs.appendChild(mk);
+    _colMarkers[col] = mid;
+    return mid;
+  }
+
   // compute real edge coords from actual DOM dimensions
   function edgeOf(item) {
     var el  = item.el;
@@ -37024,14 +37184,14 @@ function _drawCardConns(svg, tc) {
     }
 
     var nd1=nodes.find(function(n){return n.id===c.from;});
-    var col=nd1?_adaptConnColor(nd1.color,'cc'):'rgba(160,140,255,0.6)';
+    var col=nd1?_adaptConnColor(nd1.color,'cc'):'rgba(220,220,240,0.7)';
     var path=document.createElementNS('http://www.w3.org/2000/svg','path');
     path.setAttribute('class','vcc');
     path.setAttribute('d','M'+x1+','+y1+' C'+cp1x+','+cp1y+' '+cp2x+','+cp2y+' '+x2+','+y2);
     path.setAttribute('stroke',col);
     path.setAttribute('stroke-width','2');
     path.setAttribute('fill','none');
-    path.setAttribute('marker-end','url(#vca2)');
+    path.setAttribute('marker-end','url(#'+_getMarker(col)+')');
     svg.appendChild(path);
   });
 }
