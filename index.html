@@ -523,6 +523,23 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .lp-conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .lp-conn-arrow { font-size: 12px; color: rgba(255,255,255,0.42); flex-shrink: 0; }
   html.light .lp-conn-arrow { color: rgba(20,30,50,0.38); }
+
+  /* ── Backlinks: sublabels de direção ── */
+  .lp-bl-sublabel {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+    color: var(--text3); padding: 2px 0 6px; margin-top: 4px;
+  }
+  .lp-bl-sublabel--in { margin-top: 14px; color: rgba(167,139,250,0.75); }
+  html.light .lp-bl-sublabel--in { color: rgba(109,40,217,0.6); }
+  .lp-bl-count {
+    margin-left: auto; background: rgba(255,255,255,0.07);
+    border-radius: 8px; padding: 1px 7px;
+    font-size: 9px; color: var(--text3); font-weight: 600;
+  }
+  html.light .lp-bl-count { background: rgba(0,0,0,0.06); }
+  .lp-bl-count--in { background: rgba(167,139,250,0.12); color: rgba(167,139,250,0.88); }
+  html.light .lp-bl-count--in { background: rgba(109,40,217,0.10); color: rgba(109,40,217,0.7); }
   .lp-conn-name { flex: 1; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; }
   .lp-conn-cat {
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
@@ -6342,7 +6359,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   .ai-conn-card {
     border-radius: 14px; padding: 14px 16px;
-    display: flex; align-items: center; gap: 14px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
     transition: background 0.2s; cursor: default;
     background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
     animation: ai-card-in 0.22s ease both;
@@ -6380,6 +6397,15 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     box-shadow: 0 2px 10px rgba(37,99,235,0.35);
   }
   .ai-conn-accept:hover { background: #1d4ed8; box-shadow: 0 4px 16px rgba(37,99,235,0.52); transform: translateY(-1px); }
+
+  .ai-conn-reason {
+    width: 100%; font-size: 10px; line-height: 1.5;
+    color: var(--text3); padding: 4px 0 0;
+    border-top: 1px solid rgba(255,255,255,0.06); margin-top: 2px;
+  }
+  .ai-conn-reason b { color: rgba(167,139,250,0.85); font-weight: 600; }
+  html.light .ai-conn-reason { border-top-color: rgba(0,0,0,0.06); }
+  html.light .ai-conn-reason b { color: rgba(109,40,217,0.75); }
   .ai-conn-accept:active { transform: translateY(0); }
   .ai-conn-accept.connected {
     background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.35);
@@ -12616,7 +12642,17 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
           </button>
         </div>
       </div>
-      <div id="lp-conn-list" class="lp-conn-list"></div>
+      <!-- Backlinks: split outgoing / incoming -->
+      <div class="lp-bl-sublabel">
+        <span>→ Aponta para</span>
+        <span id="lp-conn-out-count" class="lp-bl-count">0</span>
+      </div>
+      <div id="lp-conn-out-list" class="lp-conn-list"></div>
+      <div class="lp-bl-sublabel lp-bl-sublabel--in">
+        <span>← Referenciado por</span>
+        <span id="lp-conn-in-count" class="lp-bl-count lp-bl-count--in">0</span>
+      </div>
+      <div id="lp-conn-in-list" class="lp-conn-list"></div>
     </div>
 
     <!-- INFORMAÇÕES -->
@@ -15248,26 +15284,31 @@ function openLeftPanel(nd) {
     if (el) { mw.appendChild(el); mw.style.display = 'block'; }
   }
 
-  // Connections (first in body)
-  const conns = connections.filter(c => c.from===nd.id || c.to===nd.id);
-  document.getElementById('lp-conn-count').textContent = '(' + conns.length + ')';
-  const cl = document.getElementById('lp-conn-list');
-  if (!conns.length) {
-    cl.innerHTML = '<div style="font-size:9px;color:var(--text3);padding:4px 0">Nenhuma conexão</div>';
-  } else {
-    cl.innerHTML = conns.map(c => {
-      const otherId = c.from===nd.id ? c.to : c.from;
+  // Connections — split outgoing / incoming (backlinks)
+  const _connsOut = connections.filter(c => c.from===nd.id);
+  const _connsIn  = connections.filter(c => c.to===nd.id);
+  document.getElementById('lp-conn-count').textContent = '(' + (_connsOut.length + _connsIn.length) + ')';
+  const _lpOC = document.getElementById('lp-conn-out-count');
+  const _lpIC = document.getElementById('lp-conn-in-count');
+  if (_lpOC) _lpOC.textContent = _connsOut.length;
+  if (_lpIC) _lpIC.textContent = _connsIn.length;
+  function _lpRenderDir(list, isIn) {
+    if (!list.length) return '<div style="font-size:9px;color:var(--text3);padding:2px 0;opacity:0.55">Nenhuma</div>';
+    return list.map(c => {
+      const otherId = isIn ? c.from : c.to;
       const other = nodes.find(n => n.id===otherId);
       if (!other) return '';
-      const arrow = c.from===nd.id ? '→' : '←';
       return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
         <span class="lp-conn-dot" style="background:${catColor(other.cat)}"></span>
-        <span class="lp-conn-arrow">${arrow}</span>
         <span style="flex:1;color:${other.color||catColor(other.cat)}">${other.title}</span>
         <span class="lp-conn-cat">${other.cat}</span>
       </div>`;
     }).join('');
   }
+  const _lpOL = document.getElementById('lp-conn-out-list');
+  const _lpIL = document.getElementById('lp-conn-in-list');
+  if (_lpOL) _lpOL.innerHTML = _lpRenderDir(_connsOut, false);
+  if (_lpIL) _lpIL.innerHTML = _lpRenderDir(_connsIn, true);
 
   // Info grid
   const grid = document.getElementById('lp-info-grid');
@@ -18532,6 +18573,94 @@ function _renderTutorial() {
           if(!on){[[0,1],[1,2],[1,3],[1,4],[0,2]].forEach(([a,b])=>{svg.appendChild(_mkSVG('line',{x1:ns[a].x,y1:ns[a].y,x2:ns[b].x,y2:ns[b].y,stroke:'rgba(255,255,255,1)','stroke-width':'3.0'}));});}
           ns.forEach(n=>{svg.appendChild(_mkSVG('circle',{cx:n.x,cy:n.y,r:8,fill:'#5ddcaa',opacity:'.85'}));});
           if(on){const t=_mkSVG('text',{x:80,y:82,'text-anchor':'middle','font-size':'9',fill:'rgba(255,255,255,1)'});t.textContent='arestas removidas';svg.appendChild(t);}
+        }
+      },
+      {name:'Tipos de conexão', tag:'Conexão', tBg:'rgba(127,119,221,.18)', tCl:'#b0a8ff', desc:'Badge clicável na linha — cicla entre 5 tipos semânticos',
+        draw(svg,on){
+          svg.innerHTML='';
+          const tps=[{c:'rgba(255,255,255,.38)',y:20},{c:'#22c55e',y:34},{c:'#ef4444',y:48},{c:'#3b82f6',y:62},{c:'#eab308',y:76}];
+          tps.forEach((tp,i)=>{
+            const l=_mkSVG('line',{x1:24,y1:tp.y,x2:142,y2:tp.y,stroke:tp.c,'stroke-width':'2',opacity:on?'0.88':'0.45'});
+            if(on){l.style.animation=`dash-move ${0.45+i*0.08}s linear infinite`;}
+            svg.appendChild(l);
+            svg.appendChild(_mkSVG('circle',{cx:24,cy:tp.y,r:4,fill:tp.c,opacity:on?'0.9':'0.45'}));
+            svg.appendChild(_mkSVG('circle',{cx:142,cy:tp.y,r:4,fill:tp.c,opacity:on?'0.9':'0.45'}));
+          });
+        }
+      },
+      {name:'— Neutro', tag:'Conexão', tBg:'rgba(255,255,255,.07)', tCl:'rgba(255,255,255,.5)', desc:'Sem semântica. Cor gerada pelo mix das duas extremidades',
+        draw(svg,on){
+          svg.innerHTML='';
+          const A={x:36,y:44},B={x:130,y:44},col='rgba(255,255,255,0.52)';
+          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4'});
+          svg.appendChild(l);
+          [A,B].forEach(p=>{svg.appendChild(_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:'rgba(255,255,255,0.12)',stroke:col,'stroke-width':'1.5'}));});
+          const ic=_mkSVG('text',{x:83,y:49,'text-anchor':'middle','font-size':'15',fill:col,opacity:on?'1':'0.55'});ic.textContent='—';svg.appendChild(ic);
+        }
+      },
+      {name:'→ Influencia', tag:'Conexão', tBg:'rgba(34,197,94,.18)', tCl:'#4ade80', desc:'A moldou ou gerou B. Causa suave, inspiração',
+        draw(svg,on){
+          svg.innerHTML='';
+          const A={x:36,y:44},B={x:130,y:44},col='#22c55e';
+          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.11'}));}
+          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4'});
+          if(on)l.style.animation='dash-move .7s linear infinite';
+          svg.appendChild(l);
+          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
+          [A,B].forEach((p,i)=>{
+            const c=_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:on?col+'22':'rgba(34,197,94,.1)',stroke:col,'stroke-width':'1.5'});
+            if(on&&i===0)c.style.animation='pulse-ring 1.4s ease-out infinite';
+            svg.appendChild(c);
+          });
+          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='→';svg.appendChild(ic);
+        }
+      },
+      {name:'✗ Contradiz', tag:'Conexão', tBg:'rgba(239,68,68,.18)', tCl:'#f87171', desc:'A e B se opõem ou se refutam mutuamente',
+        draw(svg,on){
+          svg.innerHTML='';
+          const A={x:36,y:44},B={x:130,y:44},col='#ef4444';
+          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.09'}));}
+          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4','stroke-dasharray':'8 5'});
+          if(on)l.style.animation='dash-move .45s linear infinite';
+          svg.appendChild(l);
+          svg.appendChild(_mkSVG('polyline',{points:'46,38 36,44 46,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
+          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
+          [A,B].forEach(p=>{
+            const c=_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:on?col+'18':'rgba(239,68,68,.09)',stroke:col,'stroke-width':'1.5'});
+            if(on)c.style.animation='blink .85s ease-in-out infinite';
+            svg.appendChild(c);
+          });
+          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='✗';svg.appendChild(ic);
+        }
+      },
+      {name:'⊂ Deriva de', tag:'Conexão', tBg:'rgba(59,130,246,.18)', tCl:'#60a5fa', desc:'B é variante, espécie ou desdobramento de A',
+        draw(svg,on){
+          svg.innerHTML='';
+          const A={x:36,y:44},B={x:130,y:44},col='#3b82f6';
+          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.09'}));}
+          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4','stroke-dasharray':'3 5'});
+          if(on)l.style.animation='dash-move .85s linear infinite';
+          svg.appendChild(l);
+          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
+          const cA=_mkSVG('circle',{cx:A.x,cy:A.y,r:14,fill:on?col+'18':'rgba(59,130,246,.09)',stroke:col,'stroke-width':'1.5'});
+          const cB=_mkSVG('circle',{cx:B.x,cy:B.y,r:9, fill:on?col+'22':'rgba(59,130,246,.11)',stroke:col,'stroke-width':'1.5'});
+          if(on)cA.style.animation='float 2s ease-in-out infinite';
+          svg.appendChild(cA);svg.appendChild(cB);
+          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='⊂';svg.appendChild(ic);
+        }
+      },
+      {name:'◈ Referência', tag:'Conexão', tBg:'rgba(234,179,8,.18)', tCl:'#fbbf24', desc:'A cita, apoia ou documenta B',
+        draw(svg,on){
+          svg.innerHTML='';
+          const A={x:36,y:44},B={x:130,y:44},col='#eab308';
+          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.09'}));}
+          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4','stroke-dasharray':'2 6'});
+          if(on)l.style.animation='dash-move .6s linear infinite';
+          svg.appendChild(l);
+          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
+          [A,B].forEach(p=>{svg.appendChild(_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:on?col+'18':'rgba(234,179,8,.09)',stroke:col,'stroke-width':'1.5'}));});
+          if(on){const d=_mkSVG('polygon',{points:'83,38 90,44 83,50 76,44',fill:col,opacity:'.4'});d.style.animation='blink 1.1s ease-in-out infinite';svg.appendChild(d);}
+          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='◈';svg.appendChild(ic);
         }
       },
     ]},
@@ -28069,11 +28198,17 @@ function closeAISuggestions() {
   document.getElementById('ai-suggest-overlay').classList.remove('open');
 }
 
+const _SUGGEST_STOPWORDS = new Set([
+  'satélite','satelite','nodo','node','novo','nova','ideia','conceito',
+  'sobre','para','como','este','esta','esse','essa','seus','suas',
+  'entre','mais','também','muito','quando','onde','quem','qual','porque',
+  'isso','aqui','está','fazer','seria','pode','deve','será','feito'
+]);
 function tokenize(text) {
   return (text || '').toLowerCase()
     .replace(/[^a-záàâãéèêíïóôõöúüçñ\s]/g, ' ')
     .split(/\s+/)
-    .filter(w => w.length > 3);
+    .filter(w => w.length > 3 && !_SUGGEST_STOPWORDS.has(w));
 }
 
 function tfidfSimilarity(n1, n2) {
@@ -28127,7 +28262,15 @@ function runAISuggestions() {
     }
 
     suggestions.sort((a,b) => b.score - a.score);
-    aiSuggestResults = suggestions.slice(0, 15);
+    // Deduplicate by display-title pair (prevents "Node A ↔ Node B" shown twice)
+    const _seenTitlePairs = new Set();
+    const _deduped = suggestions.filter(({n1, n2}) => {
+      const tk = [n1.title, n2.title].sort().join('|||');
+      if (_seenTitlePairs.has(tk)) return false;
+      _seenTitlePairs.add(tk);
+      return true;
+    });
+    aiSuggestResults = _deduped.slice(0, 15);
 
     btn.innerHTML = '<i class="ti ti-refresh"></i> Reanalisar conexões';
     btn.classList.remove('spinning');
@@ -28149,7 +28292,8 @@ function renderAISuggestList(suggestions) {
   list.innerHTML = suggestions.map(({n1, n2, score, key}, idx) => {
     const c1 = n1.color || catColor(n1.cat);
     const c2 = n2.color || catColor(n2.cat);
-    const pct = Math.min(99, Math.round(score * 100 * 4));
+    const pct = Math.min(95, Math.round(score * 100));
+    const reason = generateSuggestionReason(n1, n2, score);
     return `
     <div class="ai-conn-card" id="ai-card-${key.replace('|','-')}" style="animation-delay:${idx*45}ms">
       <div class="ai-conn-pair">
@@ -28163,6 +28307,7 @@ function renderAISuggestList(suggestions) {
       <button class="ai-conn-accept" onclick="acceptAISuggestion('${n1.id}','${n2.id}','${key}')">
         <i class="ti ti-plug-connected"></i> Conectar
       </button>
+      ${reason ? `<div class="ai-conn-reason">${reason}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -35023,33 +35168,42 @@ window.updateConnectionList = updateConnectionList = function() {
   }).join('');
 };
 
-// Patch openLeftPanel para adicionar badge de tipo nas conexões do painel esquerdo
+// Patch openLeftPanel — badges de tipo + split outgoing/incoming (backlinks)
 const _ctOrigOpenLP = openLeftPanel;
 window.openLeftPanel = openLeftPanel = function(nd) {
   _ctOrigOpenLP(nd);
-  // Atualiza lp-conn-list com badges de tipo
-  const conns = connections.filter(c => c.from === nd.id || c.to === nd.id);
-  const cl = document.getElementById('lp-conn-list');
-  if (!cl || !conns.length) return;
-  cl.innerHTML = conns.map(c => {
-    const otherId = c.from === nd.id ? c.to : c.from;
-    const other = nodes.find(n => n.id === otherId);
-    if (!other) return '';
-    const arrow = c.from === nd.id ? '→' : '←';
-    const meta = _getConnTypeMeta(c);
-    const badgeStyle = meta.color
-      ? `border-color:${meta.color}55;color:${meta.color};background:${meta.color}18`
-      : '';
-    return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
-      <span class="lp-conn-type-badge" style="${badgeStyle}"
-            onclick="event.stopPropagation();cycleConnType('${c.id}');openLeftPanel(leftPanelNode)"
-            title="${meta.label} — clique para mudar">${meta.icon}</span>
-      <span class="lp-conn-dot" style="background:${typeof catColor==='function'?catColor(other.cat):'#888'}"></span>
-      <span class="lp-conn-arrow">${arrow}</span>
-      <span style="flex:1;color:${other.color || (typeof catColor==='function'?catColor(other.cat):'#888')}">${other.title}</span>
-      <span class="lp-conn-cat">${other.cat}</span>
-    </div>`;
-  }).join('');
+  const _ctOut = connections.filter(c => c.from === nd.id);
+  const _ctIn  = connections.filter(c => c.to   === nd.id);
+  // Atualiza contadores
+  const _ctOC = document.getElementById('lp-conn-out-count');
+  const _ctIC = document.getElementById('lp-conn-in-count');
+  if (_ctOC) _ctOC.textContent = _ctOut.length;
+  if (_ctIC) _ctIC.textContent = _ctIn.length;
+  // Renderiza lista com badge de tipo
+  function _ctRender(list, isIn) {
+    if (!list.length) return '<div style="font-size:9px;color:var(--text3);padding:2px 0;opacity:0.55">Nenhuma</div>';
+    return list.map(c => {
+      const otherId = isIn ? c.from : c.to;
+      const other = nodes.find(n => n.id === otherId);
+      if (!other) return '';
+      const meta = _getConnTypeMeta(c);
+      const badgeStyle = meta.color
+        ? `border-color:${meta.color}55;color:${meta.color};background:${meta.color}18`
+        : '';
+      return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
+        <span class="lp-conn-type-badge" style="${badgeStyle}"
+              onclick="event.stopPropagation();cycleConnType('${c.id}');openLeftPanel(leftPanelNode)"
+              title="${meta.label} — clique para mudar">${meta.icon}</span>
+        <span class="lp-conn-dot" style="background:${typeof catColor==='function'?catColor(other.cat):'#888'}"></span>
+        <span style="flex:1;color:${other.color||(typeof catColor==='function'?catColor(other.cat):'#888')}">${other.title}</span>
+        <span class="lp-conn-cat">${other.cat}</span>
+      </div>`;
+    }).join('');
+  }
+  const _ctOL = document.getElementById('lp-conn-out-list');
+  const _ctIL = document.getElementById('lp-conn-in-list');
+  if (_ctOL) _ctOL.innerHTML = _ctRender(_ctOut, false);
+  if (_ctIL) _ctIL.innerHTML = _ctRender(_ctIn,  true);
 };
 
 // Patch save() para incluir connType nas conexões
