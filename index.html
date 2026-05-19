@@ -3760,16 +3760,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   .sm-ft-auto-btn:hover { color: var(--text); background: var(--glass-light); }
 
-  /* ── Texto preto em dark mode → legível; branco em light mode → legível ── */
-  html:not(.light) #sm-editor [style*="color: rgb(0, 0, 0)"],
-  html:not(.light) #sm-editor [style*="color:rgb(0, 0, 0)"],
-  html:not(.light) #sm-view-body [style*="color: rgb(0, 0, 0)"],
-  html:not(.light) #sm-view-body [style*="color:rgb(0, 0, 0)"] { color: var(--text) !important; }
-
-  html.light #sm-editor [style*="color: rgb(255, 255, 255)"],
-  html.light #sm-editor [style*="color:rgb(255, 255, 255)"],
-  html.light #sm-view-body [style*="color: rgb(255, 255, 255)"],
-  html.light #sm-view-body [style*="color:rgb(255, 255, 255)"] { color: var(--text) !important; }
+  /* Cores inline são corrigidas via JS (smFixContentColors) — sem override frágil aqui */
 
   /* ── Glass Design Settings Panel (editor only) ── */
   #glass-settings-overlay {
@@ -14223,6 +14214,8 @@ function applyTheme(themeId) {
   const ms = document.getElementById('music-preset'); if(ms){ms.style.color=isLightTheme?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.4)';ms.style.borderColor=isLightTheme?'rgba(0,0,0,0.15)':'rgba(255,255,255,0.1)';}
   saveSettings(); toast('Tema: '+th.name);
   if (typeof applyThemeToLockScreen==='function') applyThemeToLockScreen(th.bg, isLightTheme);
+  // Recorrige cores de texto no modal Saiba Mais quando o tema muda
+  setTimeout(() => { if (typeof smFixContentColors === 'function') smFixContentColors(); }, 80);
   if (typeof applyGlassSettingsToDOM==='function') applyGlassSettingsToDOM(Object.assign({},glassSettings,{panelOp:glassSettings.panelOpacity||0.55,borderGl:glassSettings.borderGlow||0.10}));
 }
 
@@ -17145,6 +17138,8 @@ function openSaibaMais() {
   const editor = document.getElementById('sm-editor');
   editor.innerHTML = nd.richContent || '';
   smUpdatePlaceholder();
+  // Corrige cores inline conforme o tema atual
+  setTimeout(() => { if (typeof smFixContentColors === 'function') smFixContentColors(); }, 30);
 
   // Load media lists (separated image/video)
   smRenderMediaList();
@@ -17232,6 +17227,29 @@ function smRenderView() {
   }
 
   body.innerHTML = html;
+  smFixContentColors();
+}
+
+// Corrige cores inline muito claras (light mode) ou muito escuras (dark mode)
+// Remove o inline style de cor para deixar o CSS do tema assumir
+function smFixContentColors() {
+  const isLight = document.documentElement.classList.contains('light');
+  ['sm-view-body', 'sm-editor'].forEach(id => {
+    const container = document.getElementById(id);
+    if (!container) return;
+    container.querySelectorAll('[style]').forEach(el => {
+      const c = el.style.color;
+      if (!c) return;
+      const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (!m) return;
+      const brightness = (parseInt(m[1]) * 299 + parseInt(m[2]) * 587 + parseInt(m[3]) * 114) / 1000;
+      if (isLight && brightness > 160) {
+        el.style.removeProperty('color');
+      } else if (!isLight && brightness < 60) {
+        el.style.removeProperty('color');
+      }
+    });
+  });
 }
 
 // ── Gallery Renderer ──────────────────────────────
