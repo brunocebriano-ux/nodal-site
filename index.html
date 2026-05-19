@@ -3581,6 +3581,20 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .sm-tb-btn:active { opacity: 0.7; transform: scale(0.96); }
   .sm-tb-sep { width: 1px; height: 16px; background: var(--border); align-self: center; margin: 0 2px; }
 
+  /* Cor do texto na toolbar fixa */
+  .sm-tb-color-wrap { position: relative; }
+  .sm-tb-color-btn {
+    display: flex !important; align-items: center; gap: 3px; padding: 0 8px !important;
+  }
+  .sm-tb-color-ind {
+    display: block; width: 14px; height: 4px; border-radius: 2px;
+    background: var(--text); pointer-events: none;
+  }
+  .sm-tb-color-wrap input[type="color"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: none; padding: 0;
+  }
+
   /* Editor — glass transparente */
   #sm-editor {
     width: 100%; min-height: 280px;
@@ -17731,6 +17745,36 @@ function smExec(cmd, val) {
   document.execCommand(cmd, false, val || null);
   smMarkDirty();
 }
+
+// ── Cor do texto — toolbar fixa ──────────────────
+let _smSavedRange = null;
+function smSaveEditorSel() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) _smSavedRange = sel.getRangeAt(0).cloneRange();
+}
+function smApplyTextColor(color) {
+  const editor = document.getElementById('sm-editor');
+  if (!editor) return;
+  editor.focus();
+  if (_smSavedRange) {
+    const sel = window.getSelection();
+    if (sel) { sel.removeAllRanges(); sel.addRange(_smSavedRange); }
+  }
+  document.execCommand('foreColor', false, color);
+  const ind = document.getElementById('sm-tb-color-ind');
+  if (ind) ind.style.background = color;
+  smMarkDirty();
+}
+function smRemoveTextColor() {
+  const editor = document.getElementById('sm-editor');
+  if (!editor) return;
+  editor.focus();
+  const sel = window.getSelection();
+  if (sel && !sel.isCollapsed) document.execCommand('removeFormat', false, null);
+  const ind = document.getElementById('sm-tb-color-ind');
+  if (ind) ind.style.background = '';
+  smMarkDirty();
+}
 function smInsertH1() { smExec('formatBlock', '<h1>'); }
 function smInsertH2() { smExec('formatBlock', '<h2>'); }
 function smInsertH3() { smExec('formatBlock', '<h3>'); }
@@ -19611,6 +19655,16 @@ function closeArticleViewer() {
             <button class="sm-tb-btn" onclick="smExec('justifyRight')" title="Direita">⇒</button>
             <div class="sm-tb-sep"></div>
             <button class="sm-tb-btn" onclick="smExec('removeFormat')" title="Limpar formatação">✕ Format.</button>
+            <div class="sm-tb-sep"></div>
+            <div class="sm-tb-color-wrap" title="Cor do texto">
+              <button class="sm-tb-btn sm-tb-color-btn">
+                <span>A</span>
+                <span class="sm-tb-color-ind" id="sm-tb-color-ind"></span>
+                <input type="color" id="sm-tb-color-input" value="#e8e8f8"
+                  onmousedown="smSaveEditorSel()" oninput="smApplyTextColor(this.value)"/>
+              </button>
+            </div>
+            <button class="sm-tb-btn" onclick="smRemoveTextColor()" title="Cor automática (tema)">auto</button>
             <button id="sm-ask-ai-btn" title="Ask AI — gerar conteúdo com IA" onclick="smAskAI()">Ask AI</button>
           </div>
           <div id="sm-editor" contenteditable="true" spellcheck="false"
