@@ -3715,6 +3715,48 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   #sm-ft-ask-ai:hover { filter: brightness(1.15); }
 
+  /* ── Floating toolbar: color picker ── */
+  .sm-ft-color-wrap {
+    position: relative; display: flex; align-items: center;
+  }
+  .sm-ft-color-btn {
+    height: 26px; width: 32px; padding: 0;
+    background: transparent; border: none;
+    cursor: pointer; border-radius: 7px; transition: background 0.10s;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    color: var(--text2); gap: 2px;
+  }
+  .sm-ft-color-btn:hover { background: var(--glass-light); }
+  .sm-ft-color-indicator {
+    width: 12px; height: 4px; border-radius: 2px;
+    background: currentColor; display: block; margin-top: 1px;
+    pointer-events: none;
+  }
+  .sm-ft-color-btn input[type="color"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: none; padding: 0;
+  }
+  .sm-ft-auto-btn {
+    height: 26px; padding: 0 7px;
+    background: transparent; border: none;
+    color: var(--text3); font-family: var(--mono); font-size: 9px;
+    cursor: pointer; border-radius: 7px; transition: all 0.10s;
+    white-space: nowrap; letter-spacing: 0.04em;
+  }
+  .sm-ft-auto-btn:hover { color: var(--text); background: var(--glass-light); }
+
+  /* ── Texto preto em dark mode → legível; branco em light mode → legível ── */
+  html:not(.light) #sm-editor [style*="color: rgb(0, 0, 0)"],
+  html:not(.light) #sm-editor [style*="color:rgb(0, 0, 0)"],
+  html:not(.light) #sm-view-body [style*="color: rgb(0, 0, 0)"],
+  html:not(.light) #sm-view-body [style*="color:rgb(0, 0, 0)"] { color: var(--text) !important; }
+
+  html.light #sm-editor [style*="color: rgb(255, 255, 255)"],
+  html.light #sm-editor [style*="color:rgb(255, 255, 255)"],
+  html.light #sm-view-body [style*="color: rgb(255, 255, 255)"],
+  html.light #sm-view-body [style*="color:rgb(255, 255, 255)"] { color: var(--text) !important; }
+
   /* ── Glass Design Settings Panel (editor only) ── */
   #glass-settings-overlay {
     display: none; position: fixed; inset: 0; z-index: 100;
@@ -15415,6 +15457,7 @@ function addNode(data) {
     richMedia: data.richMedia || [],
     date: data.date || '',
     shape: data.shape || 'sphere',
+    ficha: data.ficha || null,
     x: data.x !== undefined ? data.x : (typeof cameraTarget!=='undefined'?cameraTarget.x:0)+(Math.random()-0.5)*18,
     y: data.y !== undefined ? data.y : (typeof cameraTarget!=='undefined'?cameraTarget.y:0)+(Math.random()-0.5)*18,
     z: data.z !== undefined ? data.z : (typeof cameraTarget!=='undefined'?cameraTarget.z:0)+(Math.random()-0.5)*18,
@@ -31576,7 +31619,8 @@ async function projSaveCurrentState() {
       media:n.media, tags:n.tags||[], notes:n.notes||'',
       richNotes:n.richNotes||'', richContent:n.richContent||'',
       richMedia:n.richMedia||[], date:n.date||'',
-      shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z
+      shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
+      ficha:n.ficha||null
     })),
     connections: connections.map(c => ({id:c.id, from:c.from, to:c.to})),
     projectName: 'NODAL', projectSub,
@@ -34007,6 +34051,15 @@ function showIsolatedNodes() {
   <button class="sm-ft-btn" onclick="smFtExec('formatBlock','<h2>')" title="Título">H2</button>
   <button class="sm-ft-btn" onclick="smFtExec('formatBlock','<h3>')" title="Subtítulo">H3</button>
   <div class="sm-ft-sep"></div>
+  <div class="sm-ft-color-wrap" title="Cor do texto">
+    <button class="sm-ft-color-btn" id="sm-ft-color-btn">
+      <span>A</span>
+      <span class="sm-ft-color-indicator" id="sm-ft-color-indicator"></span>
+      <input type="color" id="sm-ft-color-input" value="#e8e8f8" oninput="smFtApplyColor(this.value)"/>
+    </button>
+  </div>
+  <button class="sm-ft-auto-btn" onclick="smFtRemoveColor()" title="Remover cor (automático)">auto</button>
+  <div class="sm-ft-sep"></div>
   <button id="sm-ft-ask-ai" onclick="smFtAskAI()" title="Ask AI sobre a seleção">✦ Ask AI</button>
 </div>
 
@@ -34065,6 +34118,43 @@ function showIsolatedNodes() {
     document.getElementById('sm-editor')?.focus();
     document.execCommand(cmd, false, val || null);
     smHideFloatToolbar();
+    if (typeof smMarkDirty === 'function') smMarkDirty();
+  };
+
+  // Salva e restaura seleção para o color picker (que destrói o foco do editor)
+  let _smFtSavedRange = null;
+  function _smFtSaveSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) _smFtSavedRange = sel.getRangeAt(0).cloneRange();
+  }
+  function _smFtRestoreSelection() {
+    const editor = document.getElementById('sm-editor');
+    if (!editor || !_smFtSavedRange) return;
+    editor.focus();
+    const sel = window.getSelection();
+    if (sel) { sel.removeAllRanges(); sel.addRange(_smFtSavedRange); }
+  }
+  // Salva seleção quando o color picker é clicado
+  document.getElementById('sm-ft-color-input')?.addEventListener('click', _smFtSaveSelection);
+
+  window.smFtApplyColor = function(color) {
+    _smFtRestoreSelection();
+    document.execCommand('foreColor', false, color);
+    const ind = document.getElementById('sm-ft-color-indicator');
+    if (ind) ind.style.background = color;
+    if (typeof smMarkDirty === 'function') smMarkDirty();
+  };
+
+  window.smFtRemoveColor = function() {
+    const editor = document.getElementById('sm-editor');
+    if (!editor) return;
+    editor.focus();
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed) {
+      document.execCommand('removeFormat', false, null);
+    }
+    const ind = document.getElementById('sm-ft-color-indicator');
+    if (ind) ind.style.background = '';
     if (typeof smMarkDirty === 'function') smMarkDirty();
   };
 
@@ -35222,6 +35312,41 @@ save = function() {
     }
   } catch(e) {}
 };
+
+// Patch save: amenda localStorage para incluir ficha nos nós
+const _fichaOrigSave = save;
+save = function() {
+  _fichaOrigSave.apply(this, arguments);
+  try {
+    const stored = JSON.parse(localStorage.getItem('neural-v3') || '{}');
+    if (stored.nodes) {
+      let changed = false;
+      stored.nodes.forEach(nd => {
+        const live = nodes.find(n => n.id === nd.id);
+        if (live && live.ficha !== undefined) {
+          nd.ficha = live.ficha || null;
+          changed = true;
+        }
+      });
+      if (changed) localStorage.setItem('neural-v3', JSON.stringify(stored));
+    }
+  } catch(e) {}
+};
+
+// Restaura ficha ao carregar do localStorage
+setTimeout(() => {
+  try {
+    const data = JSON.parse(localStorage.getItem('neural-v3') || '{}');
+    if (data.nodes) {
+      data.nodes.forEach(nd => {
+        if (nd.ficha) {
+          const live = nodes.find(n => n.id === nd.id);
+          if (live) live.ficha = nd.ficha;
+        }
+      });
+    }
+  } catch(e) {}
+}, 1400);
 
 // Patch projSaveData para incluir connType nas conexões antes de salvar no Supabase
 const _ctOrigProjSaveData = projSaveData;
