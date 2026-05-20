@@ -15699,7 +15699,14 @@ function reheatSimulation(alpha) {
   // Call this when graph changes (node added/removed, connection added/removed)
   if (!forceSimulation) { startForceSimulation(); return; }
 
+  const newestId = nodes.length > 0 ? nodes[nodes.length - 1].id : null;
   buildSimNodes();
+
+  // Pina todos os nós existentes no lugar — só o mais novo fica livre para se posicionar
+  simNodes.forEach(sn => {
+    if (sn.id !== newestId) { sn.fx = sn.x; sn.fy = sn.y; }
+  });
+
   const links = buildSimLinks();
 
   forceSimulation
@@ -17187,6 +17194,10 @@ function closeSaibaMais() {
 
 // ── Tabs ──────────────────────────────────────────
 function smSwitchTab(tab) {
+  // Auto-salva ficha em memória antes de sair da aba, sem toast
+  if (smCurrentTab === 'ficha' && tab !== 'ficha' && smCurrentNode) {
+    ftAutoSave();
+  }
   smCurrentTab = tab;
   ['view','articles','gallery','edit','ficha'].forEach(t => {
     const el = document.getElementById('sm-'+t+'-tab');
@@ -17998,6 +18009,35 @@ function ftLoad() {
   // Esconde badge de salvo
   const badge = document.getElementById('ft-saved-badge');
   if (badge) { badge.classList.remove('show'); }
+}
+
+function ftAutoSave() {
+  if (!smCurrentNode) return;
+  smCurrentNode.ficha = {
+    foto:          ftFotoDataUrl,
+    nomeArtistico: ftV('ft-nome-artistico'),
+    nomeReal:      ftV('ft-nome-real'),
+    nascimento:    ftV('ft-nascimento'),
+    falecimento:   ftV('ft-falecimento'),
+    nacionalidade: ftV('ft-nacionalidade'),
+    categoria:     ftV('ft-categoria'),
+    formacao:      ftV('ft-formacao'),
+    area:          ftV('ft-area'),
+    contexto:      ftV('ft-contexto'),
+    tematicas:     ftV('ft-tematicas'),
+    influencias:   ftV('ft-influencias'),
+    colaboracoes:  ftV('ft-colaboracoes'),
+    generos:       ftGetTags('ft-tags-genero'),
+    entrevista:    ftV('ft-entrevista'),
+    textoCritico:  ftV('ft-texto-critico'),
+    galeriaLink:   ftV('ft-galeria-link'),
+    museu:         ftV('ft-museu'),
+    exposicoes:    ftV('ft-exposicoes'),
+    curadoria:     ftV('ft-curadoria'),
+    tags:          ftGetTags('ft-tags-custom'),
+    updatedAt:     new Date().toISOString(),
+  };
+  if (typeof save === 'function') save();
 }
 
 function ftSave() {
