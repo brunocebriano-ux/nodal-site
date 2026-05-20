@@ -16441,6 +16441,20 @@ function toggleNodeTag(prefix, tid) {
   const idx = current.indexOf(tid);
   if (idx >= 0) current.splice(idx, 1); else current.push(tid);
   renderTagPicker(prefix, current);
+  // Sincroniza painel esquerdo e header do Saiba Mais ao vivo (sem esperar salvar)
+  if (prefix === 'e') {
+    const chips = current.map(id => {
+      const tg = globalTags.find(g => g.id === id);
+      if (!tg) return '';
+      return `<span class="tag-chip" style="background:${tg.color}22;border-color:${tg.color}55;color:${tg.color}">${tg.name}</span>`;
+    }).filter(Boolean).join('');
+    const tagsEl = document.getElementById('lp-tags-inline');
+    if (tagsEl) { tagsEl.innerHTML = chips; tagsEl.style.display = chips ? 'flex' : 'none'; }
+    const smTagsEl = document.getElementById('sm-header-tags');
+    if (smTagsEl && typeof smCurrentNode !== 'undefined' && smCurrentNode && smCurrentNode.id === (selectedNode && selectedNode.id)) {
+      smTagsEl.innerHTML = chips; smTagsEl.style.display = chips ? 'flex' : 'none';
+    }
+  }
 }
 
 // ── Notes ──────────────────────────────────────────
