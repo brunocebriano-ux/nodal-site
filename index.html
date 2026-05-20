@@ -18034,16 +18034,27 @@ function ftSave() {
     updatedAt:     new Date().toISOString(),
   };
 
-  // 1. Persiste no localStorage imediatamente
-  try {
-    const stored = JSON.parse(localStorage.getItem('neural-v3') || '{}');
-    if (stored.nodes) {
-      const nd = stored.nodes.find(n => n.id === smCurrentNode.id);
-      if (nd) { nd.ficha = smCurrentNode.ficha; localStorage.setItem('neural-v3', JSON.stringify(stored)); }
-    }
-  } catch(e) {}
+  // 1. Dispara a cadeia completa de save() para garantir que neural-v3
+  //    e o cache do projeto sejam atualizados com a ficha (via patches da cadeia).
+  //    Depois cancela o debounce e chama projSaveCurrentState() imediatamente.
+  if (typeof save === 'function') save();
 
-  // 2. Salva direto no Supabase sem depender do debounce
+  // 2. Garante persistência direta no cache do projeto ativo (neural-proj-{id})
+  if (typeof activeProjectId !== 'undefined' && activeProjectId) {
+    try {
+      const _projKey = 'neural-proj-' + activeProjectId;
+      const _projStored = JSON.parse(localStorage.getItem(_projKey) || '{}');
+      if (_projStored.nodes) {
+        const _nd = _projStored.nodes.find(function(n){ return n.id === smCurrentNode.id; });
+        if (_nd) {
+          _nd.ficha = smCurrentNode.ficha;
+          localStorage.setItem(_projKey, JSON.stringify(_projStored));
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 3. Salva direto no Supabase, cancelando o debounce para garantir envio imediato
   if (typeof projSaveCurrentState === 'function' && typeof activeProjectId !== 'undefined' && activeProjectId) {
     if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
     projSaveCurrentState();
