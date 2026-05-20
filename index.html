@@ -3393,14 +3393,36 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .ft-avatar {
     width: 72px; height: 72px; border-radius: 50%;
     background: rgba(167,139,250,0.10);
-    border: 2px dashed var(--border-glow);
+    border: 2px solid var(--border-glow);
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; cursor: pointer; position: relative; overflow: hidden;
-    transition: border-color 0.2s, transform 0.2s;
+    font-size: 24px; cursor: default; position: relative; overflow: hidden;
+    transition: border-color 0.2s;
   }
-  .ft-avatar:hover { border-color: var(--accent); transform: scale(1.04); }
   .ft-avatar img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
   .ft-avatar-hint { font-size: 8.5px; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; }
+  /* URL da foto de perfil */
+  #ft-foto-url {
+    width: 100%; height: 38px; padding: 0 12px 0 32px; box-sizing: border-box;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+    color: rgba(255,255,255,0.78); font-family: var(--mono); font-size: 11px;
+    border-radius: 10px; outline: none; transition: border-color 0.15s; letter-spacing: 0.02em;
+    margin: 0 !important;
+  }
+  html.light #ft-foto-url {
+    background: rgba(255,255,255,0.68); border-color: rgba(20,50,120,0.13);
+    color: rgba(18,28,55,0.82);
+  }
+  #ft-foto-url::placeholder { color: rgba(255,255,255,0.22); }
+  html.light #ft-foto-url::placeholder { color: rgba(18,28,55,0.30); }
+  #ft-foto-url:focus { border-color: rgba(99,160,255,0.38); box-shadow: 0 0 0 3px rgba(99,160,255,0.09); }
+  #ft-foto-url-go {
+    width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px;
+    background: #2563eb; border: none; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s; padding: 0;
+  }
+  #ft-foto-url-go:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 5px 18px rgba(37,99,235,0.42); }
+  #ft-foto-url-go:active { transform: translateY(0); }
   .ft-profile-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
   .ft-input-nome {
     font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 700;
@@ -17900,29 +17922,16 @@ function ftUpdateInitials() {
   }
 }
 
-function ftHandleFoto(e) {
-  const file = e.target.files[0]; if (!file) return;
-  // Comprime via canvas antes de armazenar
-  const img = new Image();
-  const reader = new FileReader();
-  reader.onload = ev => {
-    img.onload = () => {
-      const MAX = 400;
-      const scale = Math.min(MAX/img.width, MAX/img.height, 1);
-      const canvas = document.createElement('canvas');
-      canvas.width  = img.width  * scale;
-      canvas.height = img.height * scale;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      ftFotoDataUrl = canvas.toDataURL('image/jpeg', 0.72);
-      const av = document.getElementById('ft-avatar');
-      let preview = av.querySelector('img');
-      if (!preview) { preview = document.createElement('img'); av.appendChild(preview); }
-      preview.src = ftFotoDataUrl;
-      document.getElementById('ft-initials').style.display = 'none';
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
+function ftApplyFotoUrl() {
+  const url = document.getElementById('ft-foto-url').value.trim();
+  if (!url) { toast('Cole uma URL de imagem'); return; }
+  ftFotoDataUrl = url;
+  const av = document.getElementById('ft-avatar');
+  let preview = av.querySelector('img');
+  if (!preview) { preview = document.createElement('img'); av.appendChild(preview); }
+  preview.onerror = () => toast('Não foi possível carregar a imagem — verifique a URL');
+  preview.src = url;
+  document.getElementById('ft-initials').style.display = 'none';
 }
 
 function ftAddTag(e, containerId) {
@@ -17971,6 +17980,10 @@ function ftLoad() {
   } else {
     initEl.style.display = ''; initEl.textContent = '?';
   }
+
+  // Popula campo URL (só mostra se for URL externa, não base64 antigo)
+  const urlField = document.getElementById('ft-foto-url');
+  if (urlField) urlField.value = (ftFotoDataUrl && !ftFotoDataUrl.startsWith('data:')) ? ftFotoDataUrl : '';
 
   // Campos de texto — novos + retrocompatibilidade com campos antigos
   const map = {
@@ -19796,15 +19809,28 @@ function closeArticleViewer() {
         <!-- Perfil / Header -->
         <div class="ft-profile">
           <div class="ft-avatar-wrap">
-            <div class="ft-avatar" id="ft-avatar" onclick="document.getElementById('ft-foto-input').click()" title="Clique para adicionar foto">
+            <div class="ft-avatar" id="ft-avatar" title="Foto de perfil">
               <span id="ft-initials">?</span>
             </div>
-            <div class="ft-avatar-hint">clique p/ foto</div>
-            <input type="file" id="ft-foto-input" accept="image/*" style="display:none" onchange="ftHandleFoto(event)">
+            <div class="ft-avatar-hint">foto via URL</div>
           </div>
           <div class="ft-profile-fields">
             <input class="ft-input-nome" id="ft-nome-artistico" placeholder="Nome artístico" oninput="ftUpdateInitials()">
             <input class="ft-input-sub"  id="ft-nome-real"      placeholder="Nome completo">
+          </div>
+        </div>
+
+        <!-- URL da Foto de Perfil -->
+        <div class="ft-field" style="margin:-8px 0 18px;">
+          <label style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);">URL da Foto</label>
+          <div class="art-img-url-row">
+            <div class="art-img-url-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <input type="text" id="ft-foto-url" placeholder="https://i.ibb.co/..." onkeydown="if(event.key==='Enter')ftApplyFotoUrl()">
+            </div>
+            <button id="ft-foto-url-go" onclick="ftApplyFotoUrl()" title="Aplicar URL da foto">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
         </div>
 
