@@ -18032,7 +18032,20 @@ function ftSave() {
     updatedAt:     new Date().toISOString(),
   };
 
-  save(); // persiste no localStorage (igual ao restante do projeto)
+  // 1. Persiste no localStorage imediatamente
+  try {
+    const stored = JSON.parse(localStorage.getItem('neural-v3') || '{}');
+    if (stored.nodes) {
+      const nd = stored.nodes.find(n => n.id === smCurrentNode.id);
+      if (nd) { nd.ficha = smCurrentNode.ficha; localStorage.setItem('neural-v3', JSON.stringify(stored)); }
+    }
+  } catch(e) {}
+
+  // 2. Salva direto no Supabase sem depender do debounce
+  if (typeof projSaveCurrentState === 'function' && typeof activeProjectId !== 'undefined' && activeProjectId) {
+    if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
+    projSaveCurrentState();
+  }
 
   const badge = document.getElementById('ft-saved-badge');
   if (badge) {
