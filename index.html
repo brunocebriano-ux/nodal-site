@@ -17189,6 +17189,23 @@ function openSaibaMais() {
   document.getElementById('sm-header-cat').style.color = catColor(nd.cat);
   document.getElementById('sm-header-title').textContent = nd.title;
 
+  // Tags no header do modal (visíveis em qualquer modo)
+  const smTagsEl = document.getElementById('sm-header-tags');
+  if (smTagsEl) {
+    if (nd.tags && nd.tags.length) {
+      const chips = nd.tags.map(tid => {
+        const tg = globalTags.find(g => g.id === tid);
+        if (!tg) return '';
+        return `<span class="tag-chip" style="background:${tg.color}22;border-color:${tg.color}55;color:${tg.color}">${tg.name}</span>`;
+      }).filter(Boolean).join('');
+      smTagsEl.innerHTML = chips;
+      smTagsEl.style.display = chips ? 'flex' : 'none';
+    } else {
+      smTagsEl.innerHTML = '';
+      smTagsEl.style.display = 'none';
+    }
+  }
+
   // Load saved rich content into editor
   const editor = document.getElementById('sm-editor');
   editor.innerHTML = nd.richContent || '';
@@ -19617,6 +19634,7 @@ function closeArticleViewer() {
           <div class="sm-header-text">
             <div id="sm-header-cat"></div>
             <div id="sm-header-title"></div>
+            <div id="sm-header-tags" style="display:none;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
           </div>
         </div>
         <div class="sm-header-actions">
