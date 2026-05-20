@@ -31433,6 +31433,11 @@ function _psRenderFolder(p, list) {
   if (delBtn) delBtn.style.display = _isEd ? '' : 'none';
   if (shareBtn) shareBtn.style.display = _isEd ? '' : 'none';
 
+  // Atualiza indicador "link ativo" se já existe link compartilhado
+  if (_isEd && p && p.id) {
+    setTimeout(() => projUpdateShareBtn(p.id), 0);
+  }
+
   // Inner nodes
   _psBuildFolderNodes(p);
 }
@@ -34231,6 +34236,8 @@ function showIsolatedNodes() {
 
   function smShowFloatToolbar(e) {
     if (!ftb) return;
+    // Nunca mostrar para visitantes
+    if (typeof isEditorUnlocked !== 'undefined' && !isEditorUnlocked) { smHideFloatToolbar(); return; }
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
       smHideFloatToolbar(); return;
