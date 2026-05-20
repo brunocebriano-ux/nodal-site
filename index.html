@@ -14401,7 +14401,7 @@ function _hudDlToggle() {
 
 function saveSettings() {
   localStorage.setItem('neural-v5-settings', JSON.stringify({
-    isLight, globalTags, tagIdCounter, customCats, catIdCounter,
+    isLight, tagIdCounter, customCats, catIdCounter,
     projectName, projectSub, currentThemeId
   }));
   if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
@@ -14410,7 +14410,11 @@ function loadSettings() {
   try {
     const s = JSON.parse(localStorage.getItem('neural-v5-settings') || localStorage.getItem('neural-v4-settings') || '{}');
     if (s.isLight) { isLight = true; document.documentElement.classList.add('light'); const bt=document.getElementById('btn-theme'); if(bt) bt.classList.add('active'); }
-    if (s.globalTags)    { globalTags = s.globalTags; }
+    // globalTags agora tem chave própria — ver loadGlobalTags()
+    // Retrocompat: se ainda estiver no formato antigo, migra
+    if (s.globalTags && s.globalTags.length && !localStorage.getItem('neural-global-tags')) {
+      try { localStorage.setItem('neural-global-tags', JSON.stringify(s.globalTags)); } catch(e) {}
+    }
     if (s.tagIdCounter)  tagIdCounter = s.tagIdCounter;
     if (s.customCats)    { customCats = s.customCats; }
     if (s.catIdCounter)  catIdCounter = s.catIdCounter;
@@ -16142,6 +16146,7 @@ function save() {
 
 function load() {
   loadSettings();
+  loadGlobalTags();
   loadLogo(); // restore custom logo if saved locally
   const raw = localStorage.getItem('neural-v3');
   if (!raw) { spawnDefaultNodes(); setTimeout(handleUrlHash, 600); return; }
@@ -16335,6 +16340,17 @@ function closeTagManager() {
   if (selectedNode) renderTagPicker('e', selectedNode.tags || []);
   renderTagPicker('c', []);
 }
+function saveGlobalTags() {
+  try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
+  // Salva no Supabase imediatamente — sem debounce
+  if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
+}
+function loadGlobalTags() {
+  try {
+    const raw = localStorage.getItem('neural-global-tags');
+    if (raw) { globalTags = JSON.parse(raw); }
+  } catch(e) {}
+}
 function addGlobalTag() {
   const name = document.getElementById('new-tag-input').value.trim();
   if (!name) { toast('Digite um nome para a tag'); return; }
@@ -16343,16 +16359,14 @@ function addGlobalTag() {
   globalTags.push({ id: 't' + (tagIdCounter++), name, color });
   document.getElementById('new-tag-input').value = '';
   renderGlobalTagList();
-  saveSettings();
-  // Salva no Supabase imediatamente (sem esperar o debounce de 2s)
-  if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
+  saveGlobalTags();
+  saveSettings(); // salva tagIdCounter atualizado
   toast('Tag criada: ' + name);
 }
 function removeGlobalTag(tid) {
   globalTags = globalTags.filter(t => t.id !== tid);
   nodes.forEach(nd => { nd.tags = (nd.tags||[]).filter(t => t !== tid); });
-  renderGlobalTagList(); saveSettings(); save();
-  if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
+  renderGlobalTagList(); saveGlobalTags(); saveSettings(); save();
   toast('Tag removida');
   if (leftPanelNode) openLeftPanel(leftPanelNode);
 }
@@ -32230,7 +32244,7 @@ const _SYNC_KEYS = [
   'neural-proj-badge-label','neural-proj-badge-emoji',
   'neural-hover-anim','neural-pres-theme','neural-fonts',
   'neural-logo-colors','neural-logo-typo','neural-typo-global',
-  'neural-panorama-data','neural-fav-collections'
+  'neural-panorama-data','neural-fav-collections','neural-global-tags'
 ];
 let _settingsSaveTimer = null;
 function _scheduleSettingsSync() {
@@ -32254,6 +32268,7 @@ async function _loadSettingsFromCloud() {
     if (error || !data || !data.data) return;
     _SYNC_KEYS.forEach(k => { if (data.data[k]) localStorage.setItem(k, data.data[k]); });
     if (typeof loadSettings === 'function') loadSettings();
+    if (typeof loadGlobalTags === 'function') loadGlobalTags();
     if (typeof loadSavedGlassSettings === 'function') loadSavedGlassSettings();
     if (typeof applyLockDesign === 'function') applyLockDesign();
     if (typeof loadSavedFonts === 'function') loadSavedFonts();
