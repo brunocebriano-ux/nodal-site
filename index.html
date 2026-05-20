@@ -17961,37 +17961,38 @@ function ftLoad() {
     initEl.style.display = ''; initEl.textContent = '?';
   }
 
-  // Campos de texto simples
+  // Campos de texto — novos + retrocompatibilidade com campos antigos
   const map = {
+    // Identificação
     'ft-nome-artistico': f.nomeArtistico,
     'ft-nome-real':      f.nomeReal,
-    'ft-cidade':         f.cidade,
     'ft-nascimento':     f.nascimento,
+    'ft-falecimento':    f.falecimento,
     'ft-nacionalidade':  f.nacionalidade,
-    'ft-instagram':      f.instagram,
-    'ft-streaming':      f.streaming,
+    'ft-categoria':      f.categoria,
+    // Trajetória
+    'ft-formacao':       f.formacao,
     'ft-area':           f.area,
-    'ft-fase':           f.fase,
+    // Obra
+    'ft-contexto':       f.contexto,
     'ft-tematicas':      f.tematicas,
     'ft-influencias':    f.influencias,
-    'ft-estetica':       f.estetica,
-    'ft-formacao':       f.formacao,
-    'ft-marcos':         f.marcos,
-    'ft-projetos':       f.projetos,
-    'ft-portfolio':      f.portfolio,
-    'ft-origem':         f.origem,
-    'ft-coletivos':      f.coletivos,
-    'ft-selo':           f.selo,
-    'ft-colaboradores':  f.colaboradores,
-    'ft-mentores':       f.mentores,
+    'ft-colaboracoes':   f.colaboracoes || f.colaboradores || '',
+    // Documentação
+    'ft-entrevista':     f.entrevista,
+    'ft-texto-critico':  f.textoCritico,
+    'ft-galeria-link':   f.galeriaLink  || f.selo || '',
+    'ft-museu':          f.museu,
+    'ft-exposicoes':     f.exposicoes   || f.marcos || '',
+    'ft-curadoria':      f.curadoria,
   };
   Object.entries(map).forEach(([id, val]) => {
     const el = document.getElementById(id); if (el) el.value = val || '';
   });
 
   // Tags
-  ftSetTags('ft-tags-genero',  f.generos);
-  ftSetTags('ft-tags-custom',  f.tags);
+  ftSetTags('ft-tags-genero', f.generos);
+  ftSetTags('ft-tags-custom', f.tags);
   ftUpdateInitials();
 
   // Esconde badge de salvo
@@ -18004,31 +18005,32 @@ function ftSave() {
 
   smCurrentNode.ficha = {
     foto:          ftFotoDataUrl,
+    // Identificação
     nomeArtistico: ftV('ft-nome-artistico'),
     nomeReal:      ftV('ft-nome-real'),
-    cidade:        ftV('ft-cidade'),
     nascimento:    ftV('ft-nascimento'),
+    falecimento:   ftV('ft-falecimento'),
     nacionalidade: ftV('ft-nacionalidade'),
-    instagram:     ftV('ft-instagram'),
-    streaming:     ftV('ft-streaming'),
+    categoria:     ftV('ft-categoria'),
+    // Trajetória
+    formacao:      ftV('ft-formacao'),
     area:          ftV('ft-area'),
-    fase:          ftV('ft-fase'),
-    generos:       ftGetTags('ft-tags-genero'),
+    // Obra
+    contexto:      ftV('ft-contexto'),
     tematicas:     ftV('ft-tematicas'),
     influencias:   ftV('ft-influencias'),
-    estetica:      ftV('ft-estetica'),
-    formacao:      ftV('ft-formacao'),
-    marcos:        ftV('ft-marcos'),
-    projetos:      ftV('ft-projetos'),
-    portfolio:     ftV('ft-portfolio'),
-    origem:        ftV('ft-origem'),
-    coletivos:     ftV('ft-coletivos'),
-    selo:          ftV('ft-selo'),
-    colaboradores: ftV('ft-colaboradores'),
-    mentores:      ftV('ft-mentores'),
+    colaboracoes:  ftV('ft-colaboracoes'),
+    // Gênero / tags
+    generos:       ftGetTags('ft-tags-genero'),
+    // Documentação
+    entrevista:    ftV('ft-entrevista'),
+    textoCritico:  ftV('ft-texto-critico'),
+    galeriaLink:   ftV('ft-galeria-link'),
+    museu:         ftV('ft-museu'),
+    exposicoes:    ftV('ft-exposicoes'),
+    curadoria:     ftV('ft-curadoria'),
+    // Tags personalizadas
     tags:          ftGetTags('ft-tags-custom'),
-    // Supabase-ready: substituir foto por Storage URL antes de persistir
-    // supabaseStorageUrl: null,
     updatedAt:     new Date().toISOString(),
   };
 
@@ -19751,8 +19753,7 @@ function closeArticleViewer() {
           </div>
           <div class="ft-profile-fields">
             <input class="ft-input-nome" id="ft-nome-artistico" placeholder="Nome artístico" oninput="ftUpdateInitials()">
-            <input class="ft-input-sub"  id="ft-nome-real"      placeholder="Nome real (opcional)">
-            <input class="ft-input-sub"  id="ft-cidade"         placeholder="Cidade onde atua">
+            <input class="ft-input-sub"  id="ft-nome-real"      placeholder="Nome completo">
           </div>
         </div>
 
@@ -19761,28 +19762,32 @@ function closeArticleViewer() {
           <div class="ft-sec-head">Identificação</div>
           <div class="ft-sec-body">
             <div class="ft-field">
-              <label>Data de nascimento</label>
+              <label>Nascimento</label>
               <input type="date" id="ft-nascimento">
             </div>
             <div class="ft-field">
+              <label>Falecimento</label>
+              <input type="date" id="ft-falecimento">
+            </div>
+            <div class="ft-field">
               <label>Nacionalidade</label>
-              <input type="text" id="ft-nacionalidade" placeholder="ex: brasileira">
+              <input type="text" id="ft-nacionalidade" placeholder="ex: brasileira, alemão...">
             </div>
             <div class="ft-field">
-              <label>Instagram / site</label>
-              <input type="text" id="ft-instagram" placeholder="@usuario ou URL">
-            </div>
-            <div class="ft-field">
-              <label>Spotify / Bandcamp / portfólio</label>
-              <input type="text" id="ft-streaming" placeholder="URL ou handle">
+              <label>Categoria</label>
+              <input type="text" id="ft-categoria" placeholder="ex: artista, teórico, coletivo, curador...">
             </div>
           </div>
         </div>
 
-        <!-- Perfil artístico -->
+        <!-- Trajetória -->
         <div class="ft-sec">
-          <div class="ft-sec-head">Perfil artístico</div>
+          <div class="ft-sec-head">Trajetória</div>
           <div class="ft-sec-body">
+            <div class="ft-field">
+              <label>Formação</label>
+              <input type="text" id="ft-formacao" placeholder="ex: autodidata, UNICAMP, Escola de Belas Artes...">
+            </div>
             <div class="ft-field">
               <label>Área de atuação</label>
               <select id="ft-area">
@@ -19799,91 +19804,71 @@ function closeArticleViewer() {
                 <option>Outro</option>
               </select>
             </div>
+          </div>
+        </div>
+
+        <!-- Obra -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Obra</div>
+          <div class="ft-sec-body ft-single">
             <div class="ft-field">
-              <label>Fase da carreira</label>
-              <select id="ft-fase">
-                <option value="">Selecione...</option>
-                <option>Emergente</option>
-                <option>Em ascensão</option>
-                <option>Consolidado</option>
-                <option>Em transição</option>
-                <option>Veterano</option>
-              </select>
+              <label>Contexto histórico</label>
+              <textarea id="ft-contexto" placeholder="Período, movimento, conjuntura cultural ou política que contextualiza o trabalho..."></textarea>
             </div>
-            <div class="ft-field ft-full">
-              <label>Gênero / estilo / movimento (Enter para adicionar)</label>
+            <div class="ft-field">
+              <label>Temas centrais</label>
+              <textarea id="ft-tematicas" placeholder="ex: identidade, memória, corpo, tecnologia, diáspora..."></textarea>
+            </div>
+            <div class="ft-field">
+              <label>Influências</label>
+              <textarea id="ft-influencias" placeholder="Artistas, movimentos ou referências que moldaram o trabalho"></textarea>
+            </div>
+            <div class="ft-field">
+              <label>Colaborações</label>
+              <textarea id="ft-colaboracoes" placeholder="Artistas, coletivos ou projetos colaborativos relevantes"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gênero / Estilo -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Gênero / Estilo / Movimento</div>
+          <div class="ft-sec-body ft-single">
+            <div class="ft-field">
               <div class="ft-tags-wrap" id="ft-tags-genero" onclick="this.querySelector('input').focus()">
-                <input type="text" placeholder="ex: hip-hop alternativo, MPB, arte concreta..." onkeydown="ftAddTag(event,'ft-tags-genero')">
+                <input type="text" placeholder="Enter para adicionar: hip-hop, arte concreta, videoarte..." onkeydown="ftAddTag(event,'ft-tags-genero')">
               </div>
             </div>
-            <div class="ft-field ft-full">
-              <label>Temáticas recorrentes na obra</label>
-              <textarea id="ft-tematicas" placeholder="ex: identidade negra, periferia, espiritualidade, amor e perda..."></textarea>
-            </div>
-            <div class="ft-field ft-full">
-              <label>Influências declaradas</label>
-              <textarea id="ft-influencias" placeholder="Artistas, movimentos ou referências que o artista menciona"></textarea>
-            </div>
-            <div class="ft-field ft-full">
-              <label>Estética predominante</label>
-              <textarea id="ft-estetica" placeholder="O que caracteriza visualmente ou sonoramente esse artista..." style="min-height:56px"></textarea>
-            </div>
           </div>
         </div>
 
-        <!-- Trajetória -->
+        <!-- Documentação -->
         <div class="ft-sec">
-          <div class="ft-sec-head">Trajetória</div>
+          <div class="ft-sec-head">Documentação</div>
           <div class="ft-sec-body ft-single">
             <div class="ft-field">
-              <label>Formação</label>
-              <input type="text" id="ft-formacao" placeholder="ex: autodidata, UNICAMP, Escola de Belas Artes...">
+              <label>Entrevista</label>
+              <input type="text" id="ft-entrevista" placeholder="URL ou referência de entrevista relevante">
             </div>
             <div class="ft-field">
-              <label>Marcos importantes</label>
-              <textarea id="ft-marcos" placeholder="Prêmios, residências, festivais, exposições, lançamentos relevantes..."></textarea>
+              <label>Texto crítico</label>
+              <textarea id="ft-texto-critico" placeholder="Referência ou trecho de texto crítico sobre a obra" style="min-height:56px"></textarea>
             </div>
             <div class="ft-field">
-              <label>Projetos anteriores / colaborações</label>
-              <textarea id="ft-projetos" placeholder="Bandas, coletivos, colabs com outros artistas..."></textarea>
+              <label>Galeria / representação</label>
+              <input type="text" id="ft-galeria-link" placeholder="ex: Galeria Nara Roesler, Pace Gallery...">
             </div>
             <div class="ft-field">
-              <label>Discografia / portfólio / publicações principais</label>
-              <textarea id="ft-portfolio" placeholder="Álbuns, séries, livros, exposições mais relevantes..." style="min-height:56px"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contexto e narrativa -->
-        <div class="ft-sec">
-          <div class="ft-sec-head">Contexto e narrativa</div>
-          <div class="ft-sec-body ft-single">
-            <div class="ft-field">
-              <label>Como a origem geográfica influencia o trabalho</label>
-              <textarea id="ft-origem" placeholder="Cidade, região, diáspora, contexto cultural..." style="min-height:56px"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Rede e conexões -->
-        <div class="ft-sec">
-          <div class="ft-sec-head">Rede e conexões</div>
-          <div class="ft-sec-body">
-            <div class="ft-field">
-              <label>Coletivos / grupos que integra</label>
-              <input type="text" id="ft-coletivos" placeholder="ex: Racionais, Opavivará...">
+              <label>Museu / coleção</label>
+              <input type="text" id="ft-museu" placeholder="ex: MoMA, MAM SP, acervo particular...">
             </div>
             <div class="ft-field">
-              <label>Selo / galeria / editora / agente</label>
-              <input type="text" id="ft-selo" placeholder="ex: Tratore, Galeria Nara Roesler...">
+              <label>Exposições relevantes</label>
+              <textarea id="ft-exposicoes" placeholder="Exposições individuais e coletivas mais importantes" style="min-height:56px"></textarea>
             </div>
-            <div class="ft-field ft-full">
-              <label>Artistas que colabora frequentemente</label>
-              <input type="text" id="ft-colaboradores" placeholder="ex: Emicida, Karina Buhr, Ana Pi...">
-            </div>
-            <div class="ft-field ft-full">
-              <label>Mentores ou referências de geração</label>
-              <input type="text" id="ft-mentores" placeholder="Quem abriu caminho ou influenciou diretamente">
+            <div class="ft-field">
+              <label>Notas de curadoria</label>
+              <textarea id="ft-curadoria" placeholder="Observações curatoriais, contexto de seleção, relevância no mapa..." style="min-height:56px"></textarea>
             </div>
           </div>
         </div>
