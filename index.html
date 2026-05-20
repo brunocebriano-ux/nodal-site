@@ -31801,6 +31801,18 @@ async function projSaveCurrentState() {
   proj.modified  = Date.now();
   await projSaveData(activeProjectId, data);
   await projSaveList();
+
+  // Atualiza snapshot do link compartilhado com dados mais recentes
+  // Garante que foto, tags e alterações apareçam para visitantes imediatamente
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (session) {
+      await _sb.from('public_shares')
+        .update({ proj_data: data })
+        .eq('proj_id', activeProjectId)
+        .eq('user_id', session.user.id);
+    }
+  } catch(e) {}
 }
 
 // ── Patch save() to also save project data ────────────
@@ -35199,14 +35211,14 @@ function _openCtxMenu(nd, x, y) {
   const isEditor = typeof isEditorUnlocked !== 'undefined' && isEditorUnlocked;
 
   _ctxMenu.innerHTML = `
-    <div class="ctx-item" onclick="_ctxEdit()">
+    ${isEditor ? `<div class="ctx-item" onclick="_ctxEdit()">
       <span class="ctx-icon">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9.5 2L12 4.5 5 11.5 2 12 2.5 9 9.5 2Z"/>
         </svg>
       </span>
       Editar nó
-    </div>
+    </div>` : ''}
     <div class="ctx-item" onclick="_ctxFocus()">
       <span class="ctx-icon">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
