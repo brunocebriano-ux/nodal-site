@@ -17203,6 +17203,15 @@ function openSaibaMais() {
 }
 
 function closeSaibaMais() {
+  // Auto-salva ficha ao fechar o modal sem precisar trocar de aba
+  if (smCurrentTab === 'ficha' && smCurrentNode) {
+    // Aplica URL da foto se foi digitada mas o botão não foi clicado
+    const _urlFld = document.getElementById('ft-foto-url');
+    if (_urlFld && _urlFld.value.trim() && _urlFld.value.trim() !== ftFotoDataUrl) {
+      ftFotoDataUrl = _urlFld.value.trim();
+    }
+    ftAutoSave();
+  }
   if (smDirty && !confirm('Há alterações não salvas. Sair sem salvar?')) return;
   document.getElementById('sm-overlay').classList.remove('open');
   document.body.classList.remove('sm-open');
@@ -17981,7 +17990,10 @@ function ftLoad() {
   if (oldImg) oldImg.remove();
   if (ftFotoDataUrl) {
     initEl.style.display = 'none';
-    const img = document.createElement('img'); img.src = ftFotoDataUrl; av.appendChild(img);
+    const img = document.createElement('img');
+    img.onerror = function() { initEl.style.display = ''; initEl.textContent = '?'; img.remove(); };
+    img.src = ftFotoDataUrl;
+    av.appendChild(img);
   } else {
     initEl.style.display = ''; initEl.textContent = '?';
   }
@@ -19847,7 +19859,7 @@ function closeArticleViewer() {
           <div class="art-img-url-row">
             <div class="art-img-url-wrap">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              <input type="text" id="ft-foto-url" placeholder="https://i.ibb.co/..." onkeydown="if(event.key==='Enter')ftApplyFotoUrl()">
+              <input type="text" id="ft-foto-url" placeholder="https://i.ibb.co/..." onkeydown="if(event.key==='Enter')ftApplyFotoUrl()" onblur="if(this.value.trim()&&this.value.trim()!==ftFotoDataUrl)ftApplyFotoUrl()">
             </div>
             <button id="ft-foto-url-go" onclick="ftApplyFotoUrl()" title="Aplicar URL da foto">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
