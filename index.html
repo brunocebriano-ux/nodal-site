@@ -16344,13 +16344,16 @@ function addGlobalTag() {
   document.getElementById('new-tag-input').value = '';
   renderGlobalTagList();
   saveSettings();
+  // Salva no Supabase imediatamente (sem esperar o debounce de 2s)
+  if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
   toast('Tag criada: ' + name);
 }
 function removeGlobalTag(tid) {
   globalTags = globalTags.filter(t => t.id !== tid);
-  // Remove from all nodes
   nodes.forEach(nd => { nd.tags = (nd.tags||[]).filter(t => t !== tid); });
-  renderGlobalTagList(); saveSettings(); save(); toast('Tag removida');
+  renderGlobalTagList(); saveSettings(); save();
+  if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
+  toast('Tag removida');
   if (leftPanelNode) openLeftPanel(leftPanelNode);
 }
 function renderGlobalTagList() {
