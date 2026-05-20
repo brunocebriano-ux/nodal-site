@@ -14543,12 +14543,18 @@ function highlight(text, q) {
 function buildSearchItem(nd, q, i) {
   const connCount = connections.filter(c=>c.from===nd.id||c.to===nd.id).length;
   const descSnip = nd.desc ? nd.desc.slice(0,60)+(nd.desc.length>60?'…':'') : '';
+  const tagChips = (nd.tags||[]).map(tid => {
+    const tg = globalTags.find(g=>g.id===tid); if (!tg) return '';
+    const matched = q && tg.name.toLowerCase().includes(q.toLowerCase());
+    return `<span style="display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:${matched?700:500};border:1px solid ${tg.color}55;background:${tg.color}18;color:${tg.color}">${matched?highlight(tg.name,q):tg.name}</span>`;
+  }).filter(Boolean).join('');
   return `<div class="search-result" data-node-id="${nd.id}" onclick="selectSearchResult('${nd.id}')">
     <span class="search-result-dot" style="background:${nd.color||catColor(nd.cat)}"></span>
     <div class="search-result-body">
       <div class="search-result-title">${highlight(nd.title,q)}</div>
       <div class="search-result-meta" style="color:${catColor(nd.cat)}">${nd.cat}</div>
       ${descSnip?`<div class="search-result-desc">${highlight(descSnip,q)}</div>`:''}
+      ${tagChips?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${tagChips}</div>`:''}
     </div>
     <span class="search-result-count">${connCount}</span>
     <span class="search-result-arrow">→</span>
@@ -31818,6 +31824,7 @@ async function projSaveCurrentState() {
       ficha:n.ficha||null
     })),
     connections: connections.map(c => ({id:c.id, from:c.from, to:c.to})),
+    globalTags: globalTags || [],
     projectName: 'NODAL', projectSub,
     articlesData: _articlesData,
     panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
@@ -32084,6 +32091,10 @@ async function loadSharedProject(identifier) {
             if (!_panoData.items) _panoData.items = [];
           }
         } catch(e) {}
+      }
+      // ── Restaurar globalTags — necessário para os chips de tags no painel esquerdo ──
+      if (pd.globalTags && Array.isArray(pd.globalTags)) {
+        globalTags = pd.globalTags;
       }
       // ── Restaurar artigos dos nós (cache em memória — não depende de localStorage) ──
       window._sharedArticlesCache = (pd.articlesData && typeof pd.articlesData === 'object')
