@@ -3726,8 +3726,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     pointer-events: auto;
   }
   #sm-float-toolbar.visible { display: flex; }
-  /* Barra flutuante só para editores — visitantes nunca veem */
+  /* Barra flutuante e sidebar só para editores — visitantes nunca veem */
   html:not(.editor-mode) #sm-float-toolbar { display: none !important; }
+  html:not(.editor-mode) #nodal-sidebar    { display: none !important; }
   @keyframes float-tb-appear {
     from { opacity:0; transform: translateY(5px) scale(0.95); }
     to   { opacity:1; transform: translateY(0) scale(1); }
@@ -17934,6 +17935,8 @@ function ftApplyFotoUrl() {
   preview.onerror = () => toast('Não foi possível carregar a imagem — verifique a URL');
   preview.src = url;
   document.getElementById('ft-initials').style.display = 'none';
+  // Salva imediatamente sem depender do usuário trocar de aba
+  if (smCurrentNode) ftAutoSave();
 }
 
 function ftAddTag(e, containerId) {
@@ -18053,6 +18056,22 @@ function ftAutoSave() {
     updatedAt:     new Date().toISOString(),
   };
   if (typeof save === 'function') save();
+  // Persiste também no cache do projeto ativo (localStorage por projeto)
+  if (typeof activeProjectId !== 'undefined' && activeProjectId) {
+    try {
+      const _pk = 'neural-proj-' + activeProjectId;
+      const _ps = JSON.parse(localStorage.getItem(_pk) || '{}');
+      if (_ps.nodes) {
+        const _nd = _ps.nodes.find(function(n){ return n.id === smCurrentNode.id; });
+        if (_nd) { _nd.ficha = smCurrentNode.ficha; localStorage.setItem(_pk, JSON.stringify(_ps)); }
+      }
+    } catch(e) {}
+    // Persiste no Supabase
+    if (typeof projSaveCurrentState === 'function') {
+      if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
+      projSaveCurrentState();
+    }
+  }
 }
 
 function ftSave() {
