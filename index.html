@@ -35666,6 +35666,11 @@ function _applyConnTypeColor(conn) {
   if (conn.particleMesh && conn.particleMesh.material) conn.particleMesh.material.color.set(targetColor);
 }
 
+// ── Expõe _applyConnTypeColor globalmente ────────────────────────────────
+// Necessário porque loadSharedProject (modo visitante) está em outro bloco
+// de script e não enxerga o escopo deste IIFE.
+window._applyConnTypeColor = _applyConnTypeColor;
+
 // Cicla para o próximo tipo e atualiza tudo
 window.cycleConnType = function(cid) {
   const conn = connections.find(c => c.id === cid);
@@ -35901,6 +35906,28 @@ setTimeout(() => {
     }
   } catch(e) {}
 }, 400);
+
+// ── Patch loadSharedProject para restaurar cores de connType no modo visitante ──
+// loadSharedProject está em outro bloco de script e não tem acesso ao IIFE.
+// Aqui interceptamos a função depois que ela foi definida e adicionamos a
+// restauração das cores — que requer _applyConnTypeColor, acessível aqui.
+if (typeof loadSharedProject === 'function') {
+  const _ctOrigLoadShared = loadSharedProject;
+  window.loadSharedProject = loadSharedProject = async function(identifier) {
+    await _ctOrigLoadShared.apply(this, arguments);
+    // Após o carregamento, aplica as cores corretas de connType no grafo 3D
+    // (pequeno delay para garantir que os objetos Three.js já estejam na cena)
+    setTimeout(() => {
+      try {
+        connections.forEach(conn => {
+          if (conn.connType && conn.connType !== 'neutro') {
+            _applyConnTypeColor(conn);
+          }
+        });
+      } catch(e) {}
+    }, 150);
+  };
+}
 
 // ══════════════════════════════════════════════════════════════
 // UNDO / REDO
