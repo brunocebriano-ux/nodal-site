@@ -10944,22 +10944,29 @@ html.light .tm-empty-state { color: rgba(255,255,255,0.45); }
 html.light .tm-tag-chip { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.45); color: rgba(255,255,255,0.9); }
 html.light .tm-tag-chip:hover { background: rgba(255,255,255,0.4); }
 
-/* Bolinha colorida — visível por padrão, some no hover */
+/* Wrapper de tamanho fixo que contém bolinha + color picker sobrepostos
+   — elimina o tremido causado por display:none→flex no hover */
+.tm-dot-wrap {
+  position: relative; width: 14px; height: 14px; flex-shrink: 0;
+}
+/* Bolinha: centralizada no wrapper, some no hover via opacity (não display) */
 .tm-tag-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  transition: opacity 0.15s;
+  position: absolute; width: 8px; height: 8px; border-radius: 50%;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  transition: opacity 0.15s; pointer-events: none;
 }
-.tm-tag-chip:hover .tm-tag-dot { display: none; }
+.tm-tag-chip:hover .tm-tag-dot { opacity: 0; }
 
-/* Color picker no chip — aparece só no hover, no lugar da bolinha */
+/* Color picker: cobre o wrapper, invisível em repouso */
 .tm-tag-chip-color {
-  position: relative; width: 14px; height: 14px;
-  border-radius: 4px; flex-shrink: 0; cursor: pointer;
-  overflow: hidden; display: none; transition: transform 0.15s;
+  position: absolute; inset: 0; border-radius: 4px;
+  overflow: hidden; display: flex; cursor: pointer;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+  border: 1.5px solid rgba(255,255,255,0.25);
 }
-.tm-tag-chip:hover .tm-tag-chip-color { display: flex; }
-.tm-tag-chip-color:hover { transform: scale(1.15); }
-.tm-tag-chip-color { border: 1.5px solid rgba(255,255,255,0.25); }
+.tm-tag-chip:hover .tm-tag-chip-color { opacity: 1; pointer-events: auto; }
+.tm-tag-chip-color:hover { transform: scale(1.12); }
 html.light .tm-tag-chip-color { border-color: rgba(255,255,255,0.6); }
 .tm-color-preview-dot { width: 100%; height: 100%; pointer-events: none; }
 .tm-tag-chip-color input[type="color"] {
@@ -10969,12 +10976,16 @@ html.light .tm-tag-chip-color { border-color: rgba(255,255,255,0.6); }
 
 .tm-tag-label { line-height: 1; }
 
+/* Botão de excluir: sempre display:flex para não causar reflow no hover,
+   oculto com opacity — tamanho do chip permanece constante */
 .tm-btn-chip-del {
   width: 14px; height: 14px; border-radius: 4px; border: none;
-  cursor: pointer; display: none; align-items: center; justify-content: center;
-  background: rgba(239,68,68,0.2); transition: background 0.15s; flex-shrink: 0; padding: 0;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  background: rgba(239,68,68,0.2); flex-shrink: 0; padding: 0;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s, background 0.15s;
 }
-.tm-tag-chip:hover .tm-btn-chip-del { display: flex; }
+.tm-tag-chip:hover .tm-btn-chip-del { opacity: 1; pointer-events: auto; }
 html.light .tm-btn-chip-del { background: rgba(248,113,113,0.25); }
 .tm-btn-chip-del:hover { background: rgba(239,68,68,0.42); }
 html.light .tm-btn-chip-del:hover { background: rgba(248,113,113,0.5); }
@@ -16151,6 +16162,7 @@ function save() {
 function load() {
   loadSettings();
   loadGlobalTags();
+  repairGlobalTagIds(); // corrige IDs duplicados gerados por tagIdCounter desincronizado
   loadLogo(); // restore custom logo if saved locally
   const raw = localStorage.getItem('neural-v3');
   if (!raw) { spawnDefaultNodes(); setTimeout(handleUrlHash, 600); return; }
@@ -16359,12 +16371,44 @@ function loadGlobalTags() {
     if (raw) { globalTags = JSON.parse(raw); }
   } catch(e) {}
 }
+// ── Repara IDs duplicados em globalTags ──────────────────────────────────────
+// Causa: tagIdCounter desincronizado entre cloud e local gera colisões.
+// Esta função garante que cada tag tenha um ID único antes de qualquer uso.
+function repairGlobalTagIds() {
+  const seen = new Set();
+  let changed = false;
+  // Encontra o maior número de ID já em uso
+  let maxNum = tagIdCounter - 1;
+  globalTags.forEach(tg => {
+    const m = (tg.id || '').match(/^t(\d+)$/);
+    if (m) maxNum = Math.max(maxNum, parseInt(m[1]));
+  });
+  // Corrige IDs ausentes ou duplicados
+  globalTags.forEach(tg => {
+    if (!tg.id || seen.has(tg.id)) {
+      maxNum++;
+      tg.id = 't' + maxNum;
+      changed = true;
+    }
+    seen.add(tg.id);
+  });
+  // Garante que tagIdCounter sempre seja maior que todos os IDs existentes
+  const safeCounter = maxNum + 1;
+  if (safeCounter > tagIdCounter) { tagIdCounter = safeCounter; changed = true; }
+  if (changed) {
+    try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
+    saveSettings();
+  }
+}
 function addGlobalTag() {
   const name = document.getElementById('new-tag-input').value.trim();
   if (!name) { toast('Digite um nome para a tag'); return; }
   if (globalTags.find(t => t.name.toLowerCase() === name.toLowerCase())) { toast('Tag já existe'); return; }
   const color = document.getElementById('new-tag-color').value;
-  globalTags.push({ id: 't' + (tagIdCounter++), name, color });
+  // Garante ID único mesmo se tagIdCounter tiver ficado para trás
+  let newId = 't' + tagIdCounter++;
+  while (globalTags.some(t => t.id === newId)) { newId = 't' + tagIdCounter++; }
+  globalTags.push({ id: newId, name, color });
   document.getElementById('new-tag-input').value = '';
   renderGlobalTagList();
   saveGlobalTags();
@@ -16383,11 +16427,13 @@ function renderGlobalTagList() {
   if (!globalTags.length) { el.innerHTML = '<span class="tm-empty-state">Nenhuma tag criada</span>'; return; }
   el.innerHTML = globalTags.map(tg => `
     <span class="tm-tag-chip">
-      <span class="tm-tag-dot" style="background:${tg.color};box-shadow:0 0 5px ${tg.color}"></span>
-      <div class="tm-tag-chip-color" title="Mudar cor">
-        <div class="tm-color-preview-dot" style="background:${tg.color}"></div>
-        <input type="color" value="${tg.color}" oninput="changeGlobalTagColor('${tg.id}',this)">
-      </div>
+      <span class="tm-dot-wrap">
+        <span class="tm-tag-dot" style="background:${tg.color};box-shadow:0 0 5px ${tg.color}"></span>
+        <div class="tm-tag-chip-color" title="Mudar cor">
+          <div class="tm-color-preview-dot" style="background:${tg.color}"></div>
+          <input type="color" value="${tg.color}" oninput="changeGlobalTagColor('${tg.id}',this)">
+        </div>
+      </span>
       <span class="tm-tag-label">${tg.name}</span>
       <button class="tm-btn-chip-del" title="Remover tag" onclick="removeGlobalTag('${tg.id}')">
         <i class="ti ti-x"></i>
@@ -32310,6 +32356,7 @@ async function _loadSettingsFromCloud() {
     _SYNC_KEYS.forEach(k => { if (data.data[k]) localStorage.setItem(k, data.data[k]); });
     if (typeof loadSettings === 'function') loadSettings();
     if (typeof loadGlobalTags === 'function') loadGlobalTags();
+    if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds(); // corrige colisões pós-sync
     if (typeof loadSavedGlassSettings === 'function') loadSavedGlassSettings();
     if (typeof applyLockDesign === 'function') applyLockDesign();
     if (typeof loadSavedFonts === 'function') loadSavedFonts();
