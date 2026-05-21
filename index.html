@@ -31377,6 +31377,7 @@ async function projSaveList() {
 }
 
 async function projSaveData(id, data) {
+  data._ts = Date.now(); // ── carimbo de tempo para resolver conflitos local × nuvem
   try { localStorage.setItem(PROJ_DATA_KEY(id), JSON.stringify(data)); } catch(e) {}
   try {
     const { data: { session } } = await _sb.auth.getSession();
@@ -31398,18 +31399,50 @@ async function projSaveData(id, data) {
 }
 
 async function projLoadData(id) {
+  // ── Lê de ambas as fontes e prefere a mais recente ──────────────────────────
+  // Isso resolve o bug onde nós apagados voltam após refresh:
+  //   1. Supabase pode ter falhado em salvar silenciosamente (sessão expirada, rede)
+  //   2. O usuário pode ter atualizado antes do debounce de 2,5s disparar
+  // A solução: comparar _ts de ambas as fontes e usar a mais recente.
+  let cloudData = null, localData = null;
+
+  // Sempre lê localStorage (síncrono, confiável para o estado mais recente)
+  try {
+    const raw = localStorage.getItem(PROJ_DATA_KEY(id));
+    if (raw) localData = JSON.parse(raw);
+  } catch(e) {}
+
+  // Tenta Supabase
   try {
     const { data: { session } } = await _sb.auth.getSession();
-    if (!session) throw new Error('no session');
-    const { data, error } = await _sb.from('proj_data').select('data').eq('id', id).single();
-    if (error) throw error;
-    return data?.data || null;
-  } catch(e) {
+    if (session) {
+      const { data, error } = await _sb.from('proj_data').select('data').eq('id', id).single();
+      if (!error && data?.data) cloudData = data.data;
+    }
+  } catch(e) {}
+
+  if (!cloudData && !localData) return null;
+  if (!cloudData) return localData;
+  if (!localData) return cloudData;
+
+  // Prefere a versão com _ts mais recente; sem _ts assume que Supabase é a referência
+  const cloudTs = cloudData._ts || 0;
+  const localTs = localData._ts || 0;
+  if (localTs > cloudTs) {
+    console.log('[NODAL] projLoadData: localStorage mais recente (local=' + localTs + ' cloud=' + cloudTs + '), preferindo local e sincronizando nuvem');
+    // Re-sobe o dado local para o Supabase em background
     try {
-      const raw = localStorage.getItem(PROJ_DATA_KEY(id));
-      return raw ? JSON.parse(raw) : null;
-    } catch(e2) { return null; }
+      const { data: { session } } = await _sb.auth.getSession();
+      if (session) {
+        _sb.from('proj_data').upsert({ id, user_id: session.user.id, data: localData }).then(r => {
+          if (r.error) console.warn('[NODAL] re-sync local→cloud falhou:', r.error.message);
+          else console.log('[NODAL] re-sync local→cloud ok');
+        });
+      }
+    } catch(e) {}
+    return localData;
   }
+  return cloudData;
 }
 
 function projGenId() {
@@ -31839,6 +31872,13 @@ async function projOpen(id) {
     nodeIdCounter = maxId + 1;
     if (data.connections) {
       data.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
+      // Restaurar tipos de conexão (Deriva, Influencia, Contradiz…)
+      data.connections.forEach(sc => {
+        if (sc.connType && sc.connType !== 'neutro') {
+          const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+          if (conn) { conn.connType = sc.connType; if (typeof _applyConnTypeColor === 'function') _applyConnTypeColor(conn); }
+        }
+      });
     }
     if (data.projectName) { projectName = data.projectName; projectSub = proj.sub || proj.name || data.projectSub || ''; applyProjectName(); }
     if (projectName !== 'NODAL') { projectSub = proj.sub || proj.name || projectName; projectName = 'NODAL'; applyProjectName(); }
@@ -31899,7 +31939,7 @@ async function projSaveCurrentState() {
       shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
       ficha:n.ficha||null
     })),
-    connections: connections.map(c => ({id:c.id, from:c.from, to:c.to})),
+    connections: connections.map(c => ({id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'})),
     globalTags: globalTags || [],
     projectName: 'NODAL', projectSub,
     articlesData: _articlesData,
@@ -31937,6 +31977,47 @@ save = function() {
   clearTimeout(_projSaveDebounceTimer);
   _projSaveDebounceTimer = setTimeout(projSaveCurrentState, 2500);
 };
+
+// ── Flush imediato para localStorage ao sair/trocar de aba ────────────────
+// Garante que o estado mais recente (com nós deletados, etc.) fique no
+// localStorage com _ts atualizado — mesmo que o debounce de 2,5s ainda
+// não tenha disparado. projLoadData vai preferir este local se for mais novo.
+function _projFlushToLocal() {
+  if (!activeProjectId || typeof nodes === 'undefined') return;
+  try {
+    const _arts = {};
+    nodes.forEach(n => {
+      try { const r = localStorage.getItem('neural-articles-' + n.id); if (r) _arts[n.id] = JSON.parse(r); } catch(e) {}
+    });
+    const _snap = {
+      _ts: Date.now(),
+      nodes: nodes.map(n => ({
+        id:n.id, title:n.title, desc:n.desc, cat:n.cat, color:n.color,
+        size:n.size, font:n.font, fontSize:n.fontSize, bold:n.bold,
+        italic:n.italic, textShadow:n.textShadow!==false,
+        media:n.media, tags:n.tags||[], notes:n.notes||'',
+        richNotes:n.richNotes||'', richContent:n.richContent||'',
+        richMedia:n.richMedia||[], date:n.date||'',
+        shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
+        ficha:n.ficha||null
+      })),
+      connections: connections.map(c => ({id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'})),
+      globalTags: globalTags || [],
+      projectName: 'NODAL', projectSub,
+      articlesData: _arts,
+      panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
+      notepad: (function(){ try { return localStorage.getItem('notepad_' + activeProjectId)||''; } catch(e){ return ''; } })(),
+      notepadNotes: (function(){ try { const r=localStorage.getItem('notepad_notes_'+activeProjectId); return r?JSON.parse(r):null; } catch(e){ return null; } })()
+    };
+    localStorage.setItem(PROJ_DATA_KEY(activeProjectId), JSON.stringify(_snap));
+  } catch(e) {}
+}
+// Dispara ao fechar/atualizar a aba — garante que o localStorage tenha o estado atual
+window.addEventListener('beforeunload', _projFlushToLocal);
+// Dispara ao trocar de aba (usuário volta depois e o estado está correto)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') _projFlushToLocal();
+});
 
 // ── HUD badge ─────────────────────────────────────────
 function updateHudProjBadge(proj) {
@@ -32155,6 +32236,18 @@ async function loadSharedProject(identifier) {
       pd.nodes.forEach(nd => { const n = parseInt((nd.id||'').replace('n','')); if (!isNaN(n) && n > maxId) maxId = n; addNode(nd); });
       nodeIdCounter = maxId + 1;
       if (pd.connections) pd.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
+      // ── Restaurar tipos de conexão (Deriva, Influencia, Contradiz…) para o visitante ──
+      if (pd.connections) {
+        pd.connections.forEach(sc => {
+          if (sc.connType && sc.connType !== 'neutro') {
+            const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+            if (conn) {
+              conn.connType = sc.connType;
+              if (typeof _applyConnTypeColor === 'function') _applyConnTypeColor(conn);
+            }
+          }
+        });
+      }
       projectName = 'NODAL';
       projectSub = data.proj_name || '';
       applyProjectName();
@@ -32435,6 +32528,15 @@ async function projBoot() {
       _pd.nodes.forEach(nd => { const n = parseInt((nd.id||'').replace('n','')); if (!isNaN(n) && n > _maxId) _maxId = n; addNode(nd); });
       nodeIdCounter = _maxId + 1;
       if (_pd.connections) _pd.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
+      // Restaurar tipos de conexão (Deriva, Influencia, Contradiz…) para o editor
+      if (_pd.connections) {
+        _pd.connections.forEach(sc => {
+          if (sc.connType && sc.connType !== 'neutro') {
+            const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
+            if (conn) { conn.connType = sc.connType; if (typeof _applyConnTypeColor === 'function') _applyConnTypeColor(conn); }
+          }
+        });
+      }
       projectSub = (proj && (proj.sub || proj.name)) || _pd.projectSub || ''; applyProjectName();
       if (_pd.articlesData) Object.keys(_pd.articlesData).forEach(nid => {
         try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(_pd.articlesData[nid])); } catch(e) {}
