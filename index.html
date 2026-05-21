@@ -31882,6 +31882,12 @@ async function projOpen(id) {
     }
     if (data.projectName) { projectName = data.projectName; projectSub = proj.sub || proj.name || data.projectSub || ''; applyProjectName(); }
     if (projectName !== 'NODAL') { projectSub = proj.sub || proj.name || projectName; projectName = 'NODAL'; applyProjectName(); }
+    // ── Restaurar globalTags ao trocar de projeto ──────────────────────────────
+    if (data.globalTags && Array.isArray(data.globalTags) && data.globalTags.length) {
+      globalTags = data.globalTags;
+      try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
+      if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds();
+    }
     if (data.articlesData) Object.keys(data.articlesData).forEach(nid => {
       try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(data.articlesData[nid])); } catch(e) {}
     });
@@ -32538,6 +32544,14 @@ async function projBoot() {
         });
       }
       projectSub = (proj && (proj.sub || proj.name)) || _pd.projectSub || ''; applyProjectName();
+      // ── Restaurar globalTags do proj_data (mais rápido que esperar user_settings) ──
+      // proj_data já contém as tags salvas — não precisa aguardar a terceira chamada
+      // Supabase (_loadSettingsFromCloud) para as tags aparecerem.
+      if (_pd.globalTags && Array.isArray(_pd.globalTags) && _pd.globalTags.length) {
+        globalTags = _pd.globalTags;
+        try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
+        if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds();
+      }
       if (_pd.articlesData) Object.keys(_pd.articlesData).forEach(nid => {
         try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(_pd.articlesData[nid])); } catch(e) {}
       });
