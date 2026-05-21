@@ -13320,6 +13320,14 @@ async function registerUser() {
   try {
     const _shareToken = new URLSearchParams(window.location.search).get('share');
     if (_shareToken) {
+      // ── Oculta IMEDIATAMENTE o canvas e o lock screen ──────────────────────
+      // Impede que dados do localStorage apareçam enquanto loadSharedProject
+      // ainda está buscando o projeto no Supabase (pode levar 1-3s de rede).
+      // A cortina permanece ativa até loadSharedProject terminar de montar o canvas.
+      const _earlyLs = document.getElementById('lock-screen');
+      const _earlyCurtain = document.getElementById('transition-curtain');
+      if (_earlyLs) _earlyLs.classList.add('hidden');
+      if (_earlyCurtain) _earlyCurtain.classList.add('active');
       // loadSharedProject está em um <script> posterior — guarda o token
       // e deixa a inicialização final chamá-la depois que estiver definida
       window._pendingShareToken = _shareToken;
@@ -16152,6 +16160,8 @@ function updateStats() {
 // ── Persistence ────────────────────────────────────
 function save() {
   if (typeof _t2gImporting !== 'undefined' && _t2gImporting) return;
+  // Visitantes não devem escrever no localStorage — evita sobrescrever dados do editor
+  if (typeof isViewerMode !== 'undefined' && isViewerMode) return;
   localStorage.setItem('neural-v3', JSON.stringify({
     nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||''})),
     connections: connections.map(c=>({id:c.id,from:c.from,to:c.to}))
@@ -32283,8 +32293,9 @@ async function loadSharedProject(identifier) {
     console.error('[NODAL] loadSharedProject erro:', e);
     const curtain = document.getElementById('transition-curtain');
     const ls = document.getElementById('lock-screen');
-    if (curtain) curtain.classList.remove('active');
+    // Mostra o lock screen ANTES de tirar a cortina para não expor o canvas antigo
     if (ls) ls.classList.remove('hidden');
+    if (curtain) curtain.classList.remove('active');
     toast('Link inválido ou expirado');
   }
 }
