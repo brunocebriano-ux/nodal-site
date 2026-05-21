@@ -11322,8 +11322,6 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
         </div>
         <button id="lock-submit" onclick="_lockSubmitCurrent();lockSubmitRipple(event)">→ Entrar</button>
         <div class="lock-hint">
-          Sem senha? Apenas visualização disponível<br>
-          <span class="lock-hint-visitor" onclick="enterViewerMode()">✦ Entrar como Visitante →</span><br>
           <span class="lock-forgot-link" id="lock-forgot-link" onclick="showForgotPassword()">Esqueci minha senha</span>
         </div>
       </div>
@@ -16348,8 +16346,12 @@ function closeTagManager() {
 }
 function saveGlobalTags() {
   try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
-  // Salva no Supabase imediatamente — sem debounce
   if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
+  // Sync proj_data para que visitantes vejam as tags atualizadas
+  if (typeof activeProjectId !== 'undefined' && activeProjectId && typeof projSaveCurrentState === 'function') {
+    clearTimeout(window._tagProjSaveTimer);
+    window._tagProjSaveTimer = setTimeout(projSaveCurrentState, 2500);
+  }
 }
 function loadGlobalTags() {
   try {
@@ -25764,11 +25766,9 @@ function _panoComputeMetrics() {
   nodes.forEach(n => { (n.richMedia||[]).forEach(m=>{ if(m.type==='video'||m.type==='youtube') vids++; }); });
   metrics['videos'] = { val: vids, tag:'vídeos', label:'vídeos nas galerias', color:'#f87171' };
 
-  // artigos: via localStorage 'neural-articles-<id>'
+  // artigos: via getNodeArticles (suporta cache de visitante)
   let arts = 0;
-  nodes.forEach(n => {
-    try { const r=localStorage.getItem('neural-articles-'+n.id); if(r) arts += JSON.parse(r).length; } catch(e){}
-  });
+  nodes.forEach(n => { arts += getNodeArticles(n.id).length; });
   metrics['artigos'] = { val: arts, tag:'artigos', label:'artigos referenciados', color:'#facc15' };
 
   // imagens nas galerias
