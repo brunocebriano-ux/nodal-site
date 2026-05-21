@@ -16340,9 +16340,9 @@ function openTagManager() {
 function closeTagManager() {
   document.getElementById('tag-manager-overlay').classList.remove('open');
   document.getElementById('tag-manager').classList.remove('open');
-  // Refresh tag pickers if editor is open
-  if (selectedNode) renderTagPicker('e', selectedNode.tags || []);
-  renderTagPicker('c', []);
+  // Rerender preservando toggles não salvos; usa saved tags só se picker nunca foi inicializado
+  if (selectedNode) renderTagPicker('e', _tagPickerState['e'] != null ? _tagPickerState['e'] : (selectedNode.tags || []));
+  renderTagPicker('c', _tagPickerState['c'] != null ? _tagPickerState['c'] : []);
 }
 function saveGlobalTags() {
   try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
@@ -16406,11 +16406,15 @@ function changeGlobalTagColor(tid, input) {
   chip.querySelector('.tm-color-preview-dot').style.background = color;
   saveSettings();
 }
+// Estado em memória das tags — fonte de verdade única (substitui leitura frágil do DOM)
+const _tagPickerState = {};
 function renderTagPicker(prefix, assigned) {
   const assignedEl = document.getElementById(prefix + '-tag-assigned');
   const availEl = document.getElementById(prefix + '-tag-available');
   if (!assignedEl || !availEl) return;
-  const assignedSet = new Set(assigned);
+  // Grava estado em memória — única fonte de verdade
+  _tagPickerState[prefix] = (assigned || []).filter(id => typeof id === 'string' && id.length > 0);
+  const assignedSet = new Set(_tagPickerState[prefix]);
   if (!assignedSet.size) {
     assignedEl.innerHTML = '<span style="font-size:9px;color:var(--text3)">Sem tags atribuídas</span>';
   } else {
@@ -16430,20 +16434,14 @@ function renderTagPicker(prefix, assigned) {
   }
 }
 function getAssignedTags(prefix) {
-  const el = document.getElementById(prefix + '-tag-assigned');
-  if (!el) return [];
-  return Array.from(el.querySelectorAll('.tag-chip')).map(chip => {
-    const onclick = chip.getAttribute('onclick') || '';
-    const m = onclick.match(/'([^']+)'\)$/);
-    return m ? m[1] : null;
-  }).filter(Boolean);
+  // Lê do estado em memória — sem parsing de onclick do DOM
+  return (_tagPickerState[prefix] || []).slice();
 }
 function toggleNodeTag(prefix, tid) {
   const current = getAssignedTags(prefix);
   const idx = current.indexOf(tid);
   if (idx >= 0) current.splice(idx, 1); else current.push(tid);
   renderTagPicker(prefix, current);
-  // Sincroniza painel esquerdo e header do Saiba Mais ao vivo (sem esperar salvar)
   if (prefix === 'e') {
     const chips = current.map(id => {
       const tg = globalTags.find(g => g.id === id);
