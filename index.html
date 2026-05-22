@@ -13220,8 +13220,6 @@ let isEditorUnlocked = false;
 let isViewerMode = false;
 let isLight = true;
 let _lockMode = 'login';
-// Declaração antecipada para evitar ReferenceError no loop de animação
-if (typeof flat2DActive === 'undefined') var flat2DActive = false;
 
 async function _activateEditorMode() {
   isEditorUnlocked = true;
@@ -16899,7 +16897,7 @@ function animate() {
   // Slerp suave entre camQuat e camTargetQuat:
   // quando uma animação fly/2D está no controle direto de camQuat, o target
   // acompanha para não causar snap quando a animação terminar
-  if (_flyRaf || flat2DActive) {
+  if (_flyRaf || window.flat2DActive) {
     camTargetQuat.copy(camQuat);
   } else if (camQuat.dot(camTargetQuat) < 0.9999998) {
     camQuat.slerp(camTargetQuat, isDragging ? 0.22 : 0.12);
@@ -17265,69 +17263,62 @@ function openSaibaMais() {
   smCurrentNode = nd;
   smDirty = false;
 
-  try {
-    // Populate header
-    const _colorBar = document.getElementById('sm-color-bar');
-    if (_colorBar) _colorBar.style.background = nd.color || catColor(nd.cat);
-    const _catEl = document.getElementById('sm-header-cat');
-    if (_catEl) { _catEl.textContent = nd.cat; _catEl.style.color = catColor(nd.cat); }
-    const _titleEl = document.getElementById('sm-header-title');
-    if (_titleEl) _titleEl.textContent = nd.title;
+  // Populate header
+  document.getElementById('sm-color-bar').style.background = nd.color || catColor(nd.cat);
+  document.getElementById('sm-header-cat').textContent = nd.cat;
+  document.getElementById('sm-header-cat').style.color = catColor(nd.cat);
+  document.getElementById('sm-header-title').textContent = nd.title;
 
-    // Tags no header do modal (visíveis em qualquer modo)
-    const smTagsEl = document.getElementById('sm-header-tags');
-    if (smTagsEl) {
-      if (nd.tags && nd.tags.length) {
-        const chips = nd.tags.map(tid => {
-          const tg = globalTags.find(g => g.id === tid);
-          if (!tg) return '';
-          return `<span class="tag-chip" style="background:${tg.color}22;border-color:${tg.color}55;color:${tg.color}">${tg.name}</span>`;
-        }).filter(Boolean).join('');
-        smTagsEl.innerHTML = chips;
-        smTagsEl.style.display = chips ? 'flex' : 'none';
-      } else {
-        smTagsEl.innerHTML = '';
-        smTagsEl.style.display = 'none';
-      }
+  // Tags no header do modal (visíveis em qualquer modo)
+  const smTagsEl = document.getElementById('sm-header-tags');
+  if (smTagsEl) {
+    if (nd.tags && nd.tags.length) {
+      const chips = nd.tags.map(tid => {
+        const tg = globalTags.find(g => g.id === tid);
+        if (!tg) return '';
+        return `<span class="tag-chip" style="background:${tg.color}22;border-color:${tg.color}55;color:${tg.color}">${tg.name}</span>`;
+      }).filter(Boolean).join('');
+      smTagsEl.innerHTML = chips;
+      smTagsEl.style.display = chips ? 'flex' : 'none';
+    } else {
+      smTagsEl.innerHTML = '';
+      smTagsEl.style.display = 'none';
     }
-
-    // Load saved rich content into editor
-    const editor = document.getElementById('sm-editor');
-    if (editor) { editor.innerHTML = nd.richContent || ''; smUpdatePlaceholder(); }
-    // Corrige cores inline conforme o tema atual
-    setTimeout(() => { if (typeof smFixContentColors === 'function') smFixContentColors(); }, 30);
-
-    // Load media lists (separated image/video)
-    smRenderMediaList();
-
-    // Apply editor/visitor access control
-    smUpdateEditTabAccess();
-
-    // Show/hide the Edit tab button label based on access
-    const editTabBtn = document.getElementById('sm-tab-edit');
-    if (editTabBtn) editTabBtn.textContent = isEditorUnlocked ? '✎ Editar' : '⬡ Editar';
-
-    const _statusEl = document.getElementById('sm-status');
-    if (_statusEl) _statusEl.textContent = isEditorUnlocked ? 'Pronto' : 'Modo leitura';
-
-    // Default: open on Texto tab
-    smSwitchTab('view');
-
-    // Empurra AMBOS os sidebars para trás enquanto o modal está aberto
-    ['left-panel','nodal-sidebar'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.style.setProperty('z-index',        '-1',    'important');
-      el.style.setProperty('pointer-events', 'none',  'important');
-    });
-  } catch(e) {
-    console.error('[NODAL] openSaibaMais erro interno:', e);
   }
 
-  // Abre o overlay independente de erros anteriores
+  // Load saved rich content into editor
+  const editor = document.getElementById('sm-editor');
+  editor.innerHTML = nd.richContent || '';
+  smUpdatePlaceholder();
+  // Corrige cores inline conforme o tema atual
+  setTimeout(() => { if (typeof smFixContentColors === 'function') smFixContentColors(); }, 30);
+
+  // Load media lists (separated image/video)
+  smRenderMediaList();
+
+  // Apply editor/visitor access control
+  smUpdateEditTabAccess();
+
+  // Show/hide the Edit tab button label based on access
+  const editTabBtn = document.getElementById('sm-tab-edit');
+  if (editTabBtn) {
+    editTabBtn.textContent = isEditorUnlocked ? '✎ Editar' : '⬡ Editar';
+  }
+
+  document.getElementById('sm-status').textContent = isEditorUnlocked ? 'Pronto' : 'Modo leitura';
+
+  // Default: open on Texto tab
+  smSwitchTab('view');
+
+  // Empurra AMBOS os sidebars para trás enquanto o modal está aberto
+  ['left-panel','nodal-sidebar'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.setProperty('z-index',        '-1',    'important');
+    el.style.setProperty('pointer-events', 'none',  'important');
+  });
   document.body.classList.add('sm-open');
-  const _smOverlay = document.getElementById('sm-overlay');
-  if (_smOverlay) _smOverlay.classList.add('open');
+  document.getElementById('sm-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
@@ -19379,19 +19370,16 @@ document.addEventListener('keydown', function(e) {
     case 'n':
     case 'N':
       if (isEditorUnlocked) addNodeDialog();
-      else toast('🔒 Faça login para criar nós');
       break;
 
     case 'd':
     case 'D':
       if (isEditorUnlocked) toggleDragMode();
-      else toast('🔒 Faça login para usar o modo mover');
       break;
 
     case 'c':
     case 'C':
       if (isEditorUnlocked) toggleConnectMode();
-      else toast('🔒 Faça login para conectar nós');
       break;
 
     case 'm':
@@ -21948,7 +21936,7 @@ setEditingEnabled = function(on) {
 //  MODO 2D — Grafo Plano
 // ══════════════════════════════════════════════════
 
-let flat2DActive = false;
+var flat2DActive = false;
 let _flat2DSavedSpherical = null;
 let _flat2DNodePositions  = {};
 let _flat2DLayout         = {};
@@ -26380,13 +26368,7 @@ window.lockDesignSettings = (function(){
               leftBgImage:null,leftBgVideo:null,leftBgType:'image',
               animOn:true,animType:'web',animSize:80,animColor:'#ffffff',
               rightBlur:28,rightOpacity:82,rightColor:'#080818'};
-  try {
-    var s = Object.assign(def, JSON.parse(localStorage.getItem('neural-lock-design')||'{}'));
-    // Animação rede sempre ativa — não pode ser desligada por configurações salvas
-    s.animOn = true;
-    s.animType = 'web';
-    return s;
-  }
+  try { return Object.assign(def, JSON.parse(localStorage.getItem('neural-lock-design')||'{}')); }
   catch(e){ return def; }
 })();
 var lockDesignSettings = window.lockDesignSettings; // local alias
