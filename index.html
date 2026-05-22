@@ -15187,7 +15187,24 @@ window.addEventListener('mousemove', e => {
 });
 
 canvas.addEventListener('wheel', e => {
-  zoomTarget = Math.max(8, Math.min(500, zoomTarget + e.deltaY * 0.07));
+  // Zoom proporcional: rápido longe, preciso perto
+  const factor = 1 + e.deltaY * 0.001;
+  const newZoom = Math.max(8, Math.min(500, zoomTarget * factor));
+
+  // Zoom em direção ao cursor (só fora de fly e modo 2D)
+  if (!_flyRaf && !window.flat2DActive) {
+    const ndc = getMouseNDC(e);
+    raycaster.setFromCamera(ndc, camera);
+    const camDir = camera.position.clone().sub(cameraTarget).normalize();
+    const focalPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(camDir, cameraTarget);
+    const fp = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(focalPlane, fp)) {
+      const shift = (1 - newZoom / zoomTarget) * 0.35;
+      cameraTarget.addScaledVector(fp.sub(cameraTarget), shift);
+    }
+  }
+
+  zoomTarget = newZoom;
 }, {passive:true});
 
 // Touch support
@@ -21097,7 +21114,10 @@ flyToNode = function(nd) {
   const tRadius = Math.max(_flyConfig.minRadius, Math.min(spherical.radius, dist*1.6+18));
   const startQuat2   = camQuat.clone();
   const endQuat2     = sphericalToQuat(tTheta, tPhi);
-  const startRadius = spherical.radius;
+  const startRadius  = spherical.radius;
+  const startTarget  = cameraTarget.clone();
+  const endTarget    = new THREE.Vector3(0, 0, 0);
+  panVel.set(0, 0, 0);
   const STEPS = _flyConfig.steps;
   let s = 0;
   function step() {
@@ -21106,6 +21126,7 @@ flyToNode = function(nd) {
     camQuat.copy(startQuat2).slerp(endQuat2, t);
     spherical.radius = startRadius + (tRadius - startRadius) * t;
     zoomTarget = spherical.radius;
+    cameraTarget.copy(startTarget).lerp(endTarget, t);
     updateCamera();
     if (s < STEPS) _flyRaf = requestAnimationFrame(step);
     else _flyRaf = null;
