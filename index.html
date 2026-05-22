@@ -13220,6 +13220,8 @@ let isEditorUnlocked = false;
 let isViewerMode = false;
 let isLight = true;
 let _lockMode = 'login';
+// Declaração antecipada para evitar ReferenceError no loop de animação
+if (typeof flat2DActive === 'undefined') var flat2DActive = false;
 
 async function _activateEditorMode() {
   isEditorUnlocked = true;
@@ -13245,7 +13247,7 @@ async function _activateEditorMode() {
   try {
     console.log('[NODAL] iniciando projBoot...');
     if (typeof projBoot === 'function') await projBoot();
-    await _loadSettingsFromCloud();
+    if (typeof _loadSettingsFromCloud === 'function') await _loadSettingsFromCloud();
     console.log('[NODAL] projBoot ok, iniciando showProjectsScreen...');
     if (typeof showProjectsScreen === 'function') await showProjectsScreen();
     console.log('[NODAL] showProjectsScreen ok');
