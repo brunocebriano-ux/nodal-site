@@ -11282,6 +11282,69 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
 .cmp-qc-result { font-size: 11px; color: rgba(255,255,255,0.5); min-height: 14px; margin-top: 6px; }
 /* ══ fim cat-manager ══ */
 
+/* ══════════════════════════════════════
+   MOBILE — apenas em telas ≤ 768px
+   Zero impacto no desktop
+══════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Safe area iPhone (notch / Dynamic Island) */
+  #hud-top {
+    padding-top: env(safe-area-inset-top);
+    height: calc(46px + env(safe-area-inset-top));
+  }
+
+  /* HUD: remove spacer e faz os botões scrollarem horizontalmente */
+  .hud-spacer { display: none !important; }
+  #hud-btns {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+  #hud-btns::-webkit-scrollbar { display: none; }
+  #hud-dl-toggle { flex-shrink: 0; }
+
+  /* Sidebar: dock horizontal fixo na base */
+  #nodal-sidebar {
+    flex-direction: row !important;
+    align-items: center !important;
+    top: auto !important;
+    bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+    left: 18px !important;
+    right: 18px !important;
+    width: auto !important;
+    max-width: calc(100vw - 36px) !important;
+    height: 58px !important;
+    padding: 0 8px !important;
+    border-radius: 18px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border: 1px solid var(--sb-border-idle, rgba(255,255,255,0.08)) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
+    scrollbar-width: none !important;
+  }
+  #nodal-sidebar::-webkit-scrollbar { display: none; }
+
+  /* Garante que sb-hidden não esconda a sidebar no mobile */
+  #nodal-sidebar.sb-hidden {
+    transform: none !important;
+    pointer-events: all !important;
+  }
+
+  /* Layout horizontal: só ícones, sem labels */
+  #nodal-sidebar .sb-profile { flex-direction: row !important; padding: 0 4px !important; gap: 6px !important; }
+  #nodal-sidebar .sb-profile-text { display: none !important; }
+  #nodal-sidebar .sb-section { display: none !important; }
+  #nodal-sidebar .sb-spacer { display: none !important; }
+  #nodal-sidebar .sb-footer-sep { width: 1px !important; height: 28px !important; margin: 0 4px !important; background: var(--border) !important; }
+  #nodal-sidebar .sb-item { padding: 8px 10px !important; justify-content: center !important; min-width: 38px !important; width: auto !important; }
+  #nodal-sidebar .sb-label { display: none !important; }
+  #nodal-sidebar #sidebar-toggle { display: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -12440,7 +12503,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     <span id="isolated-count">0</span> isolado<span id="isolated-plural">s</span>
   </div>
   <div class="hud-sep" id="isolated-sep" style="display:none"></div>
-  <div style="display:flex;gap:5px;align-items:center">
+  <div id="hud-btns" style="display:flex;gap:5px;align-items:center">
 
     <!-- Busca (sempre visível) -->
     <button class="btn" onclick="openSearch()" title="Buscar nós, artigos e mídias (Ctrl+F)">⌕ Buscar</button>
