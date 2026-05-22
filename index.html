@@ -15082,7 +15082,8 @@ const panVel = new THREE.Vector3();
 const PAN_DAMPING = 0.85;
 
 // ── Quaternion arcball (sem gimbal lock) ───────────
-const camQuat = new THREE.Quaternion(); // identity = câmera em +Z
+const camQuat = new THREE.Quaternion();       // quaternion atual da câmera (suavizado)
+let camTargetQuat = new THREE.Quaternion();   // alvo para o slerp — mouse/inércia atualizam aqui
 
 function sphericalToQuat(theta, phi) {
   const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
@@ -15092,15 +15093,17 @@ function sphericalToQuat(theta, phi) {
 
 function setSpherical(theta, phi) {
   spherical.theta = theta; spherical.phi = phi;
-  camQuat.copy(sphericalToQuat(theta, phi));
+  const q = sphericalToQuat(theta, phi);
+  camQuat.copy(q);
+  camTargetQuat.copy(q); // sincroniza os dois ao setar posição programática
 }
 
 function applyOrbitDelta(dx, dy) {
-  const sens = 0.004;
-  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camQuat);
+  const sens = 0.0032; // ligeiramente menos sensível → sensação de peso/profundidade
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camTargetQuat);
   const qH = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -dx * sens);
   const qV = new THREE.Quaternion().setFromAxisAngle(right, -dy * sens);
-  camQuat.premultiply(qH).premultiply(qV).normalize();
+  camTargetQuat.premultiply(qH).premultiply(qV).normalize();
 }
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -15487,11 +15490,18 @@ function createNodeLabel(nd) {
   const div = document.createElement('div');
   div.className = 'node-label';
   div.textContent = nd.title;
-  div.style.fontFamily = nd.font || "'Space Mono', monospace";
-  div.style.fontSize = (nd.fontSize || 13) + 'px';
-  div.style.fontWeight = nd.bold ? '700' : '400';
-  div.style.fontStyle = nd.italic ? 'italic' : 'normal';
-  div.style.color = nd.color || catColor(nd.cat);
+  // Estilos estáticos definidos uma vez — só transform/opacity mudam no loop
+  div.style.cssText = [
+    'position:fixed','pointer-events:none','z-index:5','display:none',
+    'left:0','top:0','white-space:nowrap','will-change:transform',
+    'transform-origin:0 0','transition:opacity 0.25s',
+    `font-family:${nd.font || "'Space Mono',monospace"}`,
+    `font-size:${nd.fontSize || 13}px`,
+    `font-weight:${nd.bold ? '700' : '400'}`,
+    `font-style:${nd.italic ? 'italic' : 'normal'}`,
+    `color:${nd.color || catColor(nd.cat)}`,
+    `text-shadow:${nd.textShadow !== false ? '0 0 20px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.95)' : 'none'}`
+  ].join(';');
   nd.labelEl = div;
   nd.labelPos = new THREE.Vector3(nd.x, nd.y + 1.7*nd.size + 0.4, nd.z);
 }
@@ -16841,26 +16851,17 @@ function toast(msg) {
 
 // ── Labels ─────────────────────────────────────────
 function updateLabels() {
+  const rect = canvas.getBoundingClientRect();
   nodes.forEach(nd => {
     if (!nd.labelEl || !nd.labelPos) return;
     const pos = nd.labelPos.clone().project(camera);
-    const rect = canvas.getBoundingClientRect();
+    if (pos.z > 1) { nd.labelEl.style.display = 'none'; return; }
     const px = (pos.x * 0.5 + 0.5) * rect.width + rect.left;
     const py = (-pos.y * 0.5 + 0.5) * rect.height + rect.top;
-    if (pos.z > 1) { nd.labelEl.style.display='none'; return; }
-    nd.labelEl.style.cssText = `
-      display:block; position:fixed; pointer-events:none; z-index:5;
-      left:${px}px; top:${py}px; transform:translateX(-50%);
-      font-family:${nd.font||"'Space Mono',monospace"};
-      font-size:${nd.fontSize||13}px;
-      font-weight:${nd.bold?'700':'400'};
-      font-style:${nd.italic?'italic':'normal'};
-      color:${nd.color||catColor(nd.cat)};
-      white-space:nowrap; pointer-events:none;
-      text-shadow:${nd.textShadow!==false?'0 0 20px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.95)':'none'};
-      opacity:${(selectedNode&&selectedNode.id===nd.id)||(hoveredNode&&hoveredNode.id===nd.id)?1:0.55};
-      transition:opacity 0.2s;
-    `;
+    // Só transform (GPU) e opacity — sem left/top para evitar reflow
+    nd.labelEl.style.display = 'block';
+    nd.labelEl.style.transform = `translate3d(${px.toFixed(1)}px,${py.toFixed(1)}px,0) translateX(-50%)`;
+    nd.labelEl.style.opacity = (selectedNode&&selectedNode.id===nd.id)||(hoveredNode&&hoveredNode.id===nd.id) ? '1' : '0.55';
     if (!nd.labelEl.parentElement) document.body.appendChild(nd.labelEl);
   });
 }
@@ -16882,7 +16883,7 @@ function animate() {
   }
   if (Math.abs(spherical.radius - zoomTarget) > 0.01) {
     if (_flyRaf) {
-      zoomTarget = spherical.radius; // fly animation controls radius — stay in sync
+      zoomTarget = spherical.radius;
     } else {
       spherical.radius += (zoomTarget - spherical.radius) * ZOOM_LERP;
       needCamUpdate = true;
@@ -16891,6 +16892,15 @@ function animate() {
   if (!isPanning && panVel.lengthSq() > 0.000001) {
     cameraTarget.add(panVel);
     panVel.multiplyScalar(PAN_DAMPING);
+    needCamUpdate = true;
+  }
+  // Slerp suave entre camQuat e camTargetQuat:
+  // quando uma animação fly/2D está no controle direto de camQuat, o target
+  // acompanha para não causar snap quando a animação terminar
+  if (_flyRaf || flat2DActive) {
+    camTargetQuat.copy(camQuat);
+  } else if (camQuat.dot(camTargetQuat) < 0.9999998) {
+    camQuat.slerp(camTargetQuat, isDragging ? 0.22 : 0.12);
     needCamUpdate = true;
   }
   if (needCamUpdate) updateCamera();
