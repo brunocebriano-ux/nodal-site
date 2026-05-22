@@ -15196,7 +15196,8 @@ canvas.addEventListener('wheel', e => {
   const prevTarget = zoomTarget;
   zoomTarget = Math.max(8, Math.min(500, zoomTarget + zoomSpeed));
 
-  // Zoom em direção ao cursor: o mapa se move para onde o mouse aponta
+  // Zoom em direção ao cursor: encontra o ponto 3D sob o cursor e move
+  // o centro de órbita em sua direção (negativo de zoomDelta = zoom in → move para cursor)
   const rect = canvas.getBoundingClientRect();
   const ndc = {
     x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -15204,8 +15205,12 @@ canvas.addEventListener('wheel', e => {
   };
   const _zoomRay = new THREE.Raycaster();
   _zoomRay.setFromCamera(ndc, camera);
-  const zoomDelta = zoomTarget - prevTarget;
-  cameraTarget.addScaledVector(_zoomRay.ray.direction, zoomDelta * 0.28);
+  const rayDir = _zoomRay.ray.direction;
+
+  // zoomDelta é negativo ao dar zoom in → negamos para mover PARA o cursor
+  const zoomDelta = zoomTarget - prevTarget; // negativo = zoom in
+  cameraTarget.addScaledVector(rayDir, -zoomDelta * 0.30);
+  updateCamera();
 }, {passive:true});
 
 // Touch support
