@@ -14971,6 +14971,13 @@ function applyOrbitDelta(dx, dy) {
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
+  // Devolver foco ao body para que atalhos de teclado funcionem após clicar em inputs/contenteditable
+  const ae = document.activeElement;
+  if (ae && ae !== document.body && ae !== canvas &&
+      (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' ||
+       ae.tagName === 'SELECT' || ae.isContentEditable)) {
+    ae.blur();
+  }
   if (e.button === 2 && !flat2DActive) {
     isPanning = true; panLastMouse = {x: e.clientX, y: e.clientY}; return;
   }
@@ -20683,7 +20690,9 @@ flyToNode = function(nd) {
   const tRadius = Math.max(_flyConfig.minRadius, Math.min(spherical.radius, dist*1.6+18));
   const startQuat2   = camQuat.clone();
   const endQuat2     = sphericalToQuat(tTheta, tPhi);
-  const startRadius = spherical.radius;
+  const startRadius  = spherical.radius;
+  const startTarget  = cameraTarget.clone();
+  const endTarget    = new THREE.Vector3(0, 0, 0); // flyToNode assume cameraTarget na origem
   const STEPS = _flyConfig.steps;
   let s = 0;
   function step() {
@@ -20692,6 +20701,7 @@ flyToNode = function(nd) {
     camQuat.copy(startQuat2).slerp(endQuat2, t);
     spherical.radius = startRadius + (tRadius - startRadius) * t;
     zoomTarget = spherical.radius;
+    cameraTarget.lerpVectors(startTarget, endTarget, t); // recentra o pivô na origem
     updateCamera();
     if (s < STEPS) _flyRaf = requestAnimationFrame(step);
     else _flyRaf = null;
