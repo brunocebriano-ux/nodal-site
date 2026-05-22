@@ -11284,7 +11284,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
 <div id="bg-canvas"></div>
   <video id="bg-video" autoplay muted loop playsinline></video>
 <div id="grain-overlay"></div>
-<canvas id="canvas3d"></canvas>
+<canvas id="canvas3d" tabindex="0" style="outline:none"></canvas>
 <div id="scanlines"></div>
 
 <!-- Lock Screen -->
@@ -15099,7 +15099,9 @@ function setSpherical(theta, phi) {
 }
 
 function applyOrbitDelta(dx, dy) {
-  const sens = 0.0032; // ligeiramente menos sensível → sensação de peso/profundidade
+  // Sensibilidade proporcional à distância: longe = gira rápido, perto = controle fino
+  const baseSens = 0.0014;
+  const sens = baseSens * Math.max(0.25, Math.min(3.0, spherical.radius / 90));
   const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camTargetQuat);
   const qH = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -dx * sens);
   const qV = new THREE.Quaternion().setFromAxisAngle(right, -dy * sens);
@@ -15108,6 +15110,8 @@ function applyOrbitDelta(dx, dy) {
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
+  // Garante foco no canvas para atalhos de teclado funcionarem
+  if (document.activeElement !== canvas) canvas.focus();
   if (e.button === 2 && !flat2DActive) {
     isPanning = true; panLastMouse = {x: e.clientX, y: e.clientY}; return;
   }
@@ -15187,7 +15191,21 @@ window.addEventListener('mousemove', e => {
 });
 
 canvas.addEventListener('wheel', e => {
-  zoomTarget = Math.max(8, Math.min(500, zoomTarget + e.deltaY * 0.07));
+  // Zoom proporcional à distância: longe = rápido, perto = suave e preciso
+  const zoomSpeed = e.deltaY * 0.0012 * Math.max(8, spherical.radius);
+  const prevTarget = zoomTarget;
+  zoomTarget = Math.max(8, Math.min(500, zoomTarget + zoomSpeed));
+
+  // Zoom em direção ao cursor: o mapa se move para onde o mouse aponta
+  const rect = canvas.getBoundingClientRect();
+  const ndc = {
+    x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    y: -((e.clientY - rect.top) / rect.height) * 2 + 1
+  };
+  const _zoomRay = new THREE.Raycaster();
+  _zoomRay.setFromCamera(ndc, camera);
+  const zoomDelta = zoomTarget - prevTarget;
+  cameraTarget.addScaledVector(_zoomRay.ray.direction, zoomDelta * 0.28);
 }, {passive:true});
 
 // Touch support
@@ -19369,17 +19387,23 @@ document.addEventListener('keydown', function(e) {
 
     case 'n':
     case 'N':
+      e.preventDefault();
       if (isEditorUnlocked) addNodeDialog();
+      else toast('🔒 Faça login como editor para criar nós');
       break;
 
     case 'd':
     case 'D':
+      e.preventDefault();
       if (isEditorUnlocked) toggleDragMode();
+      else toast('🔒 Faça login como editor para mover nós');
       break;
 
     case 'c':
     case 'C':
+      e.preventDefault();
       if (isEditorUnlocked) toggleConnectMode();
+      else toast('🔒 Faça login como editor para conectar nós');
       break;
 
     case 'm':
