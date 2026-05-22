@@ -26380,7 +26380,13 @@ window.lockDesignSettings = (function(){
               leftBgImage:null,leftBgVideo:null,leftBgType:'image',
               animOn:true,animType:'web',animSize:80,animColor:'#ffffff',
               rightBlur:28,rightOpacity:82,rightColor:'#080818'};
-  try { return Object.assign(def, JSON.parse(localStorage.getItem('neural-lock-design')||'{}')); }
+  try {
+    var s = Object.assign(def, JSON.parse(localStorage.getItem('neural-lock-design')||'{}'));
+    // Animação rede sempre ativa — não pode ser desligada por configurações salvas
+    s.animOn = true;
+    s.animType = 'web';
+    return s;
+  }
   catch(e){ return def; }
 })();
 var lockDesignSettings = window.lockDesignSettings; // local alias
