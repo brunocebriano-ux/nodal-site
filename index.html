@@ -14966,10 +14966,7 @@ function applyOrbitDelta(dx, dy) {
   const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camTargetQuat);
   const qH = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -dx * sens);
   const qV = new THREE.Quaternion().setFromAxisAngle(right, -dy * sens);
-  const testQ = camTargetQuat.clone().premultiply(qH).premultiply(qV).normalize();
-  const fwdY = new THREE.Vector3(0, 0, -1).applyQuaternion(testQ).y;
-  if (Math.abs(fwdY) < 0.98) camTargetQuat.copy(testQ);
-  else { camTargetQuat.premultiply(qH).normalize(); }
+  camTargetQuat.premultiply(qH).premultiply(qV).normalize();
 }
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -15056,14 +15053,22 @@ canvas.addEventListener('wheel', e => {
   e.preventDefault();
   const delta = e.deltaY * zoomTarget * 0.0007;
   const newRadius = Math.max(8, Math.min(500, zoomTarget + delta));
-  // zoom toward cursor: shift cameraTarget proportionally
   if (!flat2DActive) {
     const rect = canvas.getBoundingClientRect();
     const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const ray = new THREE.Vector3(nx, ny, 0.5).unproject(camera).sub(camera.position).normalize();
-    const shift = (zoomTarget - newRadius) * 0.18;
-    cameraTarget.addScaledVector(ray, shift);
+    // ray-plane intersection: find world point under cursor at focal plane depth
+    const camFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const cursorWorld = new THREE.Vector3(nx, ny, 0.5).unproject(camera);
+    const rayDir = cursorWorld.clone().sub(camera.position).normalize();
+    const denom = camFwd.dot(rayDir);
+    if (Math.abs(denom) > 0.001) {
+      const t = (camFwd.dot(cameraTarget) - camFwd.dot(camera.position)) / denom;
+      const hitPoint = camera.position.clone().addScaledVector(rayDir, t);
+      // shift cameraTarget proportional to zoom fraction
+      const zoomFraction = (zoomTarget - newRadius) / zoomTarget;
+      cameraTarget.addScaledVector(hitPoint.clone().sub(cameraTarget), zoomFraction);
+    }
   }
   zoomTarget = newRadius;
 }, {passive:false});
@@ -18962,12 +18967,12 @@ document.addEventListener('keydown', function(e) {
 
     case 'd':
     case 'D':
-      if (isEditorUnlocked) toggleDragMode();
+      toggleDragMode();
       break;
 
     case 'c':
     case 'C':
-      if (isEditorUnlocked) toggleConnectMode();
+      toggleConnectMode();
       break;
 
     case 'm':
