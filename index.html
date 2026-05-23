@@ -3,11 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <title>NODAL</title>
 <script>
 // ── Pre-load tema: evita flash branco/preto antes do JS iniciar ──
@@ -528,23 +523,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .lp-conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .lp-conn-arrow { font-size: 12px; color: rgba(255,255,255,0.42); flex-shrink: 0; }
   html.light .lp-conn-arrow { color: rgba(20,30,50,0.38); }
-
-  /* ── Backlinks: sublabels de direção ── */
-  .lp-bl-sublabel {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
-    color: var(--text3); padding: 2px 0 6px; margin-top: 4px;
-  }
-  .lp-bl-sublabel--in { margin-top: 14px; color: rgba(167,139,250,0.75); }
-  html.light .lp-bl-sublabel--in { color: rgba(109,40,217,0.6); }
-  .lp-bl-count {
-    margin-left: auto; background: rgba(255,255,255,0.07);
-    border-radius: 8px; padding: 1px 7px;
-    font-size: 9px; color: var(--text3); font-weight: 600;
-  }
-  html.light .lp-bl-count { background: rgba(0,0,0,0.06); }
-  .lp-bl-count--in { background: rgba(167,139,250,0.12); color: rgba(167,139,250,0.88); }
-  html.light .lp-bl-count--in { background: rgba(109,40,217,0.10); color: rgba(109,40,217,0.7); }
   .lp-conn-name { flex: 1; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; }
   .lp-conn-cat {
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
@@ -3398,36 +3376,14 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .ft-avatar {
     width: 72px; height: 72px; border-radius: 50%;
     background: rgba(167,139,250,0.10);
-    border: 2px solid var(--border-glow);
+    border: 2px dashed var(--border-glow);
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; cursor: default; position: relative; overflow: hidden;
-    transition: border-color 0.2s;
+    font-size: 24px; cursor: pointer; position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
   }
+  .ft-avatar:hover { border-color: var(--accent); transform: scale(1.04); }
   .ft-avatar img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
   .ft-avatar-hint { font-size: 8.5px; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; }
-  /* URL da foto de perfil */
-  #ft-foto-url {
-    width: 100%; height: 38px; padding: 0 12px 0 32px; box-sizing: border-box;
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
-    color: rgba(255,255,255,0.78); font-family: var(--mono); font-size: 11px;
-    border-radius: 10px; outline: none; transition: border-color 0.15s; letter-spacing: 0.02em;
-    margin: 0 !important;
-  }
-  html.light #ft-foto-url {
-    background: rgba(255,255,255,0.68); border-color: rgba(20,50,120,0.13);
-    color: rgba(18,28,55,0.82);
-  }
-  #ft-foto-url::placeholder { color: rgba(255,255,255,0.22); }
-  html.light #ft-foto-url::placeholder { color: rgba(18,28,55,0.30); }
-  #ft-foto-url:focus { border-color: rgba(99,160,255,0.38); box-shadow: 0 0 0 3px rgba(99,160,255,0.09); }
-  #ft-foto-url-go {
-    width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px;
-    background: #2563eb; border: none; color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.18s; padding: 0;
-  }
-  #ft-foto-url-go:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 5px 18px rgba(37,99,235,0.42); }
-  #ft-foto-url-go:active { transform: translateY(0); }
   .ft-profile-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
   .ft-input-nome {
     font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 700;
@@ -3608,20 +3564,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .sm-tb-btn:active { opacity: 0.7; transform: scale(0.96); }
   .sm-tb-sep { width: 1px; height: 16px; background: var(--border); align-self: center; margin: 0 2px; }
 
-  /* Cor do texto na toolbar fixa */
-  .sm-tb-color-wrap { position: relative; }
-  .sm-tb-color-btn {
-    display: flex !important; align-items: center; gap: 3px; padding: 0 8px !important;
-  }
-  .sm-tb-color-ind {
-    display: block; width: 14px; height: 4px; border-radius: 2px;
-    background: var(--text); pointer-events: none;
-  }
-  .sm-tb-color-wrap input[type="color"] {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    opacity: 0; cursor: pointer; border: none; padding: 0;
-  }
-
   /* Editor — glass transparente */
   #sm-editor {
     width: 100%; min-height: 280px;
@@ -3731,9 +3673,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     pointer-events: auto;
   }
   #sm-float-toolbar.visible { display: flex; }
-  /* Barra flutuante e sidebar só para editores — visitantes nunca veem */
-  html:not(.editor-mode) #sm-float-toolbar { display: none !important; }
-  html:not(.editor-mode) #nodal-sidebar    { display: none !important; }
   @keyframes float-tb-appear {
     from { opacity:0; transform: translateY(5px) scale(0.95); }
     to   { opacity:1; transform: translateY(0) scale(1); }
@@ -3758,39 +3697,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     font-weight: 700;
   }
   #sm-ft-ask-ai:hover { filter: brightness(1.15); }
-
-  /* ── Floating toolbar: color picker ── */
-  .sm-ft-color-wrap {
-    position: relative; display: flex; align-items: center;
-  }
-  .sm-ft-color-btn {
-    height: 26px; width: 32px; padding: 0;
-    background: transparent; border: none;
-    cursor: pointer; border-radius: 7px; transition: background 0.10s;
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 11px; font-weight: 700;
-    color: var(--text2); gap: 2px;
-  }
-  .sm-ft-color-btn:hover { background: var(--glass-light); }
-  .sm-ft-color-indicator {
-    width: 12px; height: 4px; border-radius: 2px;
-    background: currentColor; display: block; margin-top: 1px;
-    pointer-events: none;
-  }
-  .sm-ft-color-btn input[type="color"] {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    opacity: 0; cursor: pointer; border: none; padding: 0;
-  }
-  .sm-ft-auto-btn {
-    height: 26px; padding: 0 7px;
-    background: transparent; border: none;
-    color: var(--text3); font-family: var(--mono); font-size: 9px;
-    cursor: pointer; border-radius: 7px; transition: all 0.10s;
-    white-space: nowrap; letter-spacing: 0.04em;
-  }
-  .sm-ft-auto-btn:hover { color: var(--text); background: var(--glass-light); }
-
-  /* Cores inline são corrigidas via JS (smFixContentColors) — sem override frágil aqui */
 
   /* ── Glass Design Settings Panel (editor only) ── */
   #glass-settings-overlay {
@@ -6436,7 +6342,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   .ai-conn-card {
     border-radius: 14px; padding: 14px 16px;
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 14px;
     transition: background 0.2s; cursor: default;
     background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
     animation: ai-card-in 0.22s ease both;
@@ -6474,15 +6380,6 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     box-shadow: 0 2px 10px rgba(37,99,235,0.35);
   }
   .ai-conn-accept:hover { background: #1d4ed8; box-shadow: 0 4px 16px rgba(37,99,235,0.52); transform: translateY(-1px); }
-
-  .ai-conn-reason {
-    width: 100%; font-size: 10px; line-height: 1.5;
-    color: var(--text3); padding: 4px 0 0;
-    border-top: 1px solid rgba(255,255,255,0.06); margin-top: 2px;
-  }
-  .ai-conn-reason b { color: rgba(167,139,250,0.85); font-weight: 600; }
-  html.light .ai-conn-reason { border-top-color: rgba(0,0,0,0.06); }
-  html.light .ai-conn-reason b { color: rgba(109,40,217,0.75); }
   .ai-conn-accept:active { transform: translateY(0); }
   .ai-conn-accept.connected {
     background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.35);
@@ -10949,29 +10846,22 @@ html.light .tm-empty-state { color: rgba(255,255,255,0.45); }
 html.light .tm-tag-chip { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.45); color: rgba(255,255,255,0.9); }
 html.light .tm-tag-chip:hover { background: rgba(255,255,255,0.4); }
 
-/* Wrapper de tamanho fixo que contém bolinha + color picker sobrepostos
-   — elimina o tremido causado por display:none→flex no hover */
-.tm-dot-wrap {
-  position: relative; width: 14px; height: 14px; flex-shrink: 0;
-}
-/* Bolinha: centralizada no wrapper, some no hover via opacity (não display) */
+/* Bolinha colorida — visível por padrão, some no hover */
 .tm-tag-dot {
-  position: absolute; width: 8px; height: 8px; border-radius: 50%;
-  top: 50%; left: 50%; transform: translate(-50%,-50%);
-  transition: opacity 0.15s; pointer-events: none;
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  transition: opacity 0.15s;
 }
-.tm-tag-chip:hover .tm-tag-dot { opacity: 0; }
+.tm-tag-chip:hover .tm-tag-dot { display: none; }
 
-/* Color picker: cobre o wrapper, invisível em repouso */
+/* Color picker no chip — aparece só no hover, no lugar da bolinha */
 .tm-tag-chip-color {
-  position: absolute; inset: 0; border-radius: 4px;
-  overflow: hidden; display: flex; cursor: pointer;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.15s, transform 0.15s;
-  border: 1.5px solid rgba(255,255,255,0.25);
+  position: relative; width: 14px; height: 14px;
+  border-radius: 4px; flex-shrink: 0; cursor: pointer;
+  overflow: hidden; display: none; transition: transform 0.15s;
 }
-.tm-tag-chip:hover .tm-tag-chip-color { opacity: 1; pointer-events: auto; }
-.tm-tag-chip-color:hover { transform: scale(1.12); }
+.tm-tag-chip:hover .tm-tag-chip-color { display: flex; }
+.tm-tag-chip-color:hover { transform: scale(1.15); }
+.tm-tag-chip-color { border: 1.5px solid rgba(255,255,255,0.25); }
 html.light .tm-tag-chip-color { border-color: rgba(255,255,255,0.6); }
 .tm-color-preview-dot { width: 100%; height: 100%; pointer-events: none; }
 .tm-tag-chip-color input[type="color"] {
@@ -10981,16 +10871,12 @@ html.light .tm-tag-chip-color { border-color: rgba(255,255,255,0.6); }
 
 .tm-tag-label { line-height: 1; }
 
-/* Botão de excluir: sempre display:flex para não causar reflow no hover,
-   oculto com opacity — tamanho do chip permanece constante */
 .tm-btn-chip-del {
   width: 14px; height: 14px; border-radius: 4px; border: none;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  background: rgba(239,68,68,0.2); flex-shrink: 0; padding: 0;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.15s, background 0.15s;
+  cursor: pointer; display: none; align-items: center; justify-content: center;
+  background: rgba(239,68,68,0.2); transition: background 0.15s; flex-shrink: 0; padding: 0;
 }
-.tm-tag-chip:hover .tm-btn-chip-del { opacity: 1; pointer-events: auto; }
+.tm-tag-chip:hover .tm-btn-chip-del { display: flex; }
 html.light .tm-btn-chip-del { background: rgba(248,113,113,0.25); }
 .tm-btn-chip-del:hover { background: rgba(239,68,68,0.42); }
 html.light .tm-btn-chip-del:hover { background: rgba(248,113,113,0.5); }
@@ -11283,217 +11169,77 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
 /* ══ fim cat-manager ══ */
 
 /* ══════════════════════════════════════
-   MOBILE — apenas em telas ≤ 768px
+   MOBILE - apenas em telas <= 768px
    Zero impacto no desktop
 ══════════════════════════════════════ */
 @media (max-width: 768px) {
 
-  /* ── HUD: safe area + layout hamburger|logo|toggle ── */
+  /* HUD: safe area + hamburger|logo|toggle */
   #hud-top {
     padding-top: env(safe-area-inset-top);
     height: calc(50px + env(safe-area-inset-top));
-    padding-left: 10px;
-    padding-right: 10px;
-    gap: 0;
-    justify-content: space-between;
+    padding-left: 10px; padding-right: 10px;
+    gap: 0; justify-content: space-between;
   }
-
-  /* Esconde elementos não essenciais do topo */
-  .hud-spacer, .hud-sep,
-  #isolated-badge, #isolated-sep,
-  #hud-logo-img-wrap { display: none !important; }
-
-  /* Logo centralizado */
-  #logo {
-    position: absolute !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    font-size: 10px !important;
-    letter-spacing: 0.1em !important;
-    pointer-events: none !important;
-    white-space: nowrap !important;
-  }
-
-  /* Hamburger visível no mobile */
-  #mobile-ham {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 38px; height: 38px;
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 11px;
-    color: var(--text);
-    cursor: pointer;
-    flex-shrink: 0;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-
-  /* Toggle fixo à direita */
+  .hud-spacer, .hud-sep, #isolated-badge, #isolated-sep, #hud-logo-img-wrap { display: none !important; }
+  #hud-btns { width: 0 !important; height: 0 !important; padding: 0 !important; overflow: hidden !important; opacity: 0 !important; pointer-events: none !important; flex-shrink: 0 !important; }
+  #logo { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; font-size: 10px !important; letter-spacing: 0.1em !important; pointer-events: none !important; white-space: nowrap !important; }
+  #mobile-ham { display: flex !important; align-items: center; justify-content: center; width: 38px; height: 38px; background: var(--glass); border: 1px solid var(--border); border-radius: 11px; color: var(--text); cursor: pointer; flex-shrink: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   #hud-dl-toggle { flex-shrink: 0; }
 
-  /* ── Barra inferior: move #hud-btns para o bottom ── */
-  #hud-btns {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    top: auto !important;
-    height: 72px !important;
-    padding: 0 4px calc(env(safe-area-inset-bottom) * 0.5) !important;
+  /* Dropdowns abrem para CIMA */
+  .hud-dropdown { top: auto !important; bottom: 78px !important; max-height: calc(100vh - 140px) !important; }
+
+  /* Mobile Bottom Bar */
+  #mobile-bottom-bar {
+    display: flex !important;
+    position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important;
+    height: calc(68px + env(safe-area-inset-bottom) * 0.5) !important;
+    padding: 0 4px !important;
     background: var(--glass) !important;
     backdrop-filter: blur(24px) saturate(1.8) !important;
     -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
     border-top: 1px solid var(--border) !important;
-    border-radius: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: visible !important;
+    overflow-x: auto !important; overflow-y: visible !important;
     scrollbar-width: none !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0 !important;
-    justify-content: flex-start !important;
-    z-index: 200 !important;
+    align-items: center !important; gap: 0 !important;
+    justify-content: flex-start !important; z-index: 200 !important;
   }
-  #hud-btns::-webkit-scrollbar { display: none; }
-
-  /* Botões da barra: ícone em cima + label embaixo */
-  #hud-btns .btn,
-  #hud-btns .hud-menu-btn {
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    padding: 8px 16px !important;
-    height: 64px !important;
-    min-width: 64px !important;
-    width: auto !important;
-    font-size: 10px !important;
-    font-weight: 500 !important;
-    border: none !important;
-    background: transparent !important;
-    color: var(--text2) !important;
-    border-radius: 12px !important;
-    white-space: nowrap !important;
+  #mobile-bottom-bar::-webkit-scrollbar { display: none; }
+  .mbar-btn {
+    display: flex !important; flex-direction: column !important;
+    align-items: center !important; justify-content: center !important;
+    gap: 4px !important; padding: 8px 16px !important;
+    height: 60px !important; min-width: 64px !important;
+    background: transparent !important; border: none !important;
+    color: var(--text2) !important; font-size: 10px !important; font-weight: 500 !important;
+    white-space: nowrap !important; border-radius: 12px !important;
+    cursor: pointer !important; flex-shrink: 0 !important;
     transition: background 0.15s, color 0.15s !important;
   }
-  #hud-btns .btn svg,
-  #hud-btns .hud-menu-btn svg {
-    width: 20px !important;
-    height: 20px !important;
-    flex-shrink: 0 !important;
-  }
-  #hud-btns .btn:active,
-  #hud-btns .hud-menu-btn.open {
-    background: rgba(255,255,255,0.08) !important;
-    color: var(--text) !important;
-  }
-  /* Esconde caret dos dropdowns na barra */
-  #hud-btns .caret { display: none !important; }
+  .mbar-btn i { font-size: 20px !important; line-height: 1 !important; }
+  .mbar-btn:active { background: rgba(255,255,255,0.08) !important; color: var(--text) !important; }
 
-  /* Dropdowns abrem para CIMA */
-  .hud-dropdown {
-    top: auto !important;
-    bottom: 78px !important;
-    max-height: calc(100vh - 140px) !important;
-  }
+  /* Dots */
+  #mobile-nav-dots { display: flex !important; position: fixed; bottom: 4px; left: 50%; transform: translateX(-50%); gap: 5px; z-index: 201; pointer-events: none; }
+  .mnav-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: background 0.2s, transform 0.2s; }
+  .mnav-dot.active { background: var(--text2); transform: scale(1.4); }
 
-  /* Dots do scroll */
-  #mobile-nav-dots {
-    display: flex !important;
-    position: fixed;
-    bottom: calc(5px + env(safe-area-inset-bottom) * 0.5);
-    left: 50%;
-    transform: translateX(-50%);
-    gap: 5px;
-    z-index: 201;
-    pointer-events: none;
-  }
-  .mnav-dot {
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    transition: background 0.2s, transform 0.2s;
-  }
-  .mnav-dot.active {
-    background: var(--text2);
-    transform: scale(1.4);
-  }
-
-  /* ── Hamburger drawer ── */
-  #mobile-ham-overlay {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 500 !important;
-    background: rgba(0,0,0,0.45) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
-    align-items: flex-start !important;
-  }
+  /* Hamburger drawer */
+  #mobile-ham-overlay { position: fixed !important; inset: 0 !important; z-index: 500 !important; background: rgba(0,0,0,0.45) !important; backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; align-items: flex-start !important; }
   #mobile-ham-overlay.open { display: flex !important; }
-  #mobile-ham-drawer {
-    width: 275px;
-    height: 100%;
-    background: var(--glass);
-    backdrop-filter: blur(28px) saturate(1.8);
-    -webkit-backdrop-filter: blur(28px) saturate(1.8);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-  }
-  #mobile-ham-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: calc(20px + env(safe-area-inset-top)) 20px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  #mobile-ham-avatar {
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: var(--glass-light);
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  #mobile-ham-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .mham-section {
-    padding: 14px 20px 4px;
-    font-size: 9px;
-    letter-spacing: 0.12em;
-    color: var(--text3);
-    text-transform: uppercase;
-  }
-  .mham-item {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    padding: 14px 20px !important;
-    width: 100% !important;
-    text-align: left !important;
-    background: transparent !important;
-    border: none !important;
-    color: var(--text2) !important;
-    font-size: 13px !important;
-    cursor: pointer !important;
-    transition: background 0.15s, color 0.15s !important;
-  }
-  .mham-item:active {
-    background: rgba(255,255,255,0.06) !important;
-    color: var(--text) !important;
-  }
+  #mobile-ham-drawer { width: 275px; height: 100%; background: var(--glass); backdrop-filter: blur(28px) saturate(1.8); -webkit-backdrop-filter: blur(28px) saturate(1.8); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+  #mobile-ham-header { display: flex; align-items: center; gap: 12px; padding: calc(20px + env(safe-area-inset-top)) 20px 20px; border-bottom: 1px solid var(--border); }
+  #mobile-ham-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: var(--glass-light); border: 1px solid var(--border); flex-shrink: 0; }
+  #mobile-ham-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .mham-section { padding: 14px 20px 4px; font-size: 9px; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; }
+  .mham-item { display: flex !important; align-items: center !important; gap: 12px !important; padding: 14px 20px !important; width: 100% !important; text-align: left !important; background: transparent !important; border: none !important; color: var(--text2) !important; font-size: 13px !important; cursor: pointer !important; transition: background 0.15s, color 0.15s !important; }
+  .mham-item:active { background: rgba(255,255,255,0.06) !important; color: var(--text) !important; }
   .mham-item svg { flex-shrink: 0; opacity: 0.65; }
 
-  /* Sidebar original: escondida no mobile */
+  /* Sidebar escondida no mobile */
   #nodal-sidebar { display: none !important; }
 }
-
 </style>
 </head>
 <body>
@@ -11550,6 +11296,8 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
         </div>
         <button id="lock-submit" onclick="_lockSubmitCurrent();lockSubmitRipple(event)">→ Entrar</button>
         <div class="lock-hint">
+          Sem senha? Apenas visualização disponível<br>
+          <span class="lock-hint-visitor" onclick="enterViewerMode()">✦ Entrar como Visitante →</span><br>
           <span class="lock-forgot-link" id="lock-forgot-link" onclick="showForgotPassword()">Esqueci minha senha</span>
         </div>
       </div>
@@ -12713,7 +12461,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     </div>
 
     <!-- Menu Ver (todos) -->
-    <div class="hud-menu-wrap" id="menu-ver-wrap">
+    <div class="hud-menu-wrap">
       <button class="hud-menu-btn" id="menu-ver-btn" onclick="hudMenuToggle('ver')">
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="vertical-align:-1px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="1.5" x2="8" y2="3.2"/><line x1="8" y1="12.8" x2="8" y2="14.5"/><line x1="1.5" y1="8" x2="3.2" y2="8"/><line x1="12.8" y1="8" x2="14.5" y2="8"/><line x1="8" y1="8" x2="5.2" y2="5.2" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="8" x2="10.8" y2="10.8" stroke-width="1.2" stroke-linecap="round"/></svg> Explorar <span class="caret">▾</span>
       </button>
@@ -12779,7 +12527,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     </div>
 
     <!-- Menu Layout -->
-    <div class="hud-menu-wrap" id="menu-layout-wrap">
+    <div class="hud-menu-wrap">
       <button class="hud-menu-btn" id="menu-layout-btn" onclick="hudMenuToggle('layout')">
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:-1px;flex-shrink:0"><rect x="0.5" y="0.5" width="6.5" height="6.5" rx="0.5"/><rect x="9" y="0.5" width="6.5" height="6.5" rx="0.5"/><rect x="0.5" y="9" width="6.5" height="6.5" rx="0.5"/><circle cx="12.25" cy="12.25" r="3.25"/></svg> Layout <span class="caret">▾</span>
       </button>
@@ -12803,7 +12551,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
     </div>
 
     <!-- Menu Projeto -->
-    <div class="hud-menu-wrap" id="menu-projeto-wrap">
+    <div class="hud-menu-wrap">
       <button class="hud-menu-btn" id="menu-projeto-btn" onclick="hudMenuToggle('projeto')">
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:-1px;flex-shrink:0"><path d="M11.1,2.6 A6.2,6.2 0 0,1 8,14.2" stroke-linecap="round"/><path d="M8,14.2 A6.2,6.2 0 0,1 1.8,8" stroke-linecap="round"/><path d="M1.8,8 A6.2,6.2 0 0,1 11.1,2.6" stroke-linecap="round"/><circle cx="11.1" cy="2.6" r="1.6" fill="currentColor" stroke="none"/><circle cx="1.8" cy="8" r="1.6" fill="currentColor" stroke="none"/><circle cx="8" cy="14.2" r="1.6" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="3"/></svg> Núcleo <span class="caret">▾</span>
       </button>
@@ -12892,6 +12640,19 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
   <button id="hud-dl-toggle" aria-label="Alternar tema claro/escuro" onclick="_hudDlToggle()" title="Claro / Escuro"></button>
 </div>
 
+
+<!-- == MOBILE BOTTOM BAR (fora do hud-top, so visivel no mobile) == -->
+<div id="mobile-bottom-bar" style="display:none">
+  <button class="mbar-btn" onclick="openSearch()"><i class="ti ti-search"></i><span>Buscar</span></button>
+  <button class="mbar-btn editor-only hidden" onclick="hudMenuToggle('editar')"><i class="ti ti-pencil"></i><span>Editar</span></button>
+  <button class="mbar-btn" onclick="hudMenuToggle('ver')"><i class="ti ti-compass"></i><span>Explorar</span></button>
+  <button class="mbar-btn" onclick="hudMenuToggle('layout')"><i class="ti ti-layout-grid"></i><span>Layout</span></button>
+  <button class="mbar-btn" onclick="hudMenuToggle('projeto')"><i class="ti ti-share"></i><span>Nucleo</span></button>
+  <button class="mbar-btn" onclick="toggleAiPanel()"><i class="ti ti-sparkles"></i><span>IA</span></button>
+  <button class="mbar-btn" onclick="openPanoramaModal()"><i class="ti ti-layout-columns"></i><span>Panorama</span></button>
+  <button class="mbar-btn" onclick="openTutorialModal()"><i class="ti ti-book"></i><span>Guia</span></button>
+</div>
+
 <!-- Left Info Panel -->
 <div id="left-panel">
   <div id="lp-glass"></div>
@@ -12943,17 +12704,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
           </button>
         </div>
       </div>
-      <!-- Backlinks: split outgoing / incoming -->
-      <div class="lp-bl-sublabel">
-        <span>→ Aponta para</span>
-        <span id="lp-conn-out-count" class="lp-bl-count">0</span>
-      </div>
-      <div id="lp-conn-out-list" class="lp-conn-list"></div>
-      <div class="lp-bl-sublabel lp-bl-sublabel--in">
-        <span>← Referenciado por</span>
-        <span id="lp-conn-in-count" class="lp-bl-count lp-bl-count--in">0</span>
-      </div>
-      <div id="lp-conn-in-list" class="lp-conn-list"></div>
+      <div id="lp-conn-list" class="lp-conn-list"></div>
     </div>
 
     <!-- INFORMAÇÕES -->
@@ -13465,7 +13216,7 @@ async function _activateEditorMode() {
   try {
     console.log('[NODAL] iniciando projBoot...');
     if (typeof projBoot === 'function') await projBoot();
-    if (typeof _loadSettingsFromCloud === 'function') await _loadSettingsFromCloud();
+    await _loadSettingsFromCloud();
     console.log('[NODAL] projBoot ok, iniciando showProjectsScreen...');
     if (typeof showProjectsScreen === 'function') await showProjectsScreen();
     console.log('[NODAL] showProjectsScreen ok');
@@ -13540,14 +13291,6 @@ async function registerUser() {
   try {
     const _shareToken = new URLSearchParams(window.location.search).get('share');
     if (_shareToken) {
-      // ── Oculta IMEDIATAMENTE o canvas e o lock screen ──────────────────────
-      // Impede que dados do localStorage apareçam enquanto loadSharedProject
-      // ainda está buscando o projeto no Supabase (pode levar 1-3s de rede).
-      // A cortina permanece ativa até loadSharedProject terminar de montar o canvas.
-      const _earlyLs = document.getElementById('lock-screen');
-      const _earlyCurtain = document.getElementById('transition-curtain');
-      if (_earlyLs) _earlyLs.classList.add('hidden');
-      if (_earlyCurtain) _earlyCurtain.classList.add('active');
       // loadSharedProject está em um <script> posterior — guarda o token
       // e deixa a inicialização final chamá-la depois que estiver definida
       window._pendingShareToken = _shareToken;
@@ -14476,8 +14219,6 @@ function applyTheme(themeId) {
   const ms = document.getElementById('music-preset'); if(ms){ms.style.color=isLightTheme?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.4)';ms.style.borderColor=isLightTheme?'rgba(0,0,0,0.15)':'rgba(255,255,255,0.1)';}
   saveSettings(); toast('Tema: '+th.name);
   if (typeof applyThemeToLockScreen==='function') applyThemeToLockScreen(th.bg, isLightTheme);
-  // Recorrige cores de texto no modal Saiba Mais quando o tema muda
-  setTimeout(() => { if (typeof smFixContentColors === 'function') smFixContentColors(); }, 80);
   if (typeof applyGlassSettingsToDOM==='function') applyGlassSettingsToDOM(Object.assign({},glassSettings,{panelOp:glassSettings.panelOpacity||0.55,borderGl:glassSettings.borderGlow||0.10}));
 }
 
@@ -14638,7 +14379,7 @@ function _hudDlToggle() {
 
 function saveSettings() {
   localStorage.setItem('neural-v5-settings', JSON.stringify({
-    isLight, tagIdCounter, customCats, catIdCounter,
+    isLight, globalTags, tagIdCounter, customCats, catIdCounter,
     projectName, projectSub, currentThemeId
   }));
   if (typeof _scheduleSettingsSync === 'function') _scheduleSettingsSync();
@@ -14647,11 +14388,7 @@ function loadSettings() {
   try {
     const s = JSON.parse(localStorage.getItem('neural-v5-settings') || localStorage.getItem('neural-v4-settings') || '{}');
     if (s.isLight) { isLight = true; document.documentElement.classList.add('light'); const bt=document.getElementById('btn-theme'); if(bt) bt.classList.add('active'); }
-    // globalTags agora tem chave própria — ver loadGlobalTags()
-    // Retrocompat: se ainda estiver no formato antigo, migra
-    if (s.globalTags && s.globalTags.length && !localStorage.getItem('neural-global-tags')) {
-      try { localStorage.setItem('neural-global-tags', JSON.stringify(s.globalTags)); } catch(e) {}
-    }
+    if (s.globalTags)    { globalTags = s.globalTags; }
     if (s.tagIdCounter)  tagIdCounter = s.tagIdCounter;
     if (s.customCats)    { customCats = s.customCats; }
     if (s.catIdCounter)  catIdCounter = s.catIdCounter;
@@ -14780,18 +14517,12 @@ function highlight(text, q) {
 function buildSearchItem(nd, q, i) {
   const connCount = connections.filter(c=>c.from===nd.id||c.to===nd.id).length;
   const descSnip = nd.desc ? nd.desc.slice(0,60)+(nd.desc.length>60?'…':'') : '';
-  const tagChips = (nd.tags||[]).map(tid => {
-    const tg = globalTags.find(g=>g.id===tid); if (!tg) return '';
-    const matched = q && tg.name.toLowerCase().includes(q.toLowerCase());
-    return `<span style="display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:${matched?700:500};border:1px solid ${tg.color}55;background:${tg.color}18;color:${tg.color}">${matched?highlight(tg.name,q):tg.name}</span>`;
-  }).filter(Boolean).join('');
   return `<div class="search-result" data-node-id="${nd.id}" onclick="selectSearchResult('${nd.id}')">
     <span class="search-result-dot" style="background:${nd.color||catColor(nd.cat)}"></span>
     <div class="search-result-body">
       <div class="search-result-title">${highlight(nd.title,q)}</div>
       <div class="search-result-meta" style="color:${catColor(nd.cat)}">${nd.cat}</div>
       ${descSnip?`<div class="search-result-desc">${highlight(descSnip,q)}</div>`:''}
-      ${tagChips?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${tagChips}</div>`:''}
     </div>
     <span class="search-result-count">${connCount}</span>
     <span class="search-result-arrow">→</span>
@@ -15302,8 +15033,7 @@ const panVel = new THREE.Vector3();
 const PAN_DAMPING = 0.85;
 
 // ── Quaternion arcball (sem gimbal lock) ───────────
-const camQuat = new THREE.Quaternion();       // quaternion atual da câmera (suavizado)
-let camTargetQuat = new THREE.Quaternion();   // alvo para o slerp — mouse/inércia atualizam aqui
+const camQuat = new THREE.Quaternion(); // identity = câmera em +Z
 
 function sphericalToQuat(theta, phi) {
   const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
@@ -15313,17 +15043,15 @@ function sphericalToQuat(theta, phi) {
 
 function setSpherical(theta, phi) {
   spherical.theta = theta; spherical.phi = phi;
-  const q = sphericalToQuat(theta, phi);
-  camQuat.copy(q);
-  camTargetQuat.copy(q); // sincroniza os dois ao setar posição programática
+  camQuat.copy(sphericalToQuat(theta, phi));
 }
 
 function applyOrbitDelta(dx, dy) {
-  const sens = 0.0032; // ligeiramente menos sensível → sensação de peso/profundidade
-  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camTargetQuat);
+  const sens = 0.004;
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camQuat);
   const qH = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -dx * sens);
   const qV = new THREE.Quaternion().setFromAxisAngle(right, -dy * sens);
-  camTargetQuat.premultiply(qH).premultiply(qV).normalize();
+  camQuat.premultiply(qH).premultiply(qV).normalize();
 }
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -15407,24 +15135,7 @@ window.addEventListener('mousemove', e => {
 });
 
 canvas.addEventListener('wheel', e => {
-  // Zoom proporcional: rápido longe, preciso perto
-  const factor = 1 + e.deltaY * 0.001;
-  const newZoom = Math.max(8, Math.min(500, zoomTarget * factor));
-
-  // Zoom em direção ao cursor (só fora de fly e modo 2D)
-  if (!_flyRaf && !window.flat2DActive) {
-    const ndc = getMouseNDC(e);
-    raycaster.setFromCamera(ndc, camera);
-    const camDir = camera.position.clone().sub(cameraTarget).normalize();
-    const focalPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(camDir, cameraTarget);
-    const fp = new THREE.Vector3();
-    if (raycaster.ray.intersectPlane(focalPlane, fp)) {
-      const shift = (1 - newZoom / zoomTarget) * 0.35;
-      cameraTarget.addScaledVector(fp.sub(cameraTarget), shift);
-    }
-  }
-
-  zoomTarget = newZoom;
+  zoomTarget = Math.max(8, Math.min(500, zoomTarget + e.deltaY * 0.07));
 }, {passive:true});
 
 // Touch support
@@ -15625,31 +15336,26 @@ function openLeftPanel(nd) {
     if (el) { mw.appendChild(el); mw.style.display = 'block'; }
   }
 
-  // Connections — split outgoing / incoming (backlinks)
-  const _connsOut = connections.filter(c => c.from===nd.id);
-  const _connsIn  = connections.filter(c => c.to===nd.id);
-  document.getElementById('lp-conn-count').textContent = '(' + (_connsOut.length + _connsIn.length) + ')';
-  const _lpOC = document.getElementById('lp-conn-out-count');
-  const _lpIC = document.getElementById('lp-conn-in-count');
-  if (_lpOC) _lpOC.textContent = _connsOut.length;
-  if (_lpIC) _lpIC.textContent = _connsIn.length;
-  function _lpRenderDir(list, isIn) {
-    if (!list.length) return '<div style="font-size:9px;color:var(--text3);padding:2px 0;opacity:0.55">Nenhuma</div>';
-    return list.map(c => {
-      const otherId = isIn ? c.from : c.to;
+  // Connections (first in body)
+  const conns = connections.filter(c => c.from===nd.id || c.to===nd.id);
+  document.getElementById('lp-conn-count').textContent = '(' + conns.length + ')';
+  const cl = document.getElementById('lp-conn-list');
+  if (!conns.length) {
+    cl.innerHTML = '<div style="font-size:9px;color:var(--text3);padding:4px 0">Nenhuma conexão</div>';
+  } else {
+    cl.innerHTML = conns.map(c => {
+      const otherId = c.from===nd.id ? c.to : c.from;
       const other = nodes.find(n => n.id===otherId);
       if (!other) return '';
+      const arrow = c.from===nd.id ? '→' : '←';
       return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
         <span class="lp-conn-dot" style="background:${catColor(other.cat)}"></span>
+        <span class="lp-conn-arrow">${arrow}</span>
         <span style="flex:1;color:${other.color||catColor(other.cat)}">${other.title}</span>
         <span class="lp-conn-cat">${other.cat}</span>
       </div>`;
     }).join('');
   }
-  const _lpOL = document.getElementById('lp-conn-out-list');
-  const _lpIL = document.getElementById('lp-conn-in-list');
-  if (_lpOL) _lpOL.innerHTML = _lpRenderDir(_connsOut, false);
-  if (_lpIL) _lpIL.innerHTML = _lpRenderDir(_connsIn, true);
 
   // Info grid
   const grid = document.getElementById('lp-info-grid');
@@ -15727,18 +15433,11 @@ function createNodeLabel(nd) {
   const div = document.createElement('div');
   div.className = 'node-label';
   div.textContent = nd.title;
-  // Estilos estáticos definidos uma vez — só transform/opacity mudam no loop
-  div.style.cssText = [
-    'position:fixed','pointer-events:none','z-index:5','display:none',
-    'left:0','top:0','white-space:nowrap','will-change:transform',
-    'transform-origin:0 0','transition:opacity 0.25s',
-    `font-family:${nd.font || "'Space Mono',monospace"}`,
-    `font-size:${nd.fontSize || 13}px`,
-    `font-weight:${nd.bold ? '700' : '400'}`,
-    `font-style:${nd.italic ? 'italic' : 'normal'}`,
-    `color:${nd.color || catColor(nd.cat)}`,
-    `text-shadow:${nd.textShadow !== false ? '0 0 20px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.95)' : 'none'}`
-  ].join(';');
+  div.style.fontFamily = nd.font || "'Space Mono', monospace";
+  div.style.fontSize = (nd.fontSize || 13) + 'px';
+  div.style.fontWeight = nd.bold ? '700' : '400';
+  div.style.fontStyle = nd.italic ? 'italic' : 'normal';
+  div.style.color = nd.color || catColor(nd.cat);
   nd.labelEl = div;
   nd.labelPos = new THREE.Vector3(nd.x, nd.y + 1.7*nd.size + 0.4, nd.z);
 }
@@ -15763,7 +15462,6 @@ function addNode(data) {
     richMedia: data.richMedia || [],
     date: data.date || '',
     shape: data.shape || 'sphere',
-    ficha: data.ficha || null,
     x: data.x !== undefined ? data.x : (typeof cameraTarget!=='undefined'?cameraTarget.x:0)+(Math.random()-0.5)*18,
     y: data.y !== undefined ? data.y : (typeof cameraTarget!=='undefined'?cameraTarget.y:0)+(Math.random()-0.5)*18,
     z: data.z !== undefined ? data.z : (typeof cameraTarget!=='undefined'?cameraTarget.z:0)+(Math.random()-0.5)*18,
@@ -15998,14 +15696,7 @@ function reheatSimulation(alpha) {
   // Call this when graph changes (node added/removed, connection added/removed)
   if (!forceSimulation) { startForceSimulation(); return; }
 
-  const newestId = nodes.length > 0 ? nodes[nodes.length - 1].id : null;
   buildSimNodes();
-
-  // Pina todos os nós existentes no lugar — só o mais novo fica livre para se posicionar
-  simNodes.forEach(sn => {
-    if (sn.id !== newestId) { sn.fx = sn.x; sn.fy = sn.y; }
-  });
-
   const links = buildSimLinks();
 
   forceSimulation
@@ -16407,8 +16098,6 @@ function updateStats() {
 // ── Persistence ────────────────────────────────────
 function save() {
   if (typeof _t2gImporting !== 'undefined' && _t2gImporting) return;
-  // Visitantes não devem escrever no localStorage — evita sobrescrever dados do editor
-  if (typeof isViewerMode !== 'undefined' && isViewerMode) return;
   localStorage.setItem('neural-v3', JSON.stringify({
     nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||''})),
     connections: connections.map(c=>({id:c.id,from:c.from,to:c.to}))
@@ -16418,8 +16107,6 @@ function save() {
 
 function load() {
   loadSettings();
-  loadGlobalTags();
-  repairGlobalTagIds(); // corrige IDs duplicados gerados por tagIdCounter desincronizado
   loadLogo(); // restore custom logo if saved locally
   const raw = localStorage.getItem('neural-v3');
   if (!raw) { spawnDefaultNodes(); setTimeout(handleUrlHash, 600); return; }
@@ -16609,74 +16296,26 @@ function openTagManager() {
 function closeTagManager() {
   document.getElementById('tag-manager-overlay').classList.remove('open');
   document.getElementById('tag-manager').classList.remove('open');
-  // Rerender preservando toggles não salvos; usa saved tags só se picker nunca foi inicializado
-  if (selectedNode) renderTagPicker('e', _tagPickerState['e'] != null ? _tagPickerState['e'] : (selectedNode.tags || []));
-  renderTagPicker('c', _tagPickerState['c'] != null ? _tagPickerState['c'] : []);
-}
-function saveGlobalTags() {
-  try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
-  if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
-  // Sync proj_data para que visitantes vejam as tags atualizadas
-  if (typeof activeProjectId !== 'undefined' && activeProjectId && typeof projSaveCurrentState === 'function') {
-    clearTimeout(window._tagProjSaveTimer);
-    window._tagProjSaveTimer = setTimeout(projSaveCurrentState, 2500);
-  }
-}
-function loadGlobalTags() {
-  try {
-    const raw = localStorage.getItem('neural-global-tags');
-    if (raw) { globalTags = JSON.parse(raw); }
-  } catch(e) {}
-}
-// ── Repara IDs duplicados em globalTags ──────────────────────────────────────
-// Causa: tagIdCounter desincronizado entre cloud e local gera colisões.
-// Esta função garante que cada tag tenha um ID único antes de qualquer uso.
-function repairGlobalTagIds() {
-  const seen = new Set();
-  let changed = false;
-  // Encontra o maior número de ID já em uso
-  let maxNum = tagIdCounter - 1;
-  globalTags.forEach(tg => {
-    const m = (tg.id || '').match(/^t(\d+)$/);
-    if (m) maxNum = Math.max(maxNum, parseInt(m[1]));
-  });
-  // Corrige IDs ausentes ou duplicados
-  globalTags.forEach(tg => {
-    if (!tg.id || seen.has(tg.id)) {
-      maxNum++;
-      tg.id = 't' + maxNum;
-      changed = true;
-    }
-    seen.add(tg.id);
-  });
-  // Garante que tagIdCounter sempre seja maior que todos os IDs existentes
-  const safeCounter = maxNum + 1;
-  if (safeCounter > tagIdCounter) { tagIdCounter = safeCounter; changed = true; }
-  if (changed) {
-    try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
-    saveSettings();
-  }
+  // Refresh tag pickers if editor is open
+  if (selectedNode) renderTagPicker('e', selectedNode.tags || []);
+  renderTagPicker('c', []);
 }
 function addGlobalTag() {
   const name = document.getElementById('new-tag-input').value.trim();
   if (!name) { toast('Digite um nome para a tag'); return; }
   if (globalTags.find(t => t.name.toLowerCase() === name.toLowerCase())) { toast('Tag já existe'); return; }
   const color = document.getElementById('new-tag-color').value;
-  // Garante ID único mesmo se tagIdCounter tiver ficado para trás
-  let newId = 't' + tagIdCounter++;
-  while (globalTags.some(t => t.id === newId)) { newId = 't' + tagIdCounter++; }
-  globalTags.push({ id: newId, name, color });
+  globalTags.push({ id: 't' + (tagIdCounter++), name, color });
   document.getElementById('new-tag-input').value = '';
   renderGlobalTagList();
-  saveGlobalTags();
-  saveSettings(); // salva tagIdCounter atualizado
+  saveSettings();
   toast('Tag criada: ' + name);
 }
 function removeGlobalTag(tid) {
   globalTags = globalTags.filter(t => t.id !== tid);
+  // Remove from all nodes
   nodes.forEach(nd => { nd.tags = (nd.tags||[]).filter(t => t !== tid); });
-  renderGlobalTagList(); saveGlobalTags(); saveSettings(); save();
-  toast('Tag removida');
+  renderGlobalTagList(); saveSettings(); save(); toast('Tag removida');
   if (leftPanelNode) openLeftPanel(leftPanelNode);
 }
 function renderGlobalTagList() {
@@ -16684,13 +16323,11 @@ function renderGlobalTagList() {
   if (!globalTags.length) { el.innerHTML = '<span class="tm-empty-state">Nenhuma tag criada</span>'; return; }
   el.innerHTML = globalTags.map(tg => `
     <span class="tm-tag-chip">
-      <span class="tm-dot-wrap">
-        <span class="tm-tag-dot" style="background:${tg.color};box-shadow:0 0 5px ${tg.color}"></span>
-        <div class="tm-tag-chip-color" title="Mudar cor">
-          <div class="tm-color-preview-dot" style="background:${tg.color}"></div>
-          <input type="color" value="${tg.color}" oninput="changeGlobalTagColor('${tg.id}',this)">
-        </div>
-      </span>
+      <span class="tm-tag-dot" style="background:${tg.color};box-shadow:0 0 5px ${tg.color}"></span>
+      <div class="tm-tag-chip-color" title="Mudar cor">
+        <div class="tm-color-preview-dot" style="background:${tg.color}"></div>
+        <input type="color" value="${tg.color}" oninput="changeGlobalTagColor('${tg.id}',this)">
+      </div>
       <span class="tm-tag-label">${tg.name}</span>
       <button class="tm-btn-chip-del" title="Remover tag" onclick="removeGlobalTag('${tg.id}')">
         <i class="ti ti-x"></i>
@@ -16709,15 +16346,11 @@ function changeGlobalTagColor(tid, input) {
   chip.querySelector('.tm-color-preview-dot').style.background = color;
   saveSettings();
 }
-// Estado em memória das tags — fonte de verdade única (substitui leitura frágil do DOM)
-const _tagPickerState = {};
 function renderTagPicker(prefix, assigned) {
   const assignedEl = document.getElementById(prefix + '-tag-assigned');
   const availEl = document.getElementById(prefix + '-tag-available');
   if (!assignedEl || !availEl) return;
-  // Grava estado em memória — única fonte de verdade
-  _tagPickerState[prefix] = (assigned || []).filter(id => typeof id === 'string' && id.length > 0);
-  const assignedSet = new Set(_tagPickerState[prefix]);
+  const assignedSet = new Set(assigned);
   if (!assignedSet.size) {
     assignedEl.innerHTML = '<span style="font-size:9px;color:var(--text3)">Sem tags atribuídas</span>';
   } else {
@@ -16737,27 +16370,19 @@ function renderTagPicker(prefix, assigned) {
   }
 }
 function getAssignedTags(prefix) {
-  // Lê do estado em memória — sem parsing de onclick do DOM
-  return (_tagPickerState[prefix] || []).slice();
+  const el = document.getElementById(prefix + '-tag-assigned');
+  if (!el) return [];
+  return Array.from(el.querySelectorAll('.tag-chip')).map(chip => {
+    const onclick = chip.getAttribute('onclick') || '';
+    const m = onclick.match(/'([^']+)'\)$/);
+    return m ? m[1] : null;
+  }).filter(Boolean);
 }
 function toggleNodeTag(prefix, tid) {
   const current = getAssignedTags(prefix);
   const idx = current.indexOf(tid);
   if (idx >= 0) current.splice(idx, 1); else current.push(tid);
   renderTagPicker(prefix, current);
-  if (prefix === 'e') {
-    const chips = current.map(id => {
-      const tg = globalTags.find(g => g.id === id);
-      if (!tg) return '';
-      return `<span class="tag-chip" style="background:${tg.color}22;border-color:${tg.color}55;color:${tg.color}">${tg.name}</span>`;
-    }).filter(Boolean).join('');
-    const tagsEl = document.getElementById('lp-tags-inline');
-    if (tagsEl) { tagsEl.innerHTML = chips; tagsEl.style.display = chips ? 'flex' : 'none'; }
-    const smTagsEl = document.getElementById('sm-header-tags');
-    if (smTagsEl && typeof smCurrentNode !== 'undefined' && smCurrentNode && smCurrentNode.id === (selectedNode && selectedNode.id)) {
-      smTagsEl.innerHTML = chips; smTagsEl.style.display = chips ? 'flex' : 'none';
-    }
-  }
 }
 
 // ── Notes ──────────────────────────────────────────
@@ -17088,17 +16713,26 @@ function toast(msg) {
 
 // ── Labels ─────────────────────────────────────────
 function updateLabels() {
-  const rect = canvas.getBoundingClientRect();
   nodes.forEach(nd => {
     if (!nd.labelEl || !nd.labelPos) return;
     const pos = nd.labelPos.clone().project(camera);
-    if (pos.z > 1) { nd.labelEl.style.display = 'none'; return; }
+    const rect = canvas.getBoundingClientRect();
     const px = (pos.x * 0.5 + 0.5) * rect.width + rect.left;
     const py = (-pos.y * 0.5 + 0.5) * rect.height + rect.top;
-    // Só transform (GPU) e opacity — sem left/top para evitar reflow
-    nd.labelEl.style.display = 'block';
-    nd.labelEl.style.transform = `translate3d(${px.toFixed(1)}px,${py.toFixed(1)}px,0) translateX(-50%)`;
-    nd.labelEl.style.opacity = (selectedNode&&selectedNode.id===nd.id)||(hoveredNode&&hoveredNode.id===nd.id) ? '1' : '0.55';
+    if (pos.z > 1) { nd.labelEl.style.display='none'; return; }
+    nd.labelEl.style.cssText = `
+      display:block; position:fixed; pointer-events:none; z-index:5;
+      left:${px}px; top:${py}px; transform:translateX(-50%);
+      font-family:${nd.font||"'Space Mono',monospace"};
+      font-size:${nd.fontSize||13}px;
+      font-weight:${nd.bold?'700':'400'};
+      font-style:${nd.italic?'italic':'normal'};
+      color:${nd.color||catColor(nd.cat)};
+      white-space:nowrap; pointer-events:none;
+      text-shadow:${nd.textShadow!==false?'0 0 20px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.95)':'none'};
+      opacity:${(selectedNode&&selectedNode.id===nd.id)||(hoveredNode&&hoveredNode.id===nd.id)?1:0.55};
+      transition:opacity 0.2s;
+    `;
     if (!nd.labelEl.parentElement) document.body.appendChild(nd.labelEl);
   });
 }
@@ -17120,7 +16754,7 @@ function animate() {
   }
   if (Math.abs(spherical.radius - zoomTarget) > 0.01) {
     if (_flyRaf) {
-      zoomTarget = spherical.radius;
+      zoomTarget = spherical.radius; // fly animation controls radius — stay in sync
     } else {
       spherical.radius += (zoomTarget - spherical.radius) * ZOOM_LERP;
       needCamUpdate = true;
@@ -17129,15 +16763,6 @@ function animate() {
   if (!isPanning && panVel.lengthSq() > 0.000001) {
     cameraTarget.add(panVel);
     panVel.multiplyScalar(PAN_DAMPING);
-    needCamUpdate = true;
-  }
-  // Slerp suave entre camQuat e camTargetQuat:
-  // quando uma animação fly/2D está no controle direto de camQuat, o target
-  // acompanha para não causar snap quando a animação terminar
-  if (_flyRaf || window.flat2DActive) {
-    camTargetQuat.copy(camQuat);
-  } else if (camQuat.dot(camTargetQuat) < 0.9999998) {
-    camQuat.slerp(camTargetQuat, isDragging ? 0.22 : 0.12);
     needCamUpdate = true;
   }
   if (needCamUpdate) updateCamera();
@@ -17506,29 +17131,10 @@ function openSaibaMais() {
   document.getElementById('sm-header-cat').style.color = catColor(nd.cat);
   document.getElementById('sm-header-title').textContent = nd.title;
 
-  // Tags no header do modal (visíveis em qualquer modo)
-  const smTagsEl = document.getElementById('sm-header-tags');
-  if (smTagsEl) {
-    if (nd.tags && nd.tags.length) {
-      const chips = nd.tags.map(tid => {
-        const tg = globalTags.find(g => g.id === tid);
-        if (!tg) return '';
-        return `<span class="tag-chip" style="background:${tg.color}22;border-color:${tg.color}55;color:${tg.color}">${tg.name}</span>`;
-      }).filter(Boolean).join('');
-      smTagsEl.innerHTML = chips;
-      smTagsEl.style.display = chips ? 'flex' : 'none';
-    } else {
-      smTagsEl.innerHTML = '';
-      smTagsEl.style.display = 'none';
-    }
-  }
-
   // Load saved rich content into editor
   const editor = document.getElementById('sm-editor');
   editor.innerHTML = nd.richContent || '';
   smUpdatePlaceholder();
-  // Corrige cores inline conforme o tema atual
-  setTimeout(() => { if (typeof smFixContentColors === 'function') smFixContentColors(); }, 30);
 
   // Load media lists (separated image/video)
   smRenderMediaList();
@@ -17560,15 +17166,6 @@ function openSaibaMais() {
 }
 
 function closeSaibaMais() {
-  // Auto-salva ficha ao fechar o modal sem precisar trocar de aba
-  if (smCurrentTab === 'ficha' && smCurrentNode) {
-    // Aplica URL da foto se foi digitada mas o botão não foi clicado
-    const _urlFld = document.getElementById('ft-foto-url');
-    if (_urlFld && _urlFld.value.trim() && _urlFld.value.trim() !== ftFotoDataUrl) {
-      ftFotoDataUrl = _urlFld.value.trim();
-    }
-    ftAutoSave();
-  }
   if (smDirty && !confirm('Há alterações não salvas. Sair sem salvar?')) return;
   document.getElementById('sm-overlay').classList.remove('open');
   document.body.classList.remove('sm-open');
@@ -17585,10 +17182,6 @@ function closeSaibaMais() {
 
 // ── Tabs ──────────────────────────────────────────
 function smSwitchTab(tab) {
-  // Auto-salva ficha em memória antes de sair da aba, sem toast
-  if (smCurrentTab === 'ficha' && tab !== 'ficha' && smCurrentNode) {
-    ftAutoSave();
-  }
   smCurrentTab = tab;
   ['view','articles','gallery','edit','ficha'].forEach(t => {
     const el = document.getElementById('sm-'+t+'-tab');
@@ -17629,29 +17222,6 @@ function smRenderView() {
   }
 
   body.innerHTML = html;
-  smFixContentColors();
-}
-
-// Corrige cores inline muito claras (light mode) ou muito escuras (dark mode)
-// Remove o inline style de cor para deixar o CSS do tema assumir
-function smFixContentColors() {
-  const isLight = document.documentElement.classList.contains('light');
-  ['sm-view-body', 'sm-editor'].forEach(id => {
-    const container = document.getElementById(id);
-    if (!container) return;
-    container.querySelectorAll('[style]').forEach(el => {
-      const c = el.style.color;
-      if (!c) return;
-      const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-      if (!m) return;
-      const brightness = (parseInt(m[1]) * 299 + parseInt(m[2]) * 587 + parseInt(m[3]) * 114) / 1000;
-      if (isLight && brightness > 160) {
-        el.style.removeProperty('color');
-      } else if (!isLight && brightness < 60) {
-        el.style.removeProperty('color');
-      }
-    });
-  });
 }
 
 // ── Gallery Renderer ──────────────────────────────
@@ -18165,49 +17735,6 @@ function smExec(cmd, val) {
   document.execCommand(cmd, false, val || null);
   smMarkDirty();
 }
-
-// ── Cor do texto — toolbar fixa ──────────────────
-let _smSavedRange = null;
-function smSaveEditorSel() {
-  const sel = window.getSelection();
-  if (sel && sel.rangeCount > 0) _smSavedRange = sel.getRangeAt(0).cloneRange();
-}
-function smApplyTextColor(color) {
-  const editor = document.getElementById('sm-editor');
-  if (!editor) return;
-  editor.focus();
-  if (_smSavedRange) {
-    const sel = window.getSelection();
-    if (sel) { sel.removeAllRanges(); sel.addRange(_smSavedRange); }
-  }
-  document.execCommand('foreColor', false, color);
-  const ind = document.getElementById('sm-tb-color-ind');
-  if (ind) ind.style.background = color;
-  smMarkDirty();
-}
-function smRemoveTextColor() {
-  const editor = document.getElementById('sm-editor');
-  if (!editor) return;
-  editor.focus();
-  const sel = window.getSelection();
-  if (!sel || sel.isCollapsed) return;
-  // Percorre todos os nós da seleção e remove apenas a propriedade color do inline style
-  const range = sel.getRangeAt(0);
-  const fragment = range.cloneContents();
-  const allEls = fragment.querySelectorAll('[style]');
-  // Aplica direto nos elementos vivos dentro do editor que estão na seleção
-  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_ELEMENT);
-  const toFix = [];
-  let node = walker.nextNode();
-  while (node) {
-    if (node.style && node.style.color && sel.containsNode(node, true)) toFix.push(node);
-    node = walker.nextNode();
-  }
-  toFix.forEach(el => el.style.removeProperty('color'));
-  const ind = document.getElementById('sm-tb-color-ind');
-  if (ind) ind.style.background = '';
-  smMarkDirty();
-}
 function smInsertH1() { smExec('formatBlock', '<h1>'); }
 function smInsertH2() { smExec('formatBlock', '<h2>'); }
 function smInsertH3() { smExec('formatBlock', '<h3>'); }
@@ -18291,18 +17818,29 @@ function ftUpdateInitials() {
   }
 }
 
-function ftApplyFotoUrl() {
-  const url = document.getElementById('ft-foto-url').value.trim();
-  if (!url) { toast('Cole uma URL de imagem'); return; }
-  ftFotoDataUrl = url;
-  const av = document.getElementById('ft-avatar');
-  let preview = av.querySelector('img');
-  if (!preview) { preview = document.createElement('img'); av.appendChild(preview); }
-  preview.onerror = () => toast('Não foi possível carregar a imagem — verifique a URL');
-  preview.src = url;
-  document.getElementById('ft-initials').style.display = 'none';
-  // Salva imediatamente sem depender do usuário trocar de aba
-  if (smCurrentNode) ftAutoSave();
+function ftHandleFoto(e) {
+  const file = e.target.files[0]; if (!file) return;
+  // Comprime via canvas antes de armazenar
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = ev => {
+    img.onload = () => {
+      const MAX = 400;
+      const scale = Math.min(MAX/img.width, MAX/img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.width  * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      ftFotoDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      const av = document.getElementById('ft-avatar');
+      let preview = av.querySelector('img');
+      if (!preview) { preview = document.createElement('img'); av.appendChild(preview); }
+      preview.src = ftFotoDataUrl;
+      document.getElementById('ft-initials').style.display = 'none';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function ftAddTag(e, containerId) {
@@ -18347,50 +17885,42 @@ function ftLoad() {
   if (oldImg) oldImg.remove();
   if (ftFotoDataUrl) {
     initEl.style.display = 'none';
-    const img = document.createElement('img');
-    img.onerror = function() { initEl.style.display = ''; initEl.textContent = '?'; img.remove(); };
-    img.src = ftFotoDataUrl;
-    av.appendChild(img);
+    const img = document.createElement('img'); img.src = ftFotoDataUrl; av.appendChild(img);
   } else {
     initEl.style.display = ''; initEl.textContent = '?';
   }
 
-  // Popula campo URL (só mostra se for URL externa, não base64 antigo)
-  const urlField = document.getElementById('ft-foto-url');
-  if (urlField) urlField.value = (ftFotoDataUrl && !ftFotoDataUrl.startsWith('data:')) ? ftFotoDataUrl : '';
-
-  // Campos de texto — novos + retrocompatibilidade com campos antigos
+  // Campos de texto simples
   const map = {
-    // Identificação
     'ft-nome-artistico': f.nomeArtistico,
     'ft-nome-real':      f.nomeReal,
+    'ft-cidade':         f.cidade,
     'ft-nascimento':     f.nascimento,
-    'ft-falecimento':    f.falecimento,
     'ft-nacionalidade':  f.nacionalidade,
-    'ft-categoria':      f.categoria,
-    // Trajetória
-    'ft-formacao':       f.formacao,
+    'ft-instagram':      f.instagram,
+    'ft-streaming':      f.streaming,
     'ft-area':           f.area,
-    // Obra
-    'ft-contexto':       f.contexto,
+    'ft-fase':           f.fase,
     'ft-tematicas':      f.tematicas,
     'ft-influencias':    f.influencias,
-    'ft-colaboracoes':   f.colaboracoes || f.colaboradores || '',
-    // Documentação
-    'ft-entrevista':     f.entrevista,
-    'ft-texto-critico':  f.textoCritico,
-    'ft-galeria-link':   f.galeriaLink  || f.selo || '',
-    'ft-museu':          f.museu,
-    'ft-exposicoes':     f.exposicoes   || f.marcos || '',
-    'ft-curadoria':      f.curadoria,
+    'ft-estetica':       f.estetica,
+    'ft-formacao':       f.formacao,
+    'ft-marcos':         f.marcos,
+    'ft-projetos':       f.projetos,
+    'ft-portfolio':      f.portfolio,
+    'ft-origem':         f.origem,
+    'ft-coletivos':      f.coletivos,
+    'ft-selo':           f.selo,
+    'ft-colaboradores':  f.colaboradores,
+    'ft-mentores':       f.mentores,
   };
   Object.entries(map).forEach(([id, val]) => {
     const el = document.getElementById(id); if (el) el.value = val || '';
   });
 
   // Tags
-  ftSetTags('ft-tags-genero', f.generos);
-  ftSetTags('ft-tags-custom', f.tags);
+  ftSetTags('ft-tags-genero',  f.generos);
+  ftSetTags('ft-tags-custom',  f.tags);
   ftUpdateInitials();
 
   // Esconde badge de salvo
@@ -18398,110 +17928,40 @@ function ftLoad() {
   if (badge) { badge.classList.remove('show'); }
 }
 
-function ftAutoSave() {
-  if (!smCurrentNode) return;
-  smCurrentNode.ficha = {
-    foto:          ftFotoDataUrl,
-    nomeArtistico: ftV('ft-nome-artistico'),
-    nomeReal:      ftV('ft-nome-real'),
-    nascimento:    ftV('ft-nascimento'),
-    falecimento:   ftV('ft-falecimento'),
-    nacionalidade: ftV('ft-nacionalidade'),
-    categoria:     ftV('ft-categoria'),
-    formacao:      ftV('ft-formacao'),
-    area:          ftV('ft-area'),
-    contexto:      ftV('ft-contexto'),
-    tematicas:     ftV('ft-tematicas'),
-    influencias:   ftV('ft-influencias'),
-    colaboracoes:  ftV('ft-colaboracoes'),
-    generos:       ftGetTags('ft-tags-genero'),
-    entrevista:    ftV('ft-entrevista'),
-    textoCritico:  ftV('ft-texto-critico'),
-    galeriaLink:   ftV('ft-galeria-link'),
-    museu:         ftV('ft-museu'),
-    exposicoes:    ftV('ft-exposicoes'),
-    curadoria:     ftV('ft-curadoria'),
-    tags:          ftGetTags('ft-tags-custom'),
-    updatedAt:     new Date().toISOString(),
-  };
-  if (typeof save === 'function') save();
-  // Persiste também no cache do projeto ativo (localStorage por projeto)
-  if (typeof activeProjectId !== 'undefined' && activeProjectId) {
-    try {
-      const _pk = 'neural-proj-' + activeProjectId;
-      const _ps = JSON.parse(localStorage.getItem(_pk) || '{}');
-      if (_ps.nodes) {
-        const _nd = _ps.nodes.find(function(n){ return n.id === smCurrentNode.id; });
-        if (_nd) { _nd.ficha = smCurrentNode.ficha; localStorage.setItem(_pk, JSON.stringify(_ps)); }
-      }
-    } catch(e) {}
-    // Persiste no Supabase
-    if (typeof projSaveCurrentState === 'function') {
-      if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
-      projSaveCurrentState();
-    }
-  }
-}
-
 function ftSave() {
   if (!smCurrentNode) return;
 
   smCurrentNode.ficha = {
     foto:          ftFotoDataUrl,
-    // Identificação
     nomeArtistico: ftV('ft-nome-artistico'),
     nomeReal:      ftV('ft-nome-real'),
+    cidade:        ftV('ft-cidade'),
     nascimento:    ftV('ft-nascimento'),
-    falecimento:   ftV('ft-falecimento'),
     nacionalidade: ftV('ft-nacionalidade'),
-    categoria:     ftV('ft-categoria'),
-    // Trajetória
-    formacao:      ftV('ft-formacao'),
+    instagram:     ftV('ft-instagram'),
+    streaming:     ftV('ft-streaming'),
     area:          ftV('ft-area'),
-    // Obra
-    contexto:      ftV('ft-contexto'),
+    fase:          ftV('ft-fase'),
+    generos:       ftGetTags('ft-tags-genero'),
     tematicas:     ftV('ft-tematicas'),
     influencias:   ftV('ft-influencias'),
-    colaboracoes:  ftV('ft-colaboracoes'),
-    // Gênero / tags
-    generos:       ftGetTags('ft-tags-genero'),
-    // Documentação
-    entrevista:    ftV('ft-entrevista'),
-    textoCritico:  ftV('ft-texto-critico'),
-    galeriaLink:   ftV('ft-galeria-link'),
-    museu:         ftV('ft-museu'),
-    exposicoes:    ftV('ft-exposicoes'),
-    curadoria:     ftV('ft-curadoria'),
-    // Tags personalizadas
+    estetica:      ftV('ft-estetica'),
+    formacao:      ftV('ft-formacao'),
+    marcos:        ftV('ft-marcos'),
+    projetos:      ftV('ft-projetos'),
+    portfolio:     ftV('ft-portfolio'),
+    origem:        ftV('ft-origem'),
+    coletivos:     ftV('ft-coletivos'),
+    selo:          ftV('ft-selo'),
+    colaboradores: ftV('ft-colaboradores'),
+    mentores:      ftV('ft-mentores'),
     tags:          ftGetTags('ft-tags-custom'),
+    // Supabase-ready: substituir foto por Storage URL antes de persistir
+    // supabaseStorageUrl: null,
     updatedAt:     new Date().toISOString(),
   };
 
-  // 1. Dispara a cadeia completa de save() para garantir que neural-v3
-  //    e o cache do projeto sejam atualizados com a ficha (via patches da cadeia).
-  //    Depois cancela o debounce e chama projSaveCurrentState() imediatamente.
-  if (typeof save === 'function') save();
-
-  // 2. Garante persistência direta no cache do projeto ativo (neural-proj-{id})
-  if (typeof activeProjectId !== 'undefined' && activeProjectId) {
-    try {
-      const _projKey = 'neural-proj-' + activeProjectId;
-      const _projStored = JSON.parse(localStorage.getItem(_projKey) || '{}');
-      if (_projStored.nodes) {
-        const _nd = _projStored.nodes.find(function(n){ return n.id === smCurrentNode.id; });
-        if (_nd) {
-          _nd.ficha = smCurrentNode.ficha;
-          localStorage.setItem(_projKey, JSON.stringify(_projStored));
-        }
-      }
-    } catch(e) {}
-  }
-
-  // 3. Salva direto no Supabase, cancelando o debounce para garantir envio imediato
-  if (typeof projSaveCurrentState === 'function' && typeof activeProjectId !== 'undefined' && activeProjectId) {
-    if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
-    projSaveCurrentState();
-  }
+  save(); // persiste no localStorage (igual ao restante do projeto)
 
   const badge = document.getElementById('ft-saved-badge');
   if (badge) {
@@ -19160,94 +18620,6 @@ function _renderTutorial() {
           if(!on){[[0,1],[1,2],[1,3],[1,4],[0,2]].forEach(([a,b])=>{svg.appendChild(_mkSVG('line',{x1:ns[a].x,y1:ns[a].y,x2:ns[b].x,y2:ns[b].y,stroke:'rgba(255,255,255,1)','stroke-width':'3.0'}));});}
           ns.forEach(n=>{svg.appendChild(_mkSVG('circle',{cx:n.x,cy:n.y,r:8,fill:'#5ddcaa',opacity:'.85'}));});
           if(on){const t=_mkSVG('text',{x:80,y:82,'text-anchor':'middle','font-size':'9',fill:'rgba(255,255,255,1)'});t.textContent='arestas removidas';svg.appendChild(t);}
-        }
-      },
-      {name:'Tipos de conexão', tag:'Conexão', tBg:'rgba(127,119,221,.18)', tCl:'#b0a8ff', desc:'Badge clicável na linha — cicla entre 5 tipos semânticos',
-        draw(svg,on){
-          svg.innerHTML='';
-          const tps=[{c:'rgba(255,255,255,.38)',y:20},{c:'#22c55e',y:34},{c:'#ef4444',y:48},{c:'#3b82f6',y:62},{c:'#eab308',y:76}];
-          tps.forEach((tp,i)=>{
-            const l=_mkSVG('line',{x1:24,y1:tp.y,x2:142,y2:tp.y,stroke:tp.c,'stroke-width':'2',opacity:on?'0.88':'0.45'});
-            if(on){l.style.animation=`dash-move ${0.45+i*0.08}s linear infinite`;}
-            svg.appendChild(l);
-            svg.appendChild(_mkSVG('circle',{cx:24,cy:tp.y,r:4,fill:tp.c,opacity:on?'0.9':'0.45'}));
-            svg.appendChild(_mkSVG('circle',{cx:142,cy:tp.y,r:4,fill:tp.c,opacity:on?'0.9':'0.45'}));
-          });
-        }
-      },
-      {name:'— Neutro', tag:'Conexão', tBg:'rgba(255,255,255,.07)', tCl:'rgba(255,255,255,.5)', desc:'Sem semântica. Cor gerada pelo mix das duas extremidades',
-        draw(svg,on){
-          svg.innerHTML='';
-          const A={x:36,y:44},B={x:130,y:44},col='rgba(255,255,255,0.52)';
-          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4'});
-          svg.appendChild(l);
-          [A,B].forEach(p=>{svg.appendChild(_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:'rgba(255,255,255,0.12)',stroke:col,'stroke-width':'1.5'}));});
-          const ic=_mkSVG('text',{x:83,y:49,'text-anchor':'middle','font-size':'15',fill:col,opacity:on?'1':'0.55'});ic.textContent='—';svg.appendChild(ic);
-        }
-      },
-      {name:'→ Influencia', tag:'Conexão', tBg:'rgba(34,197,94,.18)', tCl:'#4ade80', desc:'A moldou ou gerou B. Causa suave, inspiração',
-        draw(svg,on){
-          svg.innerHTML='';
-          const A={x:36,y:44},B={x:130,y:44},col='#22c55e';
-          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.11'}));}
-          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4'});
-          if(on)l.style.animation='dash-move .7s linear infinite';
-          svg.appendChild(l);
-          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
-          [A,B].forEach((p,i)=>{
-            const c=_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:on?col+'22':'rgba(34,197,94,.1)',stroke:col,'stroke-width':'1.5'});
-            if(on&&i===0)c.style.animation='pulse-ring 1.4s ease-out infinite';
-            svg.appendChild(c);
-          });
-          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='→';svg.appendChild(ic);
-        }
-      },
-      {name:'✗ Contradiz', tag:'Conexão', tBg:'rgba(239,68,68,.18)', tCl:'#f87171', desc:'A e B se opõem ou se refutam mutuamente',
-        draw(svg,on){
-          svg.innerHTML='';
-          const A={x:36,y:44},B={x:130,y:44},col='#ef4444';
-          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.09'}));}
-          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4','stroke-dasharray':'8 5'});
-          if(on)l.style.animation='dash-move .45s linear infinite';
-          svg.appendChild(l);
-          svg.appendChild(_mkSVG('polyline',{points:'46,38 36,44 46,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
-          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
-          [A,B].forEach(p=>{
-            const c=_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:on?col+'18':'rgba(239,68,68,.09)',stroke:col,'stroke-width':'1.5'});
-            if(on)c.style.animation='blink .85s ease-in-out infinite';
-            svg.appendChild(c);
-          });
-          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='✗';svg.appendChild(ic);
-        }
-      },
-      {name:'⊂ Deriva de', tag:'Conexão', tBg:'rgba(59,130,246,.18)', tCl:'#60a5fa', desc:'B é variante, espécie ou desdobramento de A',
-        draw(svg,on){
-          svg.innerHTML='';
-          const A={x:36,y:44},B={x:130,y:44},col='#3b82f6';
-          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.09'}));}
-          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4','stroke-dasharray':'3 5'});
-          if(on)l.style.animation='dash-move .85s linear infinite';
-          svg.appendChild(l);
-          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
-          const cA=_mkSVG('circle',{cx:A.x,cy:A.y,r:14,fill:on?col+'18':'rgba(59,130,246,.09)',stroke:col,'stroke-width':'1.5'});
-          const cB=_mkSVG('circle',{cx:B.x,cy:B.y,r:9, fill:on?col+'22':'rgba(59,130,246,.11)',stroke:col,'stroke-width':'1.5'});
-          if(on)cA.style.animation='float 2s ease-in-out infinite';
-          svg.appendChild(cA);svg.appendChild(cB);
-          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='⊂';svg.appendChild(ic);
-        }
-      },
-      {name:'◈ Referência', tag:'Conexão', tBg:'rgba(234,179,8,.18)', tCl:'#fbbf24', desc:'A cita, apoia ou documenta B',
-        draw(svg,on){
-          svg.innerHTML='';
-          const A={x:36,y:44},B={x:130,y:44},col='#eab308';
-          if(on){svg.appendChild(_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'6',opacity:'.09'}));}
-          const l=_mkSVG('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:col,'stroke-width':'2.4','stroke-dasharray':'2 6'});
-          if(on)l.style.animation='dash-move .6s linear infinite';
-          svg.appendChild(l);
-          svg.appendChild(_mkSVG('polyline',{points:'120,38 130,44 120,50',fill:'none',stroke:col,'stroke-width':'2.2','stroke-linejoin':'round'}));
-          [A,B].forEach(p=>{svg.appendChild(_mkSVG('circle',{cx:p.x,cy:p.y,r:11,fill:on?col+'18':'rgba(234,179,8,.09)',stroke:col,'stroke-width':'1.5'}));});
-          if(on){const d=_mkSVG('polygon',{points:'83,38 90,44 83,50 76,44',fill:col,opacity:'.4'});d.style.animation='blink 1.1s ease-in-out infinite';svg.appendChild(d);}
-          const ic=_mkSVG('text',{x:83,y:31,'text-anchor':'middle','font-size':'10',fill:col,opacity:on?'1':'0.65'});ic.textContent='◈';svg.appendChild(ic);
         }
       },
     ]},
@@ -19951,7 +19323,6 @@ function closeArticleViewer() {
           <div class="sm-header-text">
             <div id="sm-header-cat"></div>
             <div id="sm-header-title"></div>
-            <div id="sm-header-tags" style="display:none;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
           </div>
         </div>
         <div class="sm-header-actions">
@@ -20156,16 +19527,6 @@ function closeArticleViewer() {
             <button class="sm-tb-btn" onclick="smExec('justifyRight')" title="Direita">⇒</button>
             <div class="sm-tb-sep"></div>
             <button class="sm-tb-btn" onclick="smExec('removeFormat')" title="Limpar formatação">✕ Format.</button>
-            <div class="sm-tb-sep"></div>
-            <div class="sm-tb-color-wrap" title="Cor do texto">
-              <button class="sm-tb-btn sm-tb-color-btn">
-                <span>A</span>
-                <span class="sm-tb-color-ind" id="sm-tb-color-ind"></span>
-                <input type="color" id="sm-tb-color-input" value="#e8e8f8"
-                  onmousedown="smSaveEditorSel()" oninput="smApplyTextColor(this.value)"/>
-              </button>
-            </div>
-            <button class="sm-tb-btn" onclick="smRemoveTextColor()" title="Cor automática (tema)">auto</button>
             <button id="sm-ask-ai-btn" title="Ask AI — gerar conteúdo com IA" onclick="smAskAI()">Ask AI</button>
           </div>
           <div id="sm-editor" contenteditable="true" spellcheck="false"
@@ -20200,28 +19561,16 @@ function closeArticleViewer() {
         <!-- Perfil / Header -->
         <div class="ft-profile">
           <div class="ft-avatar-wrap">
-            <div class="ft-avatar" id="ft-avatar" title="Foto de perfil">
+            <div class="ft-avatar" id="ft-avatar" onclick="document.getElementById('ft-foto-input').click()" title="Clique para adicionar foto">
               <span id="ft-initials">?</span>
             </div>
-            <div class="ft-avatar-hint">foto via URL</div>
+            <div class="ft-avatar-hint">clique p/ foto</div>
+            <input type="file" id="ft-foto-input" accept="image/*" style="display:none" onchange="ftHandleFoto(event)">
           </div>
           <div class="ft-profile-fields">
             <input class="ft-input-nome" id="ft-nome-artistico" placeholder="Nome artístico" oninput="ftUpdateInitials()">
-            <input class="ft-input-sub"  id="ft-nome-real"      placeholder="Nome completo">
-          </div>
-        </div>
-
-        <!-- URL da Foto de Perfil -->
-        <div class="ft-field" style="margin:-8px 0 18px;">
-          <label style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);">URL da Foto</label>
-          <div class="art-img-url-row">
-            <div class="art-img-url-wrap">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              <input type="text" id="ft-foto-url" placeholder="https://i.ibb.co/..." onkeydown="if(event.key==='Enter')ftApplyFotoUrl()" onblur="if(this.value.trim()&&this.value.trim()!==ftFotoDataUrl)ftApplyFotoUrl()">
-            </div>
-            <button id="ft-foto-url-go" onclick="ftApplyFotoUrl()" title="Aplicar URL da foto">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
+            <input class="ft-input-sub"  id="ft-nome-real"      placeholder="Nome real (opcional)">
+            <input class="ft-input-sub"  id="ft-cidade"         placeholder="Cidade onde atua">
           </div>
         </div>
 
@@ -20230,32 +19579,28 @@ function closeArticleViewer() {
           <div class="ft-sec-head">Identificação</div>
           <div class="ft-sec-body">
             <div class="ft-field">
-              <label>Nascimento</label>
+              <label>Data de nascimento</label>
               <input type="date" id="ft-nascimento">
             </div>
             <div class="ft-field">
-              <label>Falecimento</label>
-              <input type="date" id="ft-falecimento">
-            </div>
-            <div class="ft-field">
               <label>Nacionalidade</label>
-              <input type="text" id="ft-nacionalidade" placeholder="ex: brasileira, alemão...">
+              <input type="text" id="ft-nacionalidade" placeholder="ex: brasileira">
             </div>
             <div class="ft-field">
-              <label>Categoria</label>
-              <input type="text" id="ft-categoria" placeholder="ex: artista, teórico, coletivo, curador...">
+              <label>Instagram / site</label>
+              <input type="text" id="ft-instagram" placeholder="@usuario ou URL">
+            </div>
+            <div class="ft-field">
+              <label>Spotify / Bandcamp / portfólio</label>
+              <input type="text" id="ft-streaming" placeholder="URL ou handle">
             </div>
           </div>
         </div>
 
-        <!-- Trajetória -->
+        <!-- Perfil artístico -->
         <div class="ft-sec">
-          <div class="ft-sec-head">Trajetória</div>
+          <div class="ft-sec-head">Perfil artístico</div>
           <div class="ft-sec-body">
-            <div class="ft-field">
-              <label>Formação</label>
-              <input type="text" id="ft-formacao" placeholder="ex: autodidata, UNICAMP, Escola de Belas Artes...">
-            </div>
             <div class="ft-field">
               <label>Área de atuação</label>
               <select id="ft-area">
@@ -20272,71 +19617,91 @@ function closeArticleViewer() {
                 <option>Outro</option>
               </select>
             </div>
-          </div>
-        </div>
-
-        <!-- Obra -->
-        <div class="ft-sec">
-          <div class="ft-sec-head">Obra</div>
-          <div class="ft-sec-body ft-single">
             <div class="ft-field">
-              <label>Contexto histórico</label>
-              <textarea id="ft-contexto" placeholder="Período, movimento, conjuntura cultural ou política que contextualiza o trabalho..."></textarea>
+              <label>Fase da carreira</label>
+              <select id="ft-fase">
+                <option value="">Selecione...</option>
+                <option>Emergente</option>
+                <option>Em ascensão</option>
+                <option>Consolidado</option>
+                <option>Em transição</option>
+                <option>Veterano</option>
+              </select>
             </div>
-            <div class="ft-field">
-              <label>Temas centrais</label>
-              <textarea id="ft-tematicas" placeholder="ex: identidade, memória, corpo, tecnologia, diáspora..."></textarea>
-            </div>
-            <div class="ft-field">
-              <label>Influências</label>
-              <textarea id="ft-influencias" placeholder="Artistas, movimentos ou referências que moldaram o trabalho"></textarea>
-            </div>
-            <div class="ft-field">
-              <label>Colaborações</label>
-              <textarea id="ft-colaboracoes" placeholder="Artistas, coletivos ou projetos colaborativos relevantes"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Gênero / Estilo -->
-        <div class="ft-sec">
-          <div class="ft-sec-head">Gênero / Estilo / Movimento</div>
-          <div class="ft-sec-body ft-single">
-            <div class="ft-field">
+            <div class="ft-field ft-full">
+              <label>Gênero / estilo / movimento (Enter para adicionar)</label>
               <div class="ft-tags-wrap" id="ft-tags-genero" onclick="this.querySelector('input').focus()">
-                <input type="text" placeholder="Enter para adicionar: hip-hop, arte concreta, videoarte..." onkeydown="ftAddTag(event,'ft-tags-genero')">
+                <input type="text" placeholder="ex: hip-hop alternativo, MPB, arte concreta..." onkeydown="ftAddTag(event,'ft-tags-genero')">
               </div>
             </div>
+            <div class="ft-field ft-full">
+              <label>Temáticas recorrentes na obra</label>
+              <textarea id="ft-tematicas" placeholder="ex: identidade negra, periferia, espiritualidade, amor e perda..."></textarea>
+            </div>
+            <div class="ft-field ft-full">
+              <label>Influências declaradas</label>
+              <textarea id="ft-influencias" placeholder="Artistas, movimentos ou referências que o artista menciona"></textarea>
+            </div>
+            <div class="ft-field ft-full">
+              <label>Estética predominante</label>
+              <textarea id="ft-estetica" placeholder="O que caracteriza visualmente ou sonoramente esse artista..." style="min-height:56px"></textarea>
+            </div>
           </div>
         </div>
 
-        <!-- Documentação -->
+        <!-- Trajetória -->
         <div class="ft-sec">
-          <div class="ft-sec-head">Documentação</div>
+          <div class="ft-sec-head">Trajetória</div>
           <div class="ft-sec-body ft-single">
             <div class="ft-field">
-              <label>Entrevista</label>
-              <input type="text" id="ft-entrevista" placeholder="URL ou referência de entrevista relevante">
+              <label>Formação</label>
+              <input type="text" id="ft-formacao" placeholder="ex: autodidata, UNICAMP, Escola de Belas Artes...">
             </div>
             <div class="ft-field">
-              <label>Texto crítico</label>
-              <textarea id="ft-texto-critico" placeholder="Referência ou trecho de texto crítico sobre a obra" style="min-height:56px"></textarea>
+              <label>Marcos importantes</label>
+              <textarea id="ft-marcos" placeholder="Prêmios, residências, festivais, exposições, lançamentos relevantes..."></textarea>
             </div>
             <div class="ft-field">
-              <label>Galeria / representação</label>
-              <input type="text" id="ft-galeria-link" placeholder="ex: Galeria Nara Roesler, Pace Gallery...">
+              <label>Projetos anteriores / colaborações</label>
+              <textarea id="ft-projetos" placeholder="Bandas, coletivos, colabs com outros artistas..."></textarea>
             </div>
             <div class="ft-field">
-              <label>Museu / coleção</label>
-              <input type="text" id="ft-museu" placeholder="ex: MoMA, MAM SP, acervo particular...">
+              <label>Discografia / portfólio / publicações principais</label>
+              <textarea id="ft-portfolio" placeholder="Álbuns, séries, livros, exposições mais relevantes..." style="min-height:56px"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contexto e narrativa -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Contexto e narrativa</div>
+          <div class="ft-sec-body ft-single">
+            <div class="ft-field">
+              <label>Como a origem geográfica influencia o trabalho</label>
+              <textarea id="ft-origem" placeholder="Cidade, região, diáspora, contexto cultural..." style="min-height:56px"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rede e conexões -->
+        <div class="ft-sec">
+          <div class="ft-sec-head">Rede e conexões</div>
+          <div class="ft-sec-body">
+            <div class="ft-field">
+              <label>Coletivos / grupos que integra</label>
+              <input type="text" id="ft-coletivos" placeholder="ex: Racionais, Opavivará...">
             </div>
             <div class="ft-field">
-              <label>Exposições relevantes</label>
-              <textarea id="ft-exposicoes" placeholder="Exposições individuais e coletivas mais importantes" style="min-height:56px"></textarea>
+              <label>Selo / galeria / editora / agente</label>
+              <input type="text" id="ft-selo" placeholder="ex: Tratore, Galeria Nara Roesler...">
             </div>
-            <div class="ft-field">
-              <label>Notas de curadoria</label>
-              <textarea id="ft-curadoria" placeholder="Observações curatoriais, contexto de seleção, relevância no mapa..." style="min-height:56px"></textarea>
+            <div class="ft-field ft-full">
+              <label>Artistas que colabora frequentemente</label>
+              <input type="text" id="ft-colaboradores" placeholder="ex: Emicida, Karina Buhr, Ana Pi...">
+            </div>
+            <div class="ft-field ft-full">
+              <label>Mentores ou referências de geração</label>
+              <input type="text" id="ft-mentores" placeholder="Quem abriu caminho ou influenciou diretamente">
             </div>
           </div>
         </div>
@@ -21334,10 +20699,7 @@ flyToNode = function(nd) {
   const tRadius = Math.max(_flyConfig.minRadius, Math.min(spherical.radius, dist*1.6+18));
   const startQuat2   = camQuat.clone();
   const endQuat2     = sphericalToQuat(tTheta, tPhi);
-  const startRadius  = spherical.radius;
-  const startTarget  = cameraTarget.clone();
-  const endTarget    = new THREE.Vector3(0, 0, 0);
-  panVel.set(0, 0, 0);
+  const startRadius = spherical.radius;
   const STEPS = _flyConfig.steps;
   let s = 0;
   function step() {
@@ -21346,7 +20708,6 @@ flyToNode = function(nd) {
     camQuat.copy(startQuat2).slerp(endQuat2, t);
     spherical.radius = startRadius + (tRadius - startRadius) * t;
     zoomTarget = spherical.radius;
-    cameraTarget.copy(startTarget).lerp(endTarget, t);
     updateCamera();
     if (s < STEPS) _flyRaf = requestAnimationFrame(step);
     else _flyRaf = null;
@@ -22177,7 +21538,7 @@ setEditingEnabled = function(on) {
 //  MODO 2D — Grafo Plano
 // ══════════════════════════════════════════════════
 
-var flat2DActive = false;
+let flat2DActive = false;
 let _flat2DSavedSpherical = null;
 let _flat2DNodePositions  = {};
 let _flat2DLayout         = {};
@@ -26071,9 +25432,11 @@ function _panoComputeMetrics() {
   nodes.forEach(n => { (n.richMedia||[]).forEach(m=>{ if(m.type==='video'||m.type==='youtube') vids++; }); });
   metrics['videos'] = { val: vids, tag:'vídeos', label:'vídeos nas galerias', color:'#f87171' };
 
-  // artigos: via getNodeArticles (suporta cache de visitante)
+  // artigos: via localStorage 'neural-articles-<id>'
   let arts = 0;
-  nodes.forEach(n => { arts += getNodeArticles(n.id).length; });
+  nodes.forEach(n => {
+    try { const r=localStorage.getItem('neural-articles-'+n.id); if(r) arts += JSON.parse(r).length; } catch(e){}
+  });
   metrics['artigos'] = { val: arts, tag:'artigos', label:'artigos referenciados', color:'#facc15' };
 
   // imagens nas galerias
@@ -28794,17 +28157,11 @@ function closeAISuggestions() {
   document.getElementById('ai-suggest-overlay').classList.remove('open');
 }
 
-const _SUGGEST_STOPWORDS = new Set([
-  'satélite','satelite','nodo','node','novo','nova','ideia','conceito',
-  'sobre','para','como','este','esta','esse','essa','seus','suas',
-  'entre','mais','também','muito','quando','onde','quem','qual','porque',
-  'isso','aqui','está','fazer','seria','pode','deve','será','feito'
-]);
 function tokenize(text) {
   return (text || '').toLowerCase()
     .replace(/[^a-záàâãéèêíïóôõöúüçñ\s]/g, ' ')
     .split(/\s+/)
-    .filter(w => w.length > 3 && !_SUGGEST_STOPWORDS.has(w));
+    .filter(w => w.length > 3);
 }
 
 function tfidfSimilarity(n1, n2) {
@@ -28858,15 +28215,7 @@ function runAISuggestions() {
     }
 
     suggestions.sort((a,b) => b.score - a.score);
-    // Deduplicate by display-title pair (prevents "Node A ↔ Node B" shown twice)
-    const _seenTitlePairs = new Set();
-    const _deduped = suggestions.filter(({n1, n2}) => {
-      const tk = [n1.title, n2.title].sort().join('|||');
-      if (_seenTitlePairs.has(tk)) return false;
-      _seenTitlePairs.add(tk);
-      return true;
-    });
-    aiSuggestResults = _deduped.slice(0, 15);
+    aiSuggestResults = suggestions.slice(0, 15);
 
     btn.innerHTML = '<i class="ti ti-refresh"></i> Reanalisar conexões';
     btn.classList.remove('spinning');
@@ -28888,8 +28237,7 @@ function renderAISuggestList(suggestions) {
   list.innerHTML = suggestions.map(({n1, n2, score, key}, idx) => {
     const c1 = n1.color || catColor(n1.cat);
     const c2 = n2.color || catColor(n2.cat);
-    const pct = Math.min(95, Math.round(score * 100));
-    const reason = generateSuggestionReason(n1, n2, score);
+    const pct = Math.min(99, Math.round(score * 100 * 4));
     return `
     <div class="ai-conn-card" id="ai-card-${key.replace('|','-')}" style="animation-delay:${idx*45}ms">
       <div class="ai-conn-pair">
@@ -28903,7 +28251,6 @@ function renderAISuggestList(suggestions) {
       <button class="ai-conn-accept" onclick="acceptAISuggestion('${n1.id}','${n2.id}','${key}')">
         <i class="ti ti-plug-connected"></i> Conectar
       </button>
-      ${reason ? `<div class="ai-conn-reason">${reason}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -31638,7 +30985,6 @@ async function projSaveList() {
 }
 
 async function projSaveData(id, data) {
-  data._ts = Date.now(); // ── carimbo de tempo para resolver conflitos local × nuvem
   try { localStorage.setItem(PROJ_DATA_KEY(id), JSON.stringify(data)); } catch(e) {}
   try {
     const { data: { session } } = await _sb.auth.getSession();
@@ -31660,50 +31006,18 @@ async function projSaveData(id, data) {
 }
 
 async function projLoadData(id) {
-  // ── Lê de ambas as fontes e prefere a mais recente ──────────────────────────
-  // Isso resolve o bug onde nós apagados voltam após refresh:
-  //   1. Supabase pode ter falhado em salvar silenciosamente (sessão expirada, rede)
-  //   2. O usuário pode ter atualizado antes do debounce de 2,5s disparar
-  // A solução: comparar _ts de ambas as fontes e usar a mais recente.
-  let cloudData = null, localData = null;
-
-  // Sempre lê localStorage (síncrono, confiável para o estado mais recente)
-  try {
-    const raw = localStorage.getItem(PROJ_DATA_KEY(id));
-    if (raw) localData = JSON.parse(raw);
-  } catch(e) {}
-
-  // Tenta Supabase
   try {
     const { data: { session } } = await _sb.auth.getSession();
-    if (session) {
-      const { data, error } = await _sb.from('proj_data').select('data').eq('id', id).single();
-      if (!error && data?.data) cloudData = data.data;
-    }
-  } catch(e) {}
-
-  if (!cloudData && !localData) return null;
-  if (!cloudData) return localData;
-  if (!localData) return cloudData;
-
-  // Prefere a versão com _ts mais recente; sem _ts assume que Supabase é a referência
-  const cloudTs = cloudData._ts || 0;
-  const localTs = localData._ts || 0;
-  if (localTs > cloudTs) {
-    console.log('[NODAL] projLoadData: localStorage mais recente (local=' + localTs + ' cloud=' + cloudTs + '), preferindo local e sincronizando nuvem');
-    // Re-sobe o dado local para o Supabase em background
+    if (!session) throw new Error('no session');
+    const { data, error } = await _sb.from('proj_data').select('data').eq('id', id).single();
+    if (error) throw error;
+    return data?.data || null;
+  } catch(e) {
     try {
-      const { data: { session } } = await _sb.auth.getSession();
-      if (session) {
-        _sb.from('proj_data').upsert({ id, user_id: session.user.id, data: localData }).then(r => {
-          if (r.error) console.warn('[NODAL] re-sync local→cloud falhou:', r.error.message);
-          else console.log('[NODAL] re-sync local→cloud ok');
-        });
-      }
-    } catch(e) {}
-    return localData;
+      const raw = localStorage.getItem(PROJ_DATA_KEY(id));
+      return raw ? JSON.parse(raw) : null;
+    } catch(e2) { return null; }
   }
-  return cloudData;
 }
 
 function projGenId() {
@@ -31859,11 +31173,6 @@ function _psRenderFolder(p, list) {
   if (delBtn) delBtn.style.display = _isEd ? '' : 'none';
   if (shareBtn) shareBtn.style.display = _isEd ? '' : 'none';
 
-  // Atualiza indicador "link ativo" se já existe link compartilhado
-  if (_isEd && p && p.id) {
-    setTimeout(() => projUpdateShareBtn(p.id), 0);
-  }
-
   // Inner nodes
   _psBuildFolderNodes(p);
 }
@@ -32009,26 +31318,46 @@ function _renderTabContent(p) {
 function projFilterGrid(q) { renderProjectsGrid(q); }
 
 async function projUpdateShareBtn(projId) {
-  const btn = document.getElementById('ps-btn-share');
-  if (!btn) return;
+  const area = document.querySelector('#proj-tab-content .proj-share-area');
+  if (!area) return;
   try {
     const { data: { session } } = await _sb.auth.getSession();
     if (!session) return;
     const { data } = await _sb.from('public_shares').select('slug,token').eq('proj_id', projId).eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(1).single();
-    if (data) {
-      btn.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;flex-shrink:0;box-shadow:0 0 6px #4ade80;margin-right:5px;"></span> No Ar';
-      btn.style.borderColor = 'rgba(74,222,128,0.5)';
-      btn.style.color = 'rgba(74,222,128,0.9)';
-    } else {
-      btn.innerHTML = '<i class="ti ti-share"></i> Compartilhar';
-      btn.style.borderColor = '';
-      btn.style.color = '';
-    }
-  } catch(e) {
-    btn.innerHTML = '<i class="ti ti-share"></i> Compartilhar';
-    btn.style.borderColor = '';
-    btn.style.color = '';
-  }
+    if (!data) return;
+    const identifier = data.slug || data.token;
+    area.innerHTML = '';
+    const revokeBtn = document.createElement('button');
+    revokeBtn.className = 'proj-revoke-btn';
+    revokeBtn.title = 'Clique para copiar o link · Segure para revogar';
+    revokeBtn.textContent = '⚬ link ativo';
+    revokeBtn.style.cssText = 'padding:6px 14px;border:1px solid rgba(120,220,120,0.5);border-radius:4px;background:rgba(0,0,0,0.15);color:rgba(120,220,120,0.9);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;';
+    revokeBtn.onmouseover = function(){ this.style.background='rgba(0,0,0,0.35)'; };
+    revokeBtn.onmouseout  = function(){ this.style.background='rgba(0,0,0,0.15)'; this.textContent='⚬ link ativo'; this.style.color='rgba(120,220,120,0.9)'; this.style.borderColor='rgba(120,220,120,0.5)'; };
+    let _holdTimer = null;
+    revokeBtn.onmousedown = function(e) {
+      e.stopPropagation();
+      _holdTimer = setTimeout(() => { this.textContent = 'solte p/ revogar'; this.style.color='rgba(255,100,100,0.9)'; this.style.borderColor='rgba(255,100,100,0.5)'; }, 600);
+    };
+    revokeBtn.onmouseup = function(e) {
+      e.stopPropagation();
+      if (_holdTimer) { clearTimeout(_holdTimer); _holdTimer = null; }
+    };
+    revokeBtn.onclick = function(e) {
+      e.stopPropagation();
+      const url = window.location.origin + window.location.pathname + '?share=' + identifier;
+      try { navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(err) { prompt('Copie o link:', url); }
+    };
+    revokeBtn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); projRevokeShareLink(projId); });
+    // Segura 800ms para revogar
+    let _pressStart = 0;
+    revokeBtn.addEventListener('pointerdown', e => { e.stopPropagation(); _pressStart = Date.now(); });
+    revokeBtn.addEventListener('pointerup', e => {
+      e.stopPropagation();
+      if (Date.now() - _pressStart >= 800) projRevokeShareLink(projId);
+    });
+    area.appendChild(revokeBtn);
+  } catch(e) {}
 }
 
 async function projRevokeShareLink(projId) {
@@ -32133,22 +31462,9 @@ async function projOpen(id) {
     nodeIdCounter = maxId + 1;
     if (data.connections) {
       data.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
-      // Restaurar tipos de conexão (Deriva, Influencia, Contradiz…)
-      data.connections.forEach(sc => {
-        if (sc.connType && sc.connType !== 'neutro') {
-          const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
-          if (conn) { conn.connType = sc.connType; if (typeof _applyConnTypeColor === 'function') _applyConnTypeColor(conn); }
-        }
-      });
     }
     if (data.projectName) { projectName = data.projectName; projectSub = proj.sub || proj.name || data.projectSub || ''; applyProjectName(); }
     if (projectName !== 'NODAL') { projectSub = proj.sub || proj.name || projectName; projectName = 'NODAL'; applyProjectName(); }
-    // ── Restaurar globalTags ao trocar de projeto ──────────────────────────────
-    if (data.globalTags && Array.isArray(data.globalTags) && data.globalTags.length) {
-      globalTags = data.globalTags;
-      try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
-      if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds();
-    }
     if (data.articlesData) Object.keys(data.articlesData).forEach(nid => {
       try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(data.articlesData[nid])); } catch(e) {}
     });
@@ -32203,11 +31519,9 @@ async function projSaveCurrentState() {
       media:n.media, tags:n.tags||[], notes:n.notes||'',
       richNotes:n.richNotes||'', richContent:n.richContent||'',
       richMedia:n.richMedia||[], date:n.date||'',
-      shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
-      ficha:n.ficha||null
+      shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z
     })),
-    connections: connections.map(c => ({id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'})),
-    globalTags: globalTags || [],
+    connections: connections.map(c => ({id:c.id, from:c.from, to:c.to})),
     projectName: 'NODAL', projectSub,
     articlesData: _articlesData,
     panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
@@ -32220,18 +31534,6 @@ async function projSaveCurrentState() {
   proj.modified  = Date.now();
   await projSaveData(activeProjectId, data);
   await projSaveList();
-
-  // Atualiza snapshot do link compartilhado com dados mais recentes
-  // Garante que foto, tags e alterações apareçam para visitantes imediatamente
-  try {
-    const { data: { session } } = await _sb.auth.getSession();
-    if (session) {
-      await _sb.from('public_shares')
-        .update({ proj_data: data })
-        .eq('proj_id', activeProjectId)
-        .eq('user_id', session.user.id);
-    }
-  } catch(e) {}
 }
 
 // ── Patch save() to also save project data ────────────
@@ -32244,47 +31546,6 @@ save = function() {
   clearTimeout(_projSaveDebounceTimer);
   _projSaveDebounceTimer = setTimeout(projSaveCurrentState, 2500);
 };
-
-// ── Flush imediato para localStorage ao sair/trocar de aba ────────────────
-// Garante que o estado mais recente (com nós deletados, etc.) fique no
-// localStorage com _ts atualizado — mesmo que o debounce de 2,5s ainda
-// não tenha disparado. projLoadData vai preferir este local se for mais novo.
-function _projFlushToLocal() {
-  if (!activeProjectId || typeof nodes === 'undefined') return;
-  try {
-    const _arts = {};
-    nodes.forEach(n => {
-      try { const r = localStorage.getItem('neural-articles-' + n.id); if (r) _arts[n.id] = JSON.parse(r); } catch(e) {}
-    });
-    const _snap = {
-      _ts: Date.now(),
-      nodes: nodes.map(n => ({
-        id:n.id, title:n.title, desc:n.desc, cat:n.cat, color:n.color,
-        size:n.size, font:n.font, fontSize:n.fontSize, bold:n.bold,
-        italic:n.italic, textShadow:n.textShadow!==false,
-        media:n.media, tags:n.tags||[], notes:n.notes||'',
-        richNotes:n.richNotes||'', richContent:n.richContent||'',
-        richMedia:n.richMedia||[], date:n.date||'',
-        shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
-        ficha:n.ficha||null
-      })),
-      connections: connections.map(c => ({id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'})),
-      globalTags: globalTags || [],
-      projectName: 'NODAL', projectSub,
-      articlesData: _arts,
-      panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
-      notepad: (function(){ try { return localStorage.getItem('notepad_' + activeProjectId)||''; } catch(e){ return ''; } })(),
-      notepadNotes: (function(){ try { const r=localStorage.getItem('notepad_notes_'+activeProjectId); return r?JSON.parse(r):null; } catch(e){ return null; } })()
-    };
-    localStorage.setItem(PROJ_DATA_KEY(activeProjectId), JSON.stringify(_snap));
-  } catch(e) {}
-}
-// Dispara ao fechar/atualizar a aba — garante que o localStorage tenha o estado atual
-window.addEventListener('beforeunload', _projFlushToLocal);
-// Dispara ao trocar de aba (usuário volta depois e o estado está correto)
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') _projFlushToLocal();
-});
 
 // ── HUD badge ─────────────────────────────────────────
 function updateHudProjBadge(proj) {
@@ -32503,18 +31764,6 @@ async function loadSharedProject(identifier) {
       pd.nodes.forEach(nd => { const n = parseInt((nd.id||'').replace('n','')); if (!isNaN(n) && n > maxId) maxId = n; addNode(nd); });
       nodeIdCounter = maxId + 1;
       if (pd.connections) pd.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
-      // ── Restaurar tipos de conexão (Deriva, Influencia, Contradiz…) para o visitante ──
-      if (pd.connections) {
-        pd.connections.forEach(sc => {
-          if (sc.connType && sc.connType !== 'neutro') {
-            const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
-            if (conn) {
-              conn.connType = sc.connType;
-              if (typeof _applyConnTypeColor === 'function') _applyConnTypeColor(conn);
-            }
-          }
-        });
-      }
       projectName = 'NODAL';
       projectSub = data.proj_name || '';
       applyProjectName();
@@ -32528,10 +31777,6 @@ async function loadSharedProject(identifier) {
           }
         } catch(e) {}
       }
-      // ── Restaurar globalTags — necessário para os chips de tags no painel esquerdo ──
-      if (pd.globalTags && Array.isArray(pd.globalTags)) {
-        globalTags = pd.globalTags;
-      }
       // ── Restaurar artigos dos nós (cache em memória — não depende de localStorage) ──
       window._sharedArticlesCache = (pd.articlesData && typeof pd.articlesData === 'object')
         ? pd.articlesData : {};
@@ -32544,9 +31789,8 @@ async function loadSharedProject(identifier) {
     console.error('[NODAL] loadSharedProject erro:', e);
     const curtain = document.getElementById('transition-curtain');
     const ls = document.getElementById('lock-screen');
-    // Mostra o lock screen ANTES de tirar a cortina para não expor o canvas antigo
-    if (ls) ls.classList.remove('hidden');
     if (curtain) curtain.classList.remove('active');
+    if (ls) ls.classList.remove('hidden');
     toast('Link inválido ou expirado');
   }
 }
@@ -32576,109 +31820,66 @@ async function projGenerateShareLink(projId) {
     const proj = allProjects.find(p => p.id === projId);
     if (!proj) { toast('Projeto não encontrado'); return; }
 
-    // Verifica se já existe link ativo para este projeto
-    let existingLink = null;
-    try {
-      const { data } = await _sb.from('public_shares').select('slug,token').eq('proj_id', projId).eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(1).single();
-      existingLink = data;
-    } catch(e) {}
+    const autoSlug = _generateSlug(proj.sub || proj.name);
 
+    // Modal
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    overlay.innerHTML = `
+      <div style="background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px 28px 22px;width:360px;font-family:var(--mono);color:#eee;">
+        <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.5;margin-bottom:18px;">Compartilhar projeto</div>
+        <div style="font-size:10px;opacity:0.6;margin-bottom:7px;letter-spacing:0.06em;">Link personalizado</div>
+        <input id="_share-slug-input" type="text" value="${autoSlug}"
+          style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:5px;padding:8px 10px;color:#fff;font-family:var(--mono);font-size:11px;outline:none;letter-spacing:0.04em;" />
+        <div id="_share-slug-err" style="font-size:9px;color:#ff6b6b;margin-top:5px;min-height:13px;letter-spacing:0.04em;"></div>
+        <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+          <button id="_share-cancel-btn" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:transparent;color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Cancelar</button>
+          <button id="_share-confirm-btn" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.5);border-radius:4px;background:rgba(255,255,255,0.1);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Gerar link</button>
+        </div>
+      </div>`;
     document.body.appendChild(overlay);
 
-    if (existingLink) {
-      // ── Estado: projeto JÁ está no ar ──
-      const identifier = existingLink.slug || existingLink.token;
-      const url = window.location.origin + window.location.pathname + '?share=' + identifier;
-      overlay.innerHTML = `
-        <div style="background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px;width:380px;font-family:var(--mono);color:#eee;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;box-shadow:0 0 8px #4ade80;animation:_pulse-share 2s infinite;"></span>
-            <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.55;">Projeto no ar</span>
-          </div>
-          <div style="font-size:9px;opacity:0.45;margin-bottom:6px;letter-spacing:0.06em;text-transform:uppercase;">Link público</div>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:22px;">
-            <input readonly value="${url}" style="flex:1;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:5px;padding:8px 10px;color:rgba(255,255,255,0.65);font-family:var(--mono);font-size:10px;outline:none;cursor:default;" />
-            <button id="_sh-copy" style="padding:8px 14px;border:1px solid rgba(255,255,255,0.25);border-radius:5px;background:rgba(255,255,255,0.08);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;flex-shrink:0;">Copiar</button>
-          </div>
-          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;display:flex;gap:10px;justify-content:space-between;">
-            <button id="_sh-revoke" style="padding:7px 14px;border:1px solid rgba(255,80,80,0.35);border-radius:5px;background:transparent;color:rgba(255,100,100,0.75);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">✕ Tirar do ar</button>
-            <button id="_sh-close" style="padding:7px 14px;border:1px solid rgba(255,255,255,0.18);border-radius:5px;background:transparent;color:rgba(255,255,255,0.6);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Fechar</button>
-          </div>
-        </div>
-        <style>@keyframes _pulse-share{0%,100%{opacity:1}50%{opacity:0.4}}</style>`;
+    const slugInput = overlay.querySelector('#_share-slug-input');
+    const errEl = overlay.querySelector('#_share-slug-err');
+    slugInput.focus();
+    slugInput.select();
 
-      overlay.querySelector('#_sh-copy').onclick = async () => {
+    overlay.querySelector('#_share-cancel-btn').onclick = () => overlay.remove();
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    overlay.querySelector('#_share-confirm-btn').onclick = async () => {
+      const slug = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
+      if (!slug || slug.length < 3) { errEl.textContent = 'Slug muito curto (mín. 3 caracteres)'; return; }
+      errEl.textContent = '';
+      slugInput.disabled = true;
+      overlay.querySelector('#_share-confirm-btn').textContent = 'Salvando…';
+
+      try {
+        // Verifica colisão
+        const { data: existing } = await _sb.from('public_shares').select('slug').eq('slug', slug).single();
+        if (existing) { errEl.textContent = 'Slug já em uso — escolha outro'; slugInput.disabled = false; overlay.querySelector('#_share-confirm-btn').textContent = 'Gerar link'; return; }
+
+        let pd = null;
+        try { const { data, error } = await _sb.from('proj_data').select('data').eq('id', projId).single(); if (!error && data) pd = data.data; } catch(e) {}
+        if (!pd) { try { const raw = localStorage.getItem(PROJ_DATA_KEY(projId)); pd = raw ? JSON.parse(raw) : null; } catch(e) {} }
+        if (!pd) { errEl.textContent = 'Nenhum dado para compartilhar'; slugInput.disabled = false; overlay.querySelector('#_share-confirm-btn').textContent = 'Gerar link'; return; }
+
+        const tokenBytes = crypto.getRandomValues(new Uint8Array(9));
+        const token = Array.from(tokenBytes).map(b => b.toString(36).padStart(2,'0')).join('').slice(0,14);
+        const { error } = await _sb.from('public_shares').insert({ token, slug, proj_id: projId, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
+        if (error) throw error;
+
+        overlay.remove();
+        projUpdateShareBtn(projId);
+        const url = window.location.origin + window.location.pathname + '?share=' + slug;
         try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
-      };
-      overlay.querySelector('#_sh-close').onclick = () => overlay.remove();
-      overlay.querySelector('#_sh-revoke').onclick = async () => {
-        if (!confirm('Tirar o projeto do ar? Visitantes perderão o acesso.')) return;
-        try {
-          const { error } = await _sb.from('public_shares').delete().eq('proj_id', projId).eq('user_id', session.user.id);
-          if (error) throw error;
-          overlay.remove();
-          toast('Projeto tirado do ar');
-          projUpdateShareBtn(projId);
-        } catch(e) { toast('Erro: ' + (e.message || '')); }
-      };
-
-    } else {
-      // ── Estado: sem link — formulário de criação ──
-      const autoSlug = _generateSlug(proj.sub || proj.name);
-      overlay.innerHTML = `
-        <div style="background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px 28px 22px;width:360px;font-family:var(--mono);color:#eee;">
-          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.5;margin-bottom:18px;">Compartilhar projeto</div>
-          <div style="font-size:10px;opacity:0.6;margin-bottom:7px;letter-spacing:0.06em;">Link personalizado</div>
-          <input id="_sh-slug" type="text" value="${autoSlug}"
-            style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:5px;padding:8px 10px;color:#fff;font-family:var(--mono);font-size:11px;outline:none;letter-spacing:0.04em;" />
-          <div id="_sh-err" style="font-size:9px;color:#ff6b6b;margin-top:5px;min-height:13px;letter-spacing:0.04em;"></div>
-          <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
-            <button id="_sh-cancel" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:transparent;color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Cancelar</button>
-            <button id="_sh-confirm" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.5);border-radius:4px;background:rgba(255,255,255,0.1);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Gerar link</button>
-          </div>
-        </div>`;
-
-      const slugInput = overlay.querySelector('#_sh-slug');
-      const errEl    = overlay.querySelector('#_sh-err');
-      slugInput.focus(); slugInput.select();
-
-      overlay.querySelector('#_sh-cancel').onclick = () => overlay.remove();
-      overlay.querySelector('#_sh-confirm').onclick = async () => {
-        const slug = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
-        if (!slug || slug.length < 3) { errEl.textContent = 'Slug muito curto (mín. 3 caracteres)'; return; }
-        errEl.textContent = '';
-        slugInput.disabled = true;
-        overlay.querySelector('#_sh-confirm').textContent = 'Salvando…';
-        try {
-          // Checa colisão apenas com OUTROS projetos (não o próprio)
-          const { data: existing } = await _sb.from('public_shares').select('slug').eq('slug', slug).neq('proj_id', projId).single();
-          if (existing) { errEl.textContent = 'Slug já em uso — escolha outro'; slugInput.disabled = false; overlay.querySelector('#_sh-confirm').textContent = 'Gerar link'; return; }
-
-          let pd = null;
-          try { const { data, error } = await _sb.from('proj_data').select('data').eq('id', projId).single(); if (!error && data) pd = data.data; } catch(e) {}
-          if (!pd) { try { const raw = localStorage.getItem(PROJ_DATA_KEY(projId)); pd = raw ? JSON.parse(raw) : null; } catch(e) {} }
-          if (!pd) { errEl.textContent = 'Nenhum dado para compartilhar'; slugInput.disabled = false; overlay.querySelector('#_sh-confirm').textContent = 'Gerar link'; return; }
-
-          const tokenBytes = crypto.getRandomValues(new Uint8Array(9));
-          const token = Array.from(tokenBytes).map(b => b.toString(36).padStart(2,'0')).join('').slice(0,14);
-          const { error } = await _sb.from('public_shares').insert({ token, slug, proj_id: projId, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
-          if (error) throw error;
-
-          overlay.remove();
-          projUpdateShareBtn(projId);
-          const url = window.location.origin + window.location.pathname + '?share=' + slug;
-          try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
-        } catch(e) {
-          console.error('[NODAL] projGenerateShareLink erro:', e);
-          errEl.textContent = 'Erro: ' + (e.message || 'tente novamente');
-          slugInput.disabled = false;
-          overlay.querySelector('#_sh-confirm').textContent = 'Gerar link';
-        }
-      };
-    }
+      } catch(e) {
+        console.error('[NODAL] projGenerateShareLink erro:', e);
+        errEl.textContent = 'Erro: ' + (e.message || 'tente novamente');
+        slugInput.disabled = false;
+        overlay.querySelector('#_share-confirm-btn').textContent = 'Gerar link';
+      }
+    };
   } catch(e) {
     console.error('[NODAL] projGenerateShareLink erro:', e);
     toast('Erro ao abrir compartilhamento: ' + (e.message || ''));
@@ -32692,7 +31893,7 @@ const _SYNC_KEYS = [
   'neural-proj-badge-label','neural-proj-badge-emoji',
   'neural-hover-anim','neural-pres-theme','neural-fonts',
   'neural-logo-colors','neural-logo-typo','neural-typo-global',
-  'neural-panorama-data','neural-fav-collections','neural-global-tags'
+  'neural-panorama-data','neural-fav-collections'
 ];
 let _settingsSaveTimer = null;
 function _scheduleSettingsSync() {
@@ -32716,8 +31917,6 @@ async function _loadSettingsFromCloud() {
     if (error || !data || !data.data) return;
     _SYNC_KEYS.forEach(k => { if (data.data[k]) localStorage.setItem(k, data.data[k]); });
     if (typeof loadSettings === 'function') loadSettings();
-    if (typeof loadGlobalTags === 'function') loadGlobalTags();
-    if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds(); // corrige colisões pós-sync
     if (typeof loadSavedGlassSettings === 'function') loadSavedGlassSettings();
     if (typeof applyLockDesign === 'function') applyLockDesign();
     if (typeof loadSavedFonts === 'function') loadSavedFonts();
@@ -32796,24 +31995,7 @@ async function projBoot() {
       _pd.nodes.forEach(nd => { const n = parseInt((nd.id||'').replace('n','')); if (!isNaN(n) && n > _maxId) _maxId = n; addNode(nd); });
       nodeIdCounter = _maxId + 1;
       if (_pd.connections) _pd.connections.forEach(c => { try { createConnection(c.from, c.to); } catch(e) {} });
-      // Restaurar tipos de conexão (Deriva, Influencia, Contradiz…) para o editor
-      if (_pd.connections) {
-        _pd.connections.forEach(sc => {
-          if (sc.connType && sc.connType !== 'neutro') {
-            const conn = connections.find(c => c.id === sc.id || (c.from === sc.from && c.to === sc.to));
-            if (conn) { conn.connType = sc.connType; if (typeof _applyConnTypeColor === 'function') _applyConnTypeColor(conn); }
-          }
-        });
-      }
       projectSub = (proj && (proj.sub || proj.name)) || _pd.projectSub || ''; applyProjectName();
-      // ── Restaurar globalTags do proj_data (mais rápido que esperar user_settings) ──
-      // proj_data já contém as tags salvas — não precisa aguardar a terceira chamada
-      // Supabase (_loadSettingsFromCloud) para as tags aparecerem.
-      if (_pd.globalTags && Array.isArray(_pd.globalTags) && _pd.globalTags.length) {
-        globalTags = _pd.globalTags;
-        try { localStorage.setItem('neural-global-tags', JSON.stringify(globalTags)); } catch(e) {}
-        if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds();
-      }
       if (_pd.articlesData) Object.keys(_pd.articlesData).forEach(nid => {
         try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(_pd.articlesData[nid])); } catch(e) {}
       });
@@ -34768,15 +33950,6 @@ function showIsolatedNodes() {
   <button class="sm-ft-btn" onclick="smFtExec('formatBlock','<h2>')" title="Título">H2</button>
   <button class="sm-ft-btn" onclick="smFtExec('formatBlock','<h3>')" title="Subtítulo">H3</button>
   <div class="sm-ft-sep"></div>
-  <div class="sm-ft-color-wrap" title="Cor do texto">
-    <button class="sm-ft-color-btn" id="sm-ft-color-btn">
-      <span>A</span>
-      <span class="sm-ft-color-indicator" id="sm-ft-color-indicator"></span>
-      <input type="color" id="sm-ft-color-input" value="#e8e8f8" oninput="smFtApplyColor(this.value)"/>
-    </button>
-  </div>
-  <button class="sm-ft-auto-btn" onclick="smFtRemoveColor()" title="Remover cor (automático)">auto</button>
-  <div class="sm-ft-sep"></div>
   <button id="sm-ft-ask-ai" onclick="smFtAskAI()" title="Ask AI sobre a seleção">✦ Ask AI</button>
 </div>
 
@@ -34788,8 +33961,6 @@ function showIsolatedNodes() {
 
   function smShowFloatToolbar(e) {
     if (!ftb) return;
-    // Nunca mostrar para visitantes
-    if (typeof isEditorUnlocked !== 'undefined' && !isEditorUnlocked) { smHideFloatToolbar(); return; }
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
       smHideFloatToolbar(); return;
@@ -34837,50 +34008,6 @@ function showIsolatedNodes() {
     document.getElementById('sm-editor')?.focus();
     document.execCommand(cmd, false, val || null);
     smHideFloatToolbar();
-    if (typeof smMarkDirty === 'function') smMarkDirty();
-  };
-
-  // Salva e restaura seleção para o color picker (que destrói o foco do editor)
-  let _smFtSavedRange = null;
-  function _smFtSaveSelection() {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) _smFtSavedRange = sel.getRangeAt(0).cloneRange();
-  }
-  function _smFtRestoreSelection() {
-    const editor = document.getElementById('sm-editor');
-    if (!editor || !_smFtSavedRange) return;
-    editor.focus();
-    const sel = window.getSelection();
-    if (sel) { sel.removeAllRanges(); sel.addRange(_smFtSavedRange); }
-  }
-  // Salva seleção quando o color picker é clicado
-  document.getElementById('sm-ft-color-input')?.addEventListener('click', _smFtSaveSelection);
-
-  window.smFtApplyColor = function(color) {
-    _smFtRestoreSelection();
-    document.execCommand('foreColor', false, color);
-    const ind = document.getElementById('sm-ft-color-indicator');
-    if (ind) ind.style.background = color;
-    if (typeof smMarkDirty === 'function') smMarkDirty();
-  };
-
-  window.smFtRemoveColor = function() {
-    const editor = document.getElementById('sm-editor');
-    if (!editor) return;
-    editor.focus();
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) return;
-    // Remove apenas a propriedade color — preserva fonte, negrito, etc.
-    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_ELEMENT);
-    const toFix = [];
-    let node = walker.nextNode();
-    while (node) {
-      if (node.style && node.style.color && sel.containsNode(node, true)) toFix.push(node);
-      node = walker.nextNode();
-    }
-    toFix.forEach(el => el.style.removeProperty('color'));
-    const ind = document.getElementById('sm-ft-color-indicator');
-    if (ind) ind.style.background = '';
     if (typeof smMarkDirty === 'function') smMarkDirty();
   };
 
@@ -35707,14 +34834,14 @@ function _openCtxMenu(nd, x, y) {
   const isEditor = typeof isEditorUnlocked !== 'undefined' && isEditorUnlocked;
 
   _ctxMenu.innerHTML = `
-    ${isEditor ? `<div class="ctx-item" onclick="_ctxEdit()">
+    <div class="ctx-item" onclick="_ctxEdit()">
       <span class="ctx-icon">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9.5 2L12 4.5 5 11.5 2 12 2.5 9 9.5 2Z"/>
         </svg>
       </span>
       Editar nó
-    </div>` : ''}
+    </div>
     <div class="ctx-item" onclick="_ctxFocus()">
       <span class="ctx-icon">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -35942,11 +35069,6 @@ function _applyConnTypeColor(conn) {
   if (conn.particleMesh && conn.particleMesh.material) conn.particleMesh.material.color.set(targetColor);
 }
 
-// ── Expõe _applyConnTypeColor globalmente ────────────────────────────────
-// Necessário porque loadSharedProject (modo visitante) está em outro bloco
-// de script e não enxerga o escopo deste IIFE.
-window._applyConnTypeColor = _applyConnTypeColor;
-
 // Cicla para o próximo tipo e atualiza tudo
 window.cycleConnType = function(cid) {
   const conn = connections.find(c => c.id === cid);
@@ -35989,42 +35111,33 @@ window.updateConnectionList = updateConnectionList = function() {
   }).join('');
 };
 
-// Patch openLeftPanel — badges de tipo + split outgoing/incoming (backlinks)
+// Patch openLeftPanel para adicionar badge de tipo nas conexões do painel esquerdo
 const _ctOrigOpenLP = openLeftPanel;
 window.openLeftPanel = openLeftPanel = function(nd) {
   _ctOrigOpenLP(nd);
-  const _ctOut = connections.filter(c => c.from === nd.id);
-  const _ctIn  = connections.filter(c => c.to   === nd.id);
-  // Atualiza contadores
-  const _ctOC = document.getElementById('lp-conn-out-count');
-  const _ctIC = document.getElementById('lp-conn-in-count');
-  if (_ctOC) _ctOC.textContent = _ctOut.length;
-  if (_ctIC) _ctIC.textContent = _ctIn.length;
-  // Renderiza lista com badge de tipo
-  function _ctRender(list, isIn) {
-    if (!list.length) return '<div style="font-size:9px;color:var(--text3);padding:2px 0;opacity:0.55">Nenhuma</div>';
-    return list.map(c => {
-      const otherId = isIn ? c.from : c.to;
-      const other = nodes.find(n => n.id === otherId);
-      if (!other) return '';
-      const meta = _getConnTypeMeta(c);
-      const badgeStyle = meta.color
-        ? `border-color:${meta.color}55;color:${meta.color};background:${meta.color}18`
-        : '';
-      return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
-        <span class="lp-conn-type-badge" style="${badgeStyle}"
-              onclick="event.stopPropagation();cycleConnType('${c.id}');openLeftPanel(leftPanelNode)"
-              title="${meta.label} — clique para mudar">${meta.icon}</span>
-        <span class="lp-conn-dot" style="background:${typeof catColor==='function'?catColor(other.cat):'#888'}"></span>
-        <span style="flex:1;color:${other.color||(typeof catColor==='function'?catColor(other.cat):'#888')}">${other.title}</span>
-        <span class="lp-conn-cat">${other.cat}</span>
-      </div>`;
-    }).join('');
-  }
-  const _ctOL = document.getElementById('lp-conn-out-list');
-  const _ctIL = document.getElementById('lp-conn-in-list');
-  if (_ctOL) _ctOL.innerHTML = _ctRender(_ctOut, false);
-  if (_ctIL) _ctIL.innerHTML = _ctRender(_ctIn,  true);
+  // Atualiza lp-conn-list com badges de tipo
+  const conns = connections.filter(c => c.from === nd.id || c.to === nd.id);
+  const cl = document.getElementById('lp-conn-list');
+  if (!cl || !conns.length) return;
+  cl.innerHTML = conns.map(c => {
+    const otherId = c.from === nd.id ? c.to : c.from;
+    const other = nodes.find(n => n.id === otherId);
+    if (!other) return '';
+    const arrow = c.from === nd.id ? '→' : '←';
+    const meta = _getConnTypeMeta(c);
+    const badgeStyle = meta.color
+      ? `border-color:${meta.color}55;color:${meta.color};background:${meta.color}18`
+      : '';
+    return `<div class="lp-conn-item" onclick="focusNode('${other.id}')">
+      <span class="lp-conn-type-badge" style="${badgeStyle}"
+            onclick="event.stopPropagation();cycleConnType('${c.id}');openLeftPanel(leftPanelNode)"
+            title="${meta.label} — clique para mudar">${meta.icon}</span>
+      <span class="lp-conn-dot" style="background:${typeof catColor==='function'?catColor(other.cat):'#888'}"></span>
+      <span class="lp-conn-arrow">${arrow}</span>
+      <span style="flex:1;color:${other.color || (typeof catColor==='function'?catColor(other.cat):'#888')}">${other.title}</span>
+      <span class="lp-conn-cat">${other.cat}</span>
+    </div>`;
+  }).join('');
 };
 
 // Patch save() para incluir connType nas conexões
@@ -36043,41 +35156,6 @@ save = function() {
     }
   } catch(e) {}
 };
-
-// Patch save: amenda localStorage para incluir ficha nos nós
-const _fichaOrigSave = save;
-save = function() {
-  _fichaOrigSave.apply(this, arguments);
-  try {
-    const stored = JSON.parse(localStorage.getItem('neural-v3') || '{}');
-    if (stored.nodes) {
-      let changed = false;
-      stored.nodes.forEach(nd => {
-        const live = nodes.find(n => n.id === nd.id);
-        if (live && live.ficha !== undefined) {
-          nd.ficha = live.ficha || null;
-          changed = true;
-        }
-      });
-      if (changed) localStorage.setItem('neural-v3', JSON.stringify(stored));
-    }
-  } catch(e) {}
-};
-
-// Restaura ficha ao carregar do localStorage
-setTimeout(() => {
-  try {
-    const data = JSON.parse(localStorage.getItem('neural-v3') || '{}');
-    if (data.nodes) {
-      data.nodes.forEach(nd => {
-        if (nd.ficha) {
-          const live = nodes.find(n => n.id === nd.id);
-          if (live) live.ficha = nd.ficha;
-        }
-      });
-    }
-  } catch(e) {}
-}, 1400);
 
 // Patch projSaveData para incluir connType nas conexões antes de salvar no Supabase
 const _ctOrigProjSaveData = projSaveData;
@@ -36182,28 +35260,6 @@ setTimeout(() => {
     }
   } catch(e) {}
 }, 400);
-
-// ── Patch loadSharedProject para restaurar cores de connType no modo visitante ──
-// loadSharedProject está em outro bloco de script e não tem acesso ao IIFE.
-// Aqui interceptamos a função depois que ela foi definida e adicionamos a
-// restauração das cores — que requer _applyConnTypeColor, acessível aqui.
-if (typeof loadSharedProject === 'function') {
-  const _ctOrigLoadShared = loadSharedProject;
-  window.loadSharedProject = loadSharedProject = async function(identifier) {
-    await _ctOrigLoadShared.apply(this, arguments);
-    // Após o carregamento, aplica as cores corretas de connType no grafo 3D
-    // (pequeno delay para garantir que os objetos Three.js já estejam na cena)
-    setTimeout(() => {
-      try {
-        connections.forEach(conn => {
-          if (conn.connType && conn.connType !== 'neutro') {
-            _applyConnTypeColor(conn);
-          }
-        });
-      } catch(e) {}
-    }, 150);
-  };
-}
 
 // ══════════════════════════════════════════════════════════════
 // UNDO / REDO
@@ -37876,7 +36932,7 @@ function _restoreMeshes() {
   if (typeof nodes === 'undefined') return;
   nodes.forEach(function(nd) {
     if (nd.mesh) nd.mesh.visible = true;
-    if (nd.labelEl) createNodeLabel(nd);
+    if (nd.labelEl) { nd.labelEl.className = 'node-label'; nd.labelEl.onclick = null; nd.labelEl.style.cssText = ''; }
   });
   if (typeof connections !== 'undefined') {
     connections.forEach(function(c) { if (c.line) c.line.visible = true; });
@@ -38710,88 +37766,59 @@ window._colPopulateSelect = function(current) {
 
 })();
 </script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js');
-  });
-}
-</script>
 
-<!-- ══ MOBILE: Hamburger Drawer ══ -->
+<!-- == MOBILE: Hamburger Drawer == -->
 <div id="mobile-ham-overlay" style="display:none" onclick="if(event.target===this)_mobileHamToggle()">
   <div id="mobile-ham-drawer">
-    <div id="mobile-ham-header">
-      <img id="mobile-ham-avatar" src="" alt="avatar"/>
-      <div id="mobile-ham-name">—</div>
-    </div>
-    <div class="mham-section">Navegação</div>
-    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();showProjectsScreen()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg> Projetos
-    </button>
-    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();_favPanelToggle()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Favoritos
-    </button>
-    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();openNotepad()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Bloco de Notas
-    </button>
-    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();openGlassSettings()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Design
-    </button>
-    <div class="mham-section">Aparência</div>
-    <button class="mham-item" onclick="_mobileHamToggle();openThemeModal()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20"/></svg> Temas & Cores
-    </button>
-    <button class="mham-item" onclick="_mobileHamToggle();openTutorialModal()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg> Guia
-    </button>
+    <div id="mobile-ham-header"><img id="mobile-ham-avatar" src="" alt="avatar"/><div id="mobile-ham-name">-</div></div>
+    <div class="mham-section">Navegacao</div>
+    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();showProjectsScreen()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg> Projetos</button>
+    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();_favPanelToggle()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Favoritos</button>
+    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();openNotepad()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Bloco de Notas</button>
+    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();openGlassSettings()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Design</button>
+    <div class="mham-section">Aparencia</div>
+    <button class="mham-item" onclick="_mobileHamToggle();openThemeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20"/></svg> Temas e Cores</button>
+    <button class="mham-item" onclick="_mobileHamToggle();openTutorialModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg> Guia</button>
+    <div class="mham-section">Conta</div>
+    <button class="mham-item editor-only hidden" onclick="_mobileHamToggle();voltarAoLogin()" style="color:rgba(248,113,113,0.85)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sair da conta</button>
   </div>
 </div>
 
-<!-- ══ MOBILE: dots da barra inferior ══ -->
-<div id="mobile-nav-dots" style="display:none">
-  <span class="mnav-dot active"></span>
-  <span class="mnav-dot"></span>
-  <span class="mnav-dot"></span>
-</div>
+<!-- == MOBILE: Dots indicador == -->
+<div id="mobile-nav-dots" style="display:none"><span class="mnav-dot active"></span><span class="mnav-dot"></span><span class="mnav-dot"></span></div>
 
 <script>
-// ── Mobile Hamburger ──
 function _mobileHamToggle() {
-  var el = document.getElementById('mobile-ham-overlay');
+  var el = document.getElementById("mobile-ham-overlay");
   if (!el) return;
-  var isOpen = el.classList.contains('open');
-  el.style.display = isOpen ? 'none' : 'flex';
-  el.classList.toggle('open', !isOpen);
-  // Sync avatar + nome do sidebar
+  var isOpen = el.classList.contains("open");
+  el.style.display = isOpen ? "none" : "flex";
+  el.classList.toggle("open", !isOpen);
   try {
-    var sa = document.getElementById('sidebar-avatar');
-    var ma = document.getElementById('mobile-ham-avatar');
+    var sa = document.getElementById("sidebar-avatar");
+    var ma = document.getElementById("mobile-ham-avatar");
     if (sa && ma) ma.src = sa.src;
-    var sn = document.getElementById('sidebar-username');
-    var mn = document.getElementById('mobile-ham-name');
-    if (sn && mn) mn.textContent = sn.textContent || '—';
+    var sn = document.getElementById("sidebar-username");
+    var mn = document.getElementById("mobile-ham-name");
+    if (sn && mn) mn.textContent = sn.textContent || "-";
   } catch(e) {}
 }
-
-// ── Mobile nav dots (scroll indicator) ──
 (function() {
-  function _initDots() {
-    var bar = document.getElementById('hud-btns');
-    var dots = document.querySelectorAll('.mnav-dot');
+  function initDots() {
+    var bar = document.getElementById("mobile-bottom-bar");
+    var dots = document.querySelectorAll(".mnav-dot");
     if (!bar || !dots.length) return;
-    bar.addEventListener('scroll', function() {
+    bar.addEventListener("scroll", function() {
       var max = bar.scrollWidth - bar.clientWidth;
       if (max <= 0) return;
-      var pct = bar.scrollLeft / max;
-      var idx = Math.min(Math.round(pct * (dots.length - 1)), dots.length - 1);
-      dots.forEach(function(d, i) { d.classList.toggle('active', i === idx); });
+      var idx = Math.min(Math.round((bar.scrollLeft / max) * (dots.length - 1)), dots.length - 1);
+      dots.forEach(function(d,i){ d.classList.toggle("active", i===idx); });
     });
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', _initDots);
-  } else { _initDots(); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initDots);
+  else initDots();
 })();
 </script>
+
 </body>
 </html>
