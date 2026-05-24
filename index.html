@@ -15462,6 +15462,7 @@ function addNode(data) {
     media: data.media || '',
     tags: data.tags || [],
     notes: data.notes || '',
+    ficha: data.ficha || null,
     richContent: data.richContent || '',
     richMedia: data.richMedia || [],
     date: data.date || '',
@@ -16103,7 +16104,7 @@ function updateStats() {
 function save() {
   if (typeof _t2gImporting !== 'undefined' && _t2gImporting) return;
   localStorage.setItem('neural-v3', JSON.stringify({
-    nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||''})),
+    nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',ficha:n.ficha||null,x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||''})),
     connections: connections.map(c=>({id:c.id,from:c.from,to:c.to}))
   }));
   saveSettings();
@@ -31541,6 +31542,7 @@ async function projSaveCurrentState() {
       size:n.size, font:n.font, fontSize:n.fontSize, bold:n.bold,
       italic:n.italic, textShadow:n.textShadow!==false,
       media:n.media, tags:n.tags||[], notes:n.notes||'',
+      ficha:n.ficha||null,
       richNotes:n.richNotes||'', richContent:n.richContent||'',
       richMedia:n.richMedia||[], date:n.date||'',
       shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z
@@ -31922,7 +31924,7 @@ const _SYNC_KEYS = [
 let _settingsSaveTimer = null;
 function _scheduleSettingsSync() {
   clearTimeout(_settingsSaveTimer);
-  _settingsSaveTimer = setTimeout(_saveSettingsToCloud, 2000);
+  _settingsSaveTimer = setTimeout(_saveSettingsToCloud, 500);
 }
 async function _saveSettingsToCloud() {
   try {
@@ -34746,9 +34748,12 @@ save = function() {
 
 // ── Flush imediato ao fechar/minimizar a aba ──────────────────
 function _flushSave() {
+  // Sempre flushar settings (tags, tema, etc.) — não depende de activeProjectId
+  if (typeof _settingsSaveTimer !== 'undefined') clearTimeout(_settingsSaveTimer);
+  if (typeof _saveSettingsToCloud === 'function') _saveSettingsToCloud();
+  // Flushar dados do projeto se houver projeto ativo
   if (typeof activeProjectId === 'undefined' || !activeProjectId) return;
   if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
-  // fire-and-forget — o browser mantém requisições fetch curtas ao sair
   if (typeof projSaveCurrentState === 'function') projSaveCurrentState();
 }
 
