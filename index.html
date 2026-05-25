@@ -17238,7 +17238,13 @@ function updateLabels() {
     // Só transform (GPU) e opacity — sem left/top para evitar reflow
     nd.labelEl.style.display = 'block';
     nd.labelEl.style.transform = `translate3d(${px.toFixed(1)}px,${py.toFixed(1)}px,0) translateX(-50%)`;
-    nd.labelEl.style.opacity = (selectedNode&&selectedNode.id===nd.id)||(hoveredNode&&hoveredNode.id===nd.id) ? '1' : '0.55';
+    if (typeof _focusMode !== 'undefined' && _focusMode) {
+      const _focusNeighbors = new Set([_focusNodeId]);
+      connections.forEach(c => { if(c.from===_focusNodeId) _focusNeighbors.add(c.to); if(c.to===_focusNodeId) _focusNeighbors.add(c.from); });
+      nd.labelEl.style.opacity = _focusNeighbors.has(nd.id) ? ((selectedNode&&selectedNode.id===nd.id)||(hoveredNode&&hoveredNode.id===nd.id) ? '1' : '0.55') : '0';
+    } else {
+      nd.labelEl.style.opacity = (selectedNode&&selectedNode.id===nd.id)||(hoveredNode&&hoveredNode.id===nd.id) ? '1' : '0.55';
+    }
     if (!nd.labelEl.parentElement) document.body.appendChild(nd.labelEl);
   });
 }
