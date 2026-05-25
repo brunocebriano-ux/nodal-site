@@ -16919,7 +16919,7 @@ function animate() {
   // Slerp suave entre camQuat e camTargetQuat:
   // quando uma animação fly/2D está no controle direto de camQuat, o target
   // acompanha para não causar snap quando a animação terminar
-  if (_flyRaf || window.flat2DActive) {
+  if (_flyRaf || _flat2DAnimating) {
     camTargetQuat.copy(camQuat);
   } else if (camQuat.dot(camTargetQuat) < 0.9999998) {
     camQuat.slerp(camTargetQuat, isDragging ? 0.22 : 0.12);
@@ -21963,6 +21963,7 @@ setEditingEnabled = function(on) {
 // ══════════════════════════════════════════════════
 
 var flat2DActive = false;
+var _flat2DAnimating = false;
 let _flat2DSavedSpherical = null;
 let _flat2DNodePositions  = {};
 let _flat2DLayout         = {};
@@ -22008,6 +22009,7 @@ function enterFlat2D() {
   const _f2dTheta  = Math.atan2(_f2dCamDir.x, _f2dCamDir.z);
   const _f2dStartQ = camQuat.clone(), _f2dEndQ = sphericalToQuat(_f2dTheta, 0.05);
   const startR = spherical.radius;
+  _flat2DAnimating = true;
   (function flyCamera() {
     cs++;
     const t = 1 - Math.pow(1 - cs/camSteps, 3);
@@ -22016,6 +22018,7 @@ function enterFlat2D() {
     zoomTarget = spherical.radius;
     updateCamera();
     if (cs < camSteps) requestAnimationFrame(flyCamera);
+    else _flat2DAnimating = false;
   })();
 
   nodes.forEach(nd => {
