@@ -4087,6 +4087,53 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     -webkit-appearance: none; width: 11px; height: 11px;
     border-radius: 50%; background: #fff; cursor: pointer;
   }
+
+  /* ── Cluster Orbit — anel de hint no hover ── */
+  #cluster-orbit-ring {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+    width: 18px; height: 18px;
+    margin: -22px 0 0 6px;
+    font-size: 15px;
+    line-height: 1;
+    color: #00dd5a;
+    text-shadow: 0 0 6px rgba(0,220,80,0.7);
+    user-select: none;
+    animation: cor-spin 2.5s linear infinite;
+  }
+  @keyframes cor-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── Física do grafo — sliders no dropdown ── */
+  .hud-drop-physics-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 14px;
+  }
+  .hud-drop-physics-label {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text2); letter-spacing: 0.04em;
+    min-width: 72px; flex-shrink: 0;
+  }
+  .hud-drop-physics-row input[type="range"] {
+    flex: 1; -webkit-appearance: none; height: 2px;
+    background: rgba(255,255,255,0.12); border-radius: 2px;
+    outline: none; border: none; padding: 0; cursor: pointer;
+  }
+  html.light .hud-drop-physics-row input[type="range"] {
+    background: rgba(0,0,0,0.12);
+  }
+  .hud-drop-physics-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 11px; height: 11px;
+    border-radius: 50%; background: #a99cff; cursor: pointer;
+  }
+  .hud-drop-physics-val {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text3); min-width: 28px; text-align: right;
+  }
+
   /* ── CLUSTER PANEL — novo design ── */
   #cluster-panel {
     position: fixed; bottom: 0; right: 24px; transform: translateY(100%);
@@ -9987,6 +10034,13 @@ m-name {
   .hud-drop-sound-row { padding: 6px 16px; }
   .hud-drop-sound-row input[type="range"] { height: 4px !important; }
   .hud-drop-sound-row input[type="range"]::-webkit-slider-thumb { width: 14px !important; height: 14px !important; margin-top: -5px !important; }
+  .hud-drop-physics-row { padding: 5px 16px; gap: 10px; }
+  .hud-drop-physics-label { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 12px; letter-spacing: 0; min-width: 80px; color: rgba(255,255,255,0.72); }
+  html.light .hud-drop-physics-label { color: rgba(0,0,0,0.65); }
+  .hud-drop-physics-val { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 11px; color: rgba(255,255,255,0.38); }
+  html.light .hud-drop-physics-val { color: rgba(0,0,0,0.38); }
+  .hud-drop-physics-row input[type="range"] { height: 4px !important; }
+  .hud-drop-physics-row input[type="range"]::-webkit-slider-thumb { width: 14px !important; height: 14px !important; margin-top: -5px !important; }
 
   /* ─ 5. LEFT PANEL — overrides sincronizados com o novo design ── */
   #lp-glass {
@@ -12584,6 +12638,43 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
             <span class="hud-drop-icon">⊛</span> Dendrogram radial
           </div>
         </div>
+        <div class="hud-drop-section">
+          <div class="hud-drop-label">Física do grafo</div>
+          <div class="hud-drop-physics-row">
+            <span class="hud-drop-physics-label">Dist. links</span>
+            <input type="range" id="phys-link-dist" min="10" max="300" value="22" step="5" oninput="applyPhysicsConfig(this)">
+            <span class="hud-drop-physics-val" id="phys-link-dist-val">22</span>
+          </div>
+          <div class="hud-drop-physics-row">
+            <span class="hud-drop-physics-label">Repulsão</span>
+            <input type="range" id="phys-charge" min="50" max="1000" value="120" step="20" oninput="applyPhysicsConfig(this)">
+            <span class="hud-drop-physics-val" id="phys-charge-val">120</span>
+          </div>
+          <div class="hud-drop-physics-row">
+            <span class="hud-drop-physics-label">Alcance</span>
+            <input type="range" id="phys-dist-max" min="100" max="1500" value="200" step="50" oninput="applyPhysicsConfig(this)">
+            <span class="hud-drop-physics-val" id="phys-dist-max-val">200</span>
+          </div>
+          <div class="hud-drop-physics-row">
+            <span class="hud-drop-physics-label">Gravidade</span>
+            <input type="range" id="phys-gravity" min="0" max="20" value="0" step="1" oninput="applyPhysicsConfig(this)">
+            <span class="hud-drop-physics-val" id="phys-gravity-val">0</span>
+          </div>
+          <div class="hud-drop-physics-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:7px">
+            <span class="hud-drop-physics-label">Raio satélites</span>
+            <input type="range" id="phys-sat-radius" min="5" max="200" value="40" step="5" oninput="applyPhysicsConfig(this)">
+            <span class="hud-drop-physics-val" id="phys-sat-radius-val">40</span>
+          </div>
+          <div class="hud-drop-item" onclick="applyOrbitalRadius()" style="margin-top:2px;color:rgba(0,220,90,0.85)">
+            <span class="hud-drop-icon">⊙</span> Aplicar raio aos satélites
+          </div>
+          <div class="hud-drop-item" onclick="reagruparGrafo()" style="margin-top:0">
+            <span class="hud-drop-icon">↺</span> Reagrupar grafo
+          </div>
+          <div class="hud-drop-item" onclick="resetPhysicsConfig()" style="opacity:0.6">
+            <span class="hud-drop-icon">○</span> Resetar física
+          </div>
+        </div>
       </div>
     </div>
 
@@ -15072,6 +15163,7 @@ let spherical = {theta:0, phi:Math.PI/2, radius:90};
 let mouseDownPos = {x:0,y:0}, mouseMovedSinceDown = false;
 let cameraTarget = new THREE.Vector3(0, 0, 0); // ponto de órbita / pan
 let isPanning = false, panLastMouse = {x:0,y:0};
+let isClusterOrbit = false, clusterOrbitHub = null, clusterOrbitSats = [], clusterOrbitLastMouse = {x:0,y:0};
 
 const dragPlane = new THREE.Plane();
 const dragOffset = new THREE.Vector3();
@@ -15111,10 +15203,83 @@ function applyOrbitDelta(dx, dy) {
   camTargetQuat.premultiply(qH).premultiply(qV).normalize();
 }
 
+// ── Cluster Orbit — gira satélites em torno do nó hub ─────────────────────────
+
+// Encontra o nó mais próximo do clique em pixels de tela (ignora raycasting)
+function getNearestNodeOnScreen(e, maxPx) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX, cy = e.clientY;
+  let best = null, bestDSq = maxPx * maxPx;
+  const tmp = new THREE.Vector3();
+  nodes.forEach(nd => {
+    if (!nd.mesh) return;
+    tmp.set(nd.x, nd.y, nd.z).project(camera);
+    const sx = (tmp.x + 1) / 2 * rect.width  + rect.left;
+    const sy = (1 - tmp.y) / 2 * rect.height + rect.top;
+    const dSq = (sx - cx) * (sx - cx) + (sy - cy) * (sy - cy);
+    if (dSq < bestDSq) { bestDSq = dSq; best = nd; }
+  });
+  return best;
+}
+
+function rotateCluster(hub, sats, dx, dy) {
+  const sens = 0.013;
+  const hubPos = new THREE.Vector3(hub.x, hub.y, hub.z);
+  // dx horizontal → eixo Y mundial
+  const qH = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -dx * sens);
+  // dy vertical → eixo direito da câmera
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camTargetQuat);
+  const qV = new THREE.Quaternion().setFromAxisAngle(right, -dy * sens);
+  const q = qH.multiply(qV);
+
+  sats.forEach(sat => {
+    const rel = new THREE.Vector3(sat.x, sat.y, sat.z).sub(hubPos);
+    rel.applyQuaternion(q);
+    sat.x = hubPos.x + rel.x;
+    sat.y = hubPos.y + rel.y;
+    sat.z = hubPos.z + rel.z;
+    if (sat.mesh)     sat.mesh.position.set(sat.x, sat.y, sat.z);
+    if (sat.labelPos) sat.labelPos.set(sat.x, sat.y + 1.6 * (sat.size || 1.5) + 0.5, sat.z);
+    // Sincroniza com o sim d3 (posição fixada durante o orbit)
+    const ssn = simNodes.find(s => s.id === sat.id);
+    if (ssn) { ssn.x = sat.x; ssn.y = sat.y; ssn.fx = sat.x; ssn.fy = sat.y; }
+    updateConnectionLines(sat.id);
+  });
+  updateConnectionLines(hub.id);
+}
+// ── fim Cluster Orbit ─────────────────────────────────────────────────────────
+
+canvas.addEventListener('mouseleave', () => _corHide());
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
-  if (e.button === 2 && !flat2DActive) {
-    isPanning = true; panLastMouse = {x: e.clientX, y: e.clientY}; return;
+  if (e.button === 2) {
+    // Cluster orbit funciona em qualquer modo — detecta nó próximo (80px)
+    const hitNode = getNearestNodeOnScreen(e, 80);
+    if (hitNode) {
+      const sats = connections
+        .filter(c => c.from === hitNode.id || c.to === hitNode.id)
+        .map(c => nodes.find(n => n.id === (c.from === hitNode.id ? c.to : c.from)))
+        .filter(Boolean);
+      if (sats.length > 0) {
+        isClusterOrbit = true;
+        clusterOrbitHub = hitNode;
+        clusterOrbitSats = sats;
+        clusterOrbitLastMouse = {x: e.clientX, y: e.clientY};
+        // Suspende a física para não brigar com a rotação manual
+        if (forceSimulation) {
+          simNodes.forEach(sn => { sn.fx = sn.x; sn.fy = sn.y; });
+          forceSimulation.alphaTarget(0);
+        }
+        _corHide();
+        canvas.style.cursor = 'crosshair';
+        return;
+      }
+    }
+    // Pan só em modo 3D (comportamento original)
+    if (!flat2DActive) {
+      isPanning = true; panLastMouse = {x: e.clientX, y: e.clientY};
+    }
+    return;
   }
   if (e.button !== 0) return;
   // Ignorar cliques na área do painel lateral esquerdo (exceto visitante — precisa orbitar livremente)
@@ -15141,6 +15306,17 @@ window.addEventListener('mouseup', () => {
   if (draggingNode) { simNodeDragEnd(draggingNode); draggingNode = null; canvas.style.cursor = dragMode?'crosshair':'grab'; }
   isDragging = false;
   isPanning = false;
+  if (isClusterOrbit) {
+    // Reativa a física — desfixa os nós que estavam presos
+    if (forceSimulation) {
+      simNodes.forEach(sn => { sn.fx = null; sn.fy = null; });
+    }
+    isClusterOrbit = false;
+    clusterOrbitHub = null;
+    clusterOrbitSats = [];
+    canvas.style.cursor = dragMode ? 'crosshair' : 'grab';
+    save(); // persiste as novas posições dos satélites
+  }
 });
 
 window.addEventListener('mousemove', e => {
@@ -15159,6 +15335,14 @@ window.addEventListener('mousemove', e => {
       updateConnectionLines(draggingNode.id);
       simNodeDragMove(draggingNode);   // 🔗 push position to sim
     }
+    return;
+  }
+
+  if (isClusterOrbit && clusterOrbitHub) {
+    const cdx = e.clientX - clusterOrbitLastMouse.x;
+    const cdy = e.clientY - clusterOrbitLastMouse.y;
+    clusterOrbitLastMouse = {x: e.clientX, y: e.clientY};
+    rotateCluster(clusterOrbitHub, clusterOrbitSats, cdx, cdy);
     return;
   }
 
@@ -15186,7 +15370,8 @@ window.addEventListener('mousemove', e => {
     updateCamera();
   }
   // Não fazer hover na área do painel lateral
-  if (leftPanelNode && e.clientX < 302) return;
+  if (leftPanelNode && e.clientX < 302) { _corHide(); return; }
+  _corUpdate(e);
   handleHover(e);
   moveHoverPreview(e);
 });
@@ -15705,19 +15890,22 @@ function startForceSimulation() {
   // Pin positions of already-placed nodes (they have coordinates)
   // so they don't fly around on start – only released nodes drift
   // We start with alpha low so it's a gentle settle
+  const pc = (typeof physicsConfig !== 'undefined') ? physicsConfig : { linkDist:22, charge:120, distMax:200, gravity:0 };
   forceSimulation = d3.forceSimulation(simNodes)
     .alpha(0.3)
-    .alphaDecay(0.025)        // cool down speed
-    .velocityDecay(0.35)      // damping (like friction)
+    .alphaDecay(0.025)
+    .velocityDecay(0.35)
     .force('link', d3.forceLink(links)
       .id((d, i) => i)
-      .distance(22)           // desired link length
+      .distance(pc.linkDist)
       .strength(0.4)
     )
     .force('charge', d3.forceManyBody()
-      .strength(-120)         // repulsion between nodes
-      .distanceMax(200)
+      .strength(-pc.charge)
+      .distanceMax(pc.distMax)
     )
+    .force('centerX', pc.gravity > 0 ? d3.forceX(0).strength(pc.gravity * 0.001) : null)
+    .force('centerY', pc.gravity > 0 ? d3.forceY(0).strength(pc.gravity * 0.001) : null)
     .force('collision', d3.forceCollide()
       .radius(d => {
         const n = nodes.find(nd => nd.id === d.id);
@@ -15793,9 +15981,13 @@ function reheatSimulation(alpha) {
 
   const links = buildSimLinks();
 
+  const pc = (typeof physicsConfig !== 'undefined') ? physicsConfig : { linkDist:22, charge:120, distMax:200, gravity:0 };
   forceSimulation
     .nodes(simNodes)
-    .force('link', d3.forceLink(links).id((d,i)=>i).distance(22).strength(0.4))
+    .force('link', d3.forceLink(links).id((d,i)=>i).distance(pc.linkDist).strength(0.4))
+    .force('charge', d3.forceManyBody().strength(-pc.charge).distanceMax(pc.distMax))
+    .force('centerX', pc.gravity > 0 ? d3.forceX(0).strength(pc.gravity * 0.001) : null)
+    .force('centerY', pc.gravity > 0 ? d3.forceY(0).strength(pc.gravity * 0.001) : null)
     .alpha(alpha || 0.3)
     .restart();
 
@@ -15832,6 +16024,169 @@ function simNodeDragEnd(node) {
 }
 
 // ── END FORCE ENGINE ────────────────────────────────────────────────────────
+
+// ── Cluster Orbit Ring — hint visual no hover ────────────────────────────────
+let _corRingEl = null;
+let _corLastZoneNode = null;
+
+function _corGetRing() {
+  if (!_corRingEl) {
+    _corRingEl = document.createElement('div');
+    _corRingEl.id = 'cluster-orbit-ring';
+    _corRingEl.textContent = '↺';
+    document.body.appendChild(_corRingEl);
+  }
+  return _corRingEl;
+}
+
+function _corUpdate(e) {
+  // Não mostrar durante drag, pan, orbit ou modos especiais
+  if (isDragging || isPanning || isClusterOrbit || dragMode || connectMode) {
+    _corHide(); return;
+  }
+  // Zona estreita: só ativa quando o cursor está a ≤ 32px do centro do nó
+  const nd = getNearestNodeOnScreen(e, 32);
+  const hasSats = nd && connections.some(c => c.from === nd.id || c.to === nd.id);
+  if (hasSats) {
+    if (nd !== _corLastZoneNode) {
+      _corLastZoneNode = nd;
+      canvas.style.cursor = 'pointer';
+    }
+    const ring = _corGetRing();
+    ring.style.display = 'block';
+    ring.style.left = e.clientX + 'px';
+    ring.style.top  = e.clientY + 'px';
+  } else {
+    _corHide();
+  }
+}
+
+function _corHide() {
+  if (_corRingEl) _corRingEl.style.display = 'none';
+  if (_corLastZoneNode) {
+    _corLastZoneNode = null;
+    canvas.style.cursor = dragMode ? 'crosshair' : '';
+  }
+}
+// ── fim Cluster Orbit Ring ────────────────────────────────────────────────────
+
+// ── FÍSICA DO GRAFO — configuração em tempo real ─────────────────────────────
+const PHYSICS_DEFAULTS = { linkDist: 22, charge: 120, distMax: 200, gravity: 0, satRadius: 40 };
+let physicsConfig = { ...PHYSICS_DEFAULTS };
+
+(function initPhysicsConfig() {
+  try {
+    const saved = localStorage.getItem('nodal-physics-config');
+    if (saved) physicsConfig = { ...PHYSICS_DEFAULTS, ...JSON.parse(saved) };
+  } catch(e) {}
+  // Sync sliders after DOM ready
+  setTimeout(() => {
+    const ld = document.getElementById('phys-link-dist');
+    const ch = document.getElementById('phys-charge');
+    const dm = document.getElementById('phys-dist-max');
+    const gv = document.getElementById('phys-gravity');
+    const sr = document.getElementById('phys-sat-radius');
+    if (ld) { ld.value = physicsConfig.linkDist; document.getElementById('phys-link-dist-val').textContent = physicsConfig.linkDist; }
+    if (ch) { ch.value = physicsConfig.charge;   document.getElementById('phys-charge-val').textContent = physicsConfig.charge; }
+    if (dm) { dm.value = physicsConfig.distMax;  document.getElementById('phys-dist-max-val').textContent = physicsConfig.distMax; }
+    if (gv) { gv.value = physicsConfig.gravity;  document.getElementById('phys-gravity-val').textContent = physicsConfig.gravity; }
+    if (sr) { sr.value = physicsConfig.satRadius; document.getElementById('phys-sat-radius-val').textContent = physicsConfig.satRadius; }
+  }, 800);
+})();
+
+function applyPhysicsConfig(slider) {
+  // Update display value of the changed slider
+  if (slider) {
+    const valEl = document.getElementById(slider.id + '-val');
+    if (valEl) valEl.textContent = slider.value;
+  }
+  // Read all slider values
+  const ld = +document.getElementById('phys-link-dist').value;
+  const ch = +document.getElementById('phys-charge').value;
+  const dm = +document.getElementById('phys-dist-max').value;
+  const gv = +document.getElementById('phys-gravity').value;
+  const srEl = document.getElementById('phys-sat-radius');
+  const sr = srEl ? +srEl.value : (physicsConfig.satRadius || PHYSICS_DEFAULTS.satRadius);
+  physicsConfig = { linkDist: ld, charge: ch, distMax: dm, gravity: gv, satRadius: sr };
+
+  // Persist
+  try { localStorage.setItem('nodal-physics-config', JSON.stringify(physicsConfig)); } catch(e) {}
+
+  if (!forceSimulation) return;
+
+  // Apply to running simulation
+  forceSimulation
+    .force('link', d3.forceLink(buildSimLinks()).id((d,i)=>i).distance(ld).strength(0.4))
+    .force('charge', d3.forceManyBody().strength(-ch).distanceMax(dm))
+    .force('centerX', gv > 0 ? d3.forceX(0).strength(gv * 0.001) : null)
+    .force('centerY', gv > 0 ? d3.forceY(0).strength(gv * 0.001) : null)
+    .alpha(0.3)
+    .restart();
+  simEnabled = true;
+}
+
+function reagruparGrafo() {
+  hudMenuClose();
+  if (!forceSimulation) { startForceSimulation(); return; }
+  // Unpin all nodes so they can reflow freely
+  simNodes.forEach(sn => { sn.fx = null; sn.fy = null; });
+  applyPhysicsConfig(null);
+  toast('Grafo reagrupando com nova física…');
+}
+
+function resetPhysicsConfig() {
+  physicsConfig = { ...PHYSICS_DEFAULTS };
+  try { localStorage.removeItem('nodal-physics-config'); } catch(e) {}
+  const ld = document.getElementById('phys-link-dist');
+  const ch = document.getElementById('phys-charge');
+  const dm = document.getElementById('phys-dist-max');
+  const gv = document.getElementById('phys-gravity');
+  if (ld) { ld.value = PHYSICS_DEFAULTS.linkDist; document.getElementById('phys-link-dist-val').textContent = PHYSICS_DEFAULTS.linkDist; }
+  if (ch) { ch.value = PHYSICS_DEFAULTS.charge;   document.getElementById('phys-charge-val').textContent = PHYSICS_DEFAULTS.charge; }
+  if (dm) { dm.value = PHYSICS_DEFAULTS.distMax;  document.getElementById('phys-dist-max-val').textContent = PHYSICS_DEFAULTS.distMax; }
+  if (gv) { gv.value = PHYSICS_DEFAULTS.gravity;  document.getElementById('phys-gravity-val').textContent = PHYSICS_DEFAULTS.gravity; }
+  const srReset = document.getElementById('phys-sat-radius');
+  if (srReset) { srReset.value = PHYSICS_DEFAULTS.satRadius; document.getElementById('phys-sat-radius-val').textContent = PHYSICS_DEFAULTS.satRadius; }
+  if (forceSimulation) {
+    forceSimulation
+      .force('link', d3.forceLink(buildSimLinks()).id((d,i)=>i).distance(PHYSICS_DEFAULTS.linkDist).strength(0.4))
+      .force('charge', d3.forceManyBody().strength(-PHYSICS_DEFAULTS.charge).distanceMax(PHYSICS_DEFAULTS.distMax))
+      .force('centerX', null).force('centerY', null)
+      .alpha(0.3).restart();
+    simEnabled = true;
+  }
+  toast('Física resetada para valores padrão');
+}
+function applyOrbitalRadius() {
+  const r = physicsConfig.satRadius || PHYSICS_DEFAULTS.satRadius;
+  hudMenuClose();
+  nodes.forEach(hub => {
+    const sats = connections
+      .filter(c => c.from === hub.id || c.to === hub.id)
+      .map(c => nodes.find(n => n.id === (c.from === hub.id ? c.to : c.from)))
+      .filter(Boolean);
+    if (sats.length === 0) return;
+    sats.forEach(sat => {
+      const dx = sat.x - hub.x, dy = sat.y - hub.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const nx = hub.x + (dx / dist) * r;
+      const ny = hub.y + (dy / dist) * r;
+      sat.x = nx; sat.y = ny;
+      if (sat.mesh) sat.mesh.position.set(nx, ny, sat.z);
+      if (sat.labelPos) sat.labelPos.set(nx, ny + 1.6 * (sat.size || 1.5) + 0.5, sat.z);
+      const ssn = simNodes.find(s => s.id === sat.id);
+      if (ssn) { ssn.x = nx; ssn.y = ny; ssn.fx = nx; ssn.fy = ny; }
+      updateConnectionLines(sat.id);
+    });
+    updateConnectionLines(hub.id);
+  });
+  // Unpin after a short settle so d3 can resume normally
+  setTimeout(() => { simNodes.forEach(sn => { sn.fx = null; sn.fy = null; }); }, 800);
+  save();
+  toast('Raio aplicado: ' + r + ' unidades');
+}
+// ── FIM FÍSICA DO GRAFO ───────────────────────────────────────────────────────
+
 function toggleDragMode() {
   dragMode = !dragMode; draggingNode = null;
   if (dragMode && connectMode) { connectMode=false; connectFirst=null; document.getElementById('btn-connect').classList.remove('active'); document.getElementById('connect-banner').classList.remove('visible'); canvas.classList.remove('connect-mode'); }
