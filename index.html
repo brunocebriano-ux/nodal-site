@@ -37661,7 +37661,7 @@ function _restoreMeshes() {
   if (typeof nodes === 'undefined') return;
   nodes.forEach(function(nd) {
     if (nd.mesh) nd.mesh.visible = true;
-    if (nd.labelEl) { nd.labelEl.className = 'node-label'; nd.labelEl.onclick = null; nd.labelEl.style.cssText = ''; }
+    if (nd.labelEl) createNodeLabel(nd);
   });
   if (typeof connections !== 'undefined') {
     connections.forEach(function(c) { if (c.line) c.line.visible = true; });
