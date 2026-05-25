@@ -16919,7 +16919,7 @@ function animate() {
   // Slerp suave entre camQuat e camTargetQuat:
   // quando uma animação fly/2D está no controle direto de camQuat, o target
   // acompanha para não causar snap quando a animação terminar
-  if (_flyRaf || _flat2DAnimating) {
+  if (_flyRaf || window._flat2DAnimating) {
     camTargetQuat.copy(camQuat);
   } else if (camQuat.dot(camTargetQuat) < 0.9999998) {
     camQuat.slerp(camTargetQuat, isDragging ? 0.22 : 0.12);
