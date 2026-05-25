@@ -17734,6 +17734,10 @@ function closeSaibaMais() {
 function smSwitchTab(tab) {
   // Auto-salva ficha em memória antes de sair da aba, sem toast
   if (smCurrentTab === 'ficha' && tab !== 'ficha' && smCurrentNode) {
+    const _urlFldTab = document.getElementById('ft-foto-url');
+    if (_urlFldTab && _urlFldTab.value.trim() && _urlFldTab.value.trim() !== ftFotoDataUrl) {
+      ftFotoDataUrl = _urlFldTab.value.trim();
+    }
     ftAutoSave();
   }
   smCurrentTab = tab;
@@ -18547,6 +18551,9 @@ function ftLoad() {
 
 function ftAutoSave() {
   if (!smCurrentNode) return;
+  // Captura URL diretamente do campo (caso blur não tenha disparado)
+  const _urlFldAuto = document.getElementById('ft-foto-url');
+  if (_urlFldAuto && _urlFldAuto.value.trim()) ftFotoDataUrl = _urlFldAuto.value.trim();
   smCurrentNode.ficha = {
     foto:          ftFotoDataUrl,
     nomeArtistico: ftV('ft-nome-artistico'),
@@ -18572,15 +18579,27 @@ function ftAutoSave() {
     updatedAt:     new Date().toISOString(),
   };
   if (typeof save === 'function') save();
-  // Persiste também no cache do projeto ativo (localStorage por projeto)
-  if (typeof activeProjectId !== 'undefined' && activeProjectId) {
+  // Snapshot completo no localStorage do projeto ativo (robusto mesmo se não há dados prévios)
+  if (typeof activeProjectId !== 'undefined' && activeProjectId && typeof nodes !== 'undefined') {
     try {
-      const _pk = 'neural-proj-' + activeProjectId;
-      const _ps = JSON.parse(localStorage.getItem(_pk) || '{}');
-      if (_ps.nodes) {
-        const _nd = _ps.nodes.find(function(n){ return n.id === smCurrentNode.id; });
-        if (_nd) { _nd.ficha = smCurrentNode.ficha; localStorage.setItem(_pk, JSON.stringify(_ps)); }
-      }
+      const _asSnap = {
+        _ts: Date.now(),
+        nodes: nodes.map(function(n) { return {
+          id:n.id, title:n.title, desc:n.desc, cat:n.cat, color:n.color,
+          size:n.size, font:n.font, fontSize:n.fontSize, bold:n.bold,
+          italic:n.italic, textShadow:n.textShadow!==false,
+          media:n.media, tags:n.tags||[], notes:n.notes||'',
+          richNotes:n.richNotes||'', richContent:n.richContent||'',
+          richMedia:n.richMedia||[], date:n.date||'',
+          shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
+          ficha:n.ficha||null
+        }; }),
+        connections: (typeof connections !== 'undefined' ? connections : []).map(function(c) {
+          return {id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'};
+        }),
+        globalTags: (typeof globalTags !== 'undefined' ? globalTags : [])
+      };
+      localStorage.setItem('neural-proj-' + activeProjectId, JSON.stringify(_asSnap));
     } catch(e) {}
     // Persiste no Supabase
     if (typeof projSaveCurrentState === 'function') {
@@ -18592,6 +18611,10 @@ function ftAutoSave() {
 
 function ftSave() {
   if (!smCurrentNode) return;
+
+  // Captura URL diretamente do campo caso blur não tenha disparado antes do clique
+  const _urlFldSave = document.getElementById('ft-foto-url');
+  if (_urlFldSave && _urlFldSave.value.trim()) ftFotoDataUrl = _urlFldSave.value.trim();
 
   smCurrentNode.ficha = {
     foto:          ftFotoDataUrl,
@@ -18629,18 +18652,28 @@ function ftSave() {
   //    Depois cancela o debounce e chama projSaveCurrentState() imediatamente.
   if (typeof save === 'function') save();
 
-  // 2. Garante persistência direta no cache do projeto ativo (neural-proj-{id})
-  if (typeof activeProjectId !== 'undefined' && activeProjectId) {
+  // 2. Snapshot completo do estado atual no localStorage do projeto ativo.
+  //    Garante persistência mesmo que _projStored esteja vazio ou o nó não exista ainda.
+  if (typeof activeProjectId !== 'undefined' && activeProjectId && typeof nodes !== 'undefined') {
     try {
-      const _projKey = 'neural-proj-' + activeProjectId;
-      const _projStored = JSON.parse(localStorage.getItem(_projKey) || '{}');
-      if (_projStored.nodes) {
-        const _nd = _projStored.nodes.find(function(n){ return n.id === smCurrentNode.id; });
-        if (_nd) {
-          _nd.ficha = smCurrentNode.ficha;
-          localStorage.setItem(_projKey, JSON.stringify(_projStored));
-        }
-      }
+      const _ftSnap = {
+        _ts: Date.now(),
+        nodes: nodes.map(function(n) { return {
+          id:n.id, title:n.title, desc:n.desc, cat:n.cat, color:n.color,
+          size:n.size, font:n.font, fontSize:n.fontSize, bold:n.bold,
+          italic:n.italic, textShadow:n.textShadow!==false,
+          media:n.media, tags:n.tags||[], notes:n.notes||'',
+          richNotes:n.richNotes||'', richContent:n.richContent||'',
+          richMedia:n.richMedia||[], date:n.date||'',
+          shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
+          ficha:n.ficha||null
+        }; }),
+        connections: (typeof connections !== 'undefined' ? connections : []).map(function(c) {
+          return {id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'};
+        }),
+        globalTags: (typeof globalTags !== 'undefined' ? globalTags : [])
+      };
+      localStorage.setItem('neural-proj-' + activeProjectId, JSON.stringify(_ftSnap));
     } catch(e) {}
   }
 
