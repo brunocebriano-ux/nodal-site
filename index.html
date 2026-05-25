@@ -12206,6 +12206,7 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
       <div class="kb-row"><span class="kb-key">?</span><span class="kb-desc">Esta janela de atalhos</span></div>
       <div class="kb-row"><span class="kb-key">M</span><span class="kb-desc">Ativar/desativar música</span></div>
       <div class="kb-row"><span class="kb-key">L</span><span class="kb-desc">Alternar modo claro/escuro</span></div>
+      <div class="kb-row"><span class="kb-key">V</span><span class="kb-desc">Resetar vista (centralizar mapa)</span></div>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:16px">
       <button class="btn" onclick="closeKbModal()">Fechar</button>
@@ -19788,6 +19789,12 @@ document.addEventListener('keydown', function(e) {
     case 'ArrowLeft':
       // Navigate to previous connected node
       navigateNeighbor(-1);
+      break;
+
+    case 'v':
+    case 'V':
+      resetCamera();
+      toast('Vista resetada');
       break;
   }
 }, true);
@@ -29900,6 +29907,7 @@ setTimeout(() => {
     <div class="kb-row"><span class="kb-key">Ctrl+Shift+F</span><span class="kb-desc">Busca semântica (alternativa)</span></div>
     <div class="kb-row"><span class="kb-key">Ctrl+S</span><span class="kb-desc">Salvar notas (dentro do editor)</span></div>
     <div class="kb-row"><span class="kb-key">ESC</span><span class="kb-desc">Fechar qualquer modal v52</span></div>
+    <div class="kb-row"><span class="kb-key">V</span><span class="kb-desc">Resetar vista (centralizar mapa)</span></div>
   `;
   const closeBtn = kbModal.querySelector('div[style*="justify-content"]');
   if (closeBtn) kbModal.insertBefore(newGroup, closeBtn);
