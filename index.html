@@ -3448,10 +3448,11 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   html.light #ft-flag-picker { background: #f4f5fa; border-color: rgba(18,28,55,0.14); box-shadow: 0 8px 24px rgba(0,0,0,0.14); }
   #ft-flag-picker button {
-    width: 30px; height: 30px; font-size: 18px; border: none; background: transparent;
+    width: 36px; height: 28px; font-size: 18px; border: none; background: transparent;
     border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.1s; padding: 0;
+    transition: background 0.1s; padding: 2px; overflow: hidden;
   }
+  #ft-flag-picker button img { width: 28px; height: 21px; object-fit: cover; border-radius: 3px; display: block; }
   #ft-flag-picker button:hover { background: rgba(255,255,255,0.1); }
   html.light #ft-flag-picker button:hover { background: rgba(18,28,55,0.1); }
   .ft-profile-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
@@ -18484,19 +18485,40 @@ const _ftFlags = [
   '🇦🇺','🇳🇿','🇫🇯','🇵🇬'
 ];
 let _ftFlagPickerBuilt = false;
+function _ftFlagCode(f) {
+  // Converte emoji de bandeira (dois Regional Indicator chars) para código ISO de 2 letras minúsculas
+  return [...f].map(function(c){ return String.fromCharCode(c.codePointAt(0) - 0x1F1E6 + 65); }).join('').toLowerCase();
+}
 function ftToggleFlagPicker(e) {
   e.stopPropagation();
   const picker = document.getElementById('ft-flag-picker');
   if (!picker) return;
   if (picker.style.display !== 'none') { picker.style.display = 'none'; return; }
   if (!_ftFlagPickerBuilt) {
-    picker.innerHTML = _ftFlags.map(f =>
-      `<button onclick="ftInsertFlag('${f}')" title="${f}">${f}</button>`
-    ).join('');
+    // Constrói via DOM para evitar problemas de encoding de emoji em atributos HTML
+    var frag = document.createDocumentFragment();
+    _ftFlags.forEach(function(f, i) {
+      var btn = document.createElement('button');
+      btn.dataset.fi = i;
+      btn.title = f;
+      var img = document.createElement('img');
+      img.src = 'https://flagcdn.com/w40/' + _ftFlagCode(f) + '.png';
+      img.width = 28; img.height = 21; img.loading = 'lazy';
+      // Fallback: se imagem falhar, mostra o emoji como texto
+      img.onerror = (function(flag){ return function(){ this.outerHTML = flag; }; })(f);
+      btn.appendChild(img);
+      frag.appendChild(btn);
+    });
+    picker.appendChild(frag);
+    // Delegação de evento — um único listener no container
+    picker.addEventListener('click', function(ev) {
+      var btn = ev.target.closest('button[data-fi]');
+      if (btn) ftInsertFlag(_ftFlags[+btn.dataset.fi]);
+    });
     _ftFlagPickerBuilt = true;
   }
   picker.style.display = 'flex';
-  setTimeout(() => document.addEventListener('click', _ftClosePicker, { once: true }), 0);
+  setTimeout(function(){ document.addEventListener('click', _ftClosePicker, { once: true }); }, 0);
 }
 function ftInsertFlag(flag) {
   const inp = document.getElementById('ft-nome-artistico');
