@@ -12964,6 +12964,12 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
                 <option value="tecnica">Técnica</option>
                 <option value="referencia">Referência TCC</option>
                 <option value="audiovisual">Audiovisual</option>
+                <option value="movimento">Movimento</option>
+                <option value="exposicao">Exposição</option>
+                <option value="festival">Festival</option>
+                <option value="lugar">Lugar</option>
+                <option value="instituicao">Instituição</option>
+                <option value="manifesto">Manifesto</option>
               </select>
             </div>
             <div class="p-field">
@@ -13105,6 +13111,12 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
               <option value="tecnica">Técnica</option>
               <option value="referencia">Referência TCC</option>
               <option value="audiovisual">Audiovisual</option>
+              <option value="movimento">Movimento</option>
+              <option value="exposicao">Exposição</option>
+              <option value="festival">Festival</option>
+              <option value="lugar">Lugar</option>
+              <option value="instituicao">Instituição</option>
+              <option value="manifesto">Manifesto</option>
             </select>
           </div>
           <div class="p-field">
@@ -13671,7 +13683,13 @@ const BUILTIN_CATS = {
   artista:    '#fb923c',
   tecnica:    '#34d399',
   referencia: '#facc15',
-  audiovisual:'#f87171'
+  audiovisual:'#f87171',
+  movimento:  '#e879f9',
+  exposicao:   '#38bdf8',
+  festival:    '#f59e0b',
+  lugar:       '#4ade80',
+  instituicao: '#22d3ee',
+  manifesto:   '#818cf8'
 };
 let customCats = {}; // { key: color }
 let catIdCounter = 1;
@@ -26203,7 +26221,8 @@ html.light .tg-btn-padrao:hover { background:rgba(255,255,255,0.30); color:rgba(
 #pano-close-btn:hover { color:#fff; }
 
 /* stats */
-#pano-stats { flex:1;display:flex;flex-direction:column;justify-content:flex-start;gap:0;overflow-y:auto;padding-right:2px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.04) transparent; }
+#pano-left-body { flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.18) transparent; }
+#pano-stats { display:flex;flex-direction:column;justify-content:flex-start;gap:0; }
 .pano-row { display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.045);position:relative; }
 .pano-row:last-child { border-bottom:none; }
 .pano-row-num { font-family:var(--pano-num-font,var(--display));font-size:var(--pano-num-size,42px);font-weight:800;line-height:1;color:var(--pano-num-color,#ffffff);letter-spacing:-0.03em;min-width:72px;flex-shrink:0; }
@@ -26302,22 +26321,24 @@ html.light .tg-btn-padrao:hover { background:rgba(255,255,255,0.30); color:rgba(
         </div>
       </div>
 
-      <div id="pano-stats"></div>
+      <div id="pano-left-body">
+        <div id="pano-stats"></div>
 
-      <button id="pano-add-btn" onclick="showPanoMetricPicker()">＋ Adicionar métrica</button>
+        <button id="pano-add-btn" onclick="showPanoMetricPicker()">＋ Adicionar métrica</button>
 
-      <!-- picker de métricas automáticas -->
-      <div id="pano-metric-picker">
-        <div class="pano-metric-title">Escolha uma métrica automática</div>
-        <div class="pano-metric-grid" id="pano-metric-grid"></div>
-        <div class="pano-metric-sep">— ou insira um valor manual —</div>
-        <div class="pcf-row"><label>Número</label><input type="number" id="pcf-num" placeholder="ex: 42" min="0"/></div>
-        <div class="pcf-row"><label>Tag</label><input type="text" id="pcf-tag" placeholder="ex: artigos" maxlength="20"/></div>
-        <div class="pcf-row"><label>Descrição</label><input type="text" id="pcf-label" placeholder="ex: artigos analisados" maxlength="40"/></div>
-        <div class="pcf-row"><label>Cor</label><input type="color" id="pcf-color" value="#34d399"/></div>
-        <div class="pcf-btns">
-          <button id="pcf-confirm" onclick="confirmPanoItem()">✓ Adicionar</button>
-          <button id="pcf-cancel"  onclick="hidePanoMetricPicker()">✕</button>
+        <!-- picker de métricas automáticas -->
+        <div id="pano-metric-picker">
+          <div class="pano-metric-title">Escolha uma métrica automática</div>
+          <div class="pano-metric-grid" id="pano-metric-grid"></div>
+          <div class="pano-metric-sep">— ou insira um valor manual —</div>
+          <div class="pcf-row"><label>Número</label><input type="number" id="pcf-num" placeholder="ex: 42" min="0"/></div>
+          <div class="pcf-row"><label>Tag</label><input type="text" id="pcf-tag" placeholder="ex: artigos" maxlength="20"/></div>
+          <div class="pcf-row"><label>Descrição</label><input type="text" id="pcf-label" placeholder="ex: artigos analisados" maxlength="40"/></div>
+          <div class="pcf-row"><label>Cor</label><input type="color" id="pcf-color" value="#34d399"/></div>
+          <div class="pcf-btns">
+            <button id="pcf-confirm" onclick="confirmPanoItem()">✓ Adicionar</button>
+            <button id="pcf-cancel"  onclick="hidePanoMetricPicker()">✕</button>
+          </div>
         </div>
       </div>
 
