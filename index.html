@@ -18756,7 +18756,7 @@ function ftAutoSave() {
     // Persiste no Supabase
     if (typeof projSaveCurrentState === 'function') {
       if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
-      projSaveCurrentState();
+      projSaveCurrentState().catch(function(){});
     }
   }
 }
@@ -18833,7 +18833,14 @@ function ftSave() {
   // 3. Salva direto no Supabase, cancelando o debounce para garantir envio imediato
   if (typeof projSaveCurrentState === 'function' && typeof activeProjectId !== 'undefined' && activeProjectId) {
     if (typeof _projSaveDebounceTimer !== 'undefined') clearTimeout(_projSaveDebounceTimer);
-    projSaveCurrentState();
+    projSaveCurrentState().catch(function(_ftErr) {
+      var _msg = _ftErr && _ftErr.message ? _ftErr.message : '';
+      if (_msg.indexOf('Sess') !== -1 || _msg.indexOf('sess') !== -1 || _msg.indexOf('login') !== -1) {
+        toast('⚠ Sessão expirada — ficha salva localmente. Recarregue a página e faça login para sincronizar na nuvem.');
+      } else {
+        toast('⚠ Erro ao salvar na nuvem. Dados salvos localmente — recarregue para sincronizar.');
+      }
+    });
   }
 
   const badge = document.getElementById('ft-saved-badge');
@@ -31993,7 +32000,7 @@ async function projSaveData(id, data) {
   try { localStorage.setItem(PROJ_DATA_KEY(id), JSON.stringify(data)); } catch(e) {}
   try {
     const { data: { session } } = await _sb.auth.getSession();
-    if (!session) { console.warn('[NODAL] projSaveData: sem sessão ativa'); return; }
+    if (!session) { throw new Error('Sessão expirada — faça login novamente'); }
     const proj = allProjects.find(p => p.id === id);
     if (proj) {
       const r1 = await _sb.from('projetos').upsert({
@@ -32540,7 +32547,6 @@ async function projOpen(id) {
 async function projSaveCurrentState() {
   if (!activeProjectId) return;
   const proj = allProjects.find(p => p.id === activeProjectId);
-  if (!proj) return;
 
   const _articlesData = {};
   nodes.forEach(n => {
@@ -32566,11 +32572,13 @@ async function projSaveCurrentState() {
     notepadNotes: (function(){ try { const r = localStorage.getItem('notepad_notes_' + activeProjectId); return r ? JSON.parse(r) : null; } catch(e){ return null; } })()
   };
 
-  proj.nodeCount = nodes.length;
-  proj.connCount = connections.length;
-  proj.modified  = Date.now();
+  if (proj) {
+    proj.nodeCount = nodes.length;
+    proj.connCount = connections.length;
+    proj.modified  = Date.now();
+  }
   await projSaveData(activeProjectId, data);
-  await projSaveList();
+  if (proj) await projSaveList();
 
   // Atualiza snapshot do link compartilhado com dados mais recentes
   // Garante que foto, tags e alterações apareçam para visitantes imediatamente
