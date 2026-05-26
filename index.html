@@ -3428,6 +3428,32 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   #ft-foto-url-go:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 5px 18px rgba(37,99,235,0.42); }
   #ft-foto-url-go:active { transform: translateY(0); }
+  .ft-nome-row { position: relative; display: flex; align-items: center; gap: 5px; }
+  .ft-nome-row .ft-input-nome { flex: 1; min-width: 0; }
+  .ft-flag-btn {
+    flex-shrink: 0; width: 30px; height: 30px;
+    border: 1px solid rgba(255,255,255,0.13); background: rgba(255,255,255,0.06);
+    border-radius: 7px; cursor: pointer; font-size: 15px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s; color: inherit;
+  }
+  .ft-flag-btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.22); }
+  html.light .ft-flag-btn { border-color: rgba(18,28,55,0.18); background: rgba(18,28,55,0.05); }
+  html.light .ft-flag-btn:hover { background: rgba(18,28,55,0.1); }
+  #ft-flag-picker {
+    position: absolute; top: calc(100% + 5px); left: 0; z-index: 10000;
+    background: #161b2e; border: 1px solid rgba(255,255,255,0.13); border-radius: 11px;
+    padding: 8px; width: 264px; max-height: 210px; overflow-y: auto;
+    box-shadow: 0 10px 32px rgba(0,0,0,0.5); display: flex; flex-wrap: wrap; gap: 1px;
+  }
+  html.light #ft-flag-picker { background: #f4f5fa; border-color: rgba(18,28,55,0.14); box-shadow: 0 8px 24px rgba(0,0,0,0.14); }
+  #ft-flag-picker button {
+    width: 30px; height: 30px; font-size: 18px; border: none; background: transparent;
+    border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s; padding: 0;
+  }
+  #ft-flag-picker button:hover { background: rgba(255,255,255,0.1); }
+  html.light #ft-flag-picker button:hover { background: rgba(18,28,55,0.1); }
   .ft-profile-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
   .ft-input-nome {
     font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 700;
@@ -17691,7 +17717,9 @@ function openSaibaMais() {
 
   document.getElementById('sm-status').textContent = isEditorUnlocked ? 'Pronto' : 'Modo leitura';
 
-  // Default: open on Texto tab
+  // Reset tab state BEFORE switching — evita que smSwitchTab dispare ftAutoSave()
+  // no novo nó usando dados DOM do nó anterior (bug de contaminação de ficha)
+  smCurrentTab = 'view';
   smSwitchTab('view');
 
   // Empurra AMBOS os sidebars para trás enquanto o modal está aberto
@@ -17727,7 +17755,7 @@ function closeSaibaMais() {
     el.style.removeProperty('z-index');
     el.style.removeProperty('pointer-events');
   });
-  smCurrentNode = null; smDirty = false;
+  smCurrentNode = null; smDirty = false; smCurrentTab = 'view';
 }
 
 // ── Tabs ──────────────────────────────────────────
@@ -18439,6 +18467,50 @@ function ftUpdateInitials() {
              .reduce((a,p,i,arr) => (i===0||i===arr.length-1) ? a+p[0] : a, '')
              .toUpperCase().slice(0,2)
       : '?';
+  }
+}
+
+// ── Flag picker ───────────────────────────────────
+const _ftFlags = [
+  // Américas
+  '🇧🇷','🇵🇹','🇺🇸','🇨🇦','🇲🇽','🇦🇷','🇨🇴','🇨🇱','🇵🇪','🇻🇪','🇺🇾','🇵🇾','🇧🇴','🇪🇨','🇨🇺','🇩🇴','🇭🇹','🇵🇦','🇨🇷','🇬🇹','🇭🇳','🇸🇻','🇳🇮',
+  // Europa
+  '🇪🇸','🇫🇷','🇮🇹','🇩🇪','🇬🇧','🇵🇱','🇷🇺','🇺🇦','🇳🇱','🇧🇪','🇦🇹','🇨🇭','🇸🇪','🇳🇴','🇩🇰','🇫🇮','🇬🇷','🇹🇷','🇮🇪','🇷🇴','🇨🇿','🇭🇺','🇸🇰','🇧🇬','🇭🇷','🇷🇸','🇸🇮','🇧🇦','🇦🇱','🇲🇩','🇱🇹','🇱🇻','🇪🇪','🇧🇾',
+  // África
+  '🇿🇦','🇳🇬','🇪🇬','🇲🇦','🇬🇭','🇸🇳','🇪🇹','🇹🇿','🇰🇪','🇦🇴','🇨🇮','🇲🇿','🇿🇼','🇺🇬','🇨🇲','🇩🇿','🇹🇳','🇲🇱','🇧🇫','🇬🇳','🇷🇼','🇲🇬','🇨🇩',
+  // Ásia
+  '🇯🇵','🇰🇷','🇨🇳','🇹🇼','🇮🇳','🇮🇩','🇹🇭','🇻🇳','🇵🇭','🇲🇾','🇸🇬','🇵🇰','🇧🇩','🇱🇰','🇳🇵','🇮🇷','🇮🇶','🇸🇦','🇦🇪','🇮🇱','🇯🇴','🇱🇧','🇸🇾','🇦🇲','🇬🇪','🇦🇿','🇰🇿','🇺🇿','🇲🇲','🇰🇭','🇱🇦',
+  // Oceania
+  '🇦🇺','🇳🇿','🇫🇯','🇵🇬'
+];
+let _ftFlagPickerBuilt = false;
+function ftToggleFlagPicker(e) {
+  e.stopPropagation();
+  const picker = document.getElementById('ft-flag-picker');
+  if (!picker) return;
+  if (picker.style.display !== 'none') { picker.style.display = 'none'; return; }
+  if (!_ftFlagPickerBuilt) {
+    picker.innerHTML = _ftFlags.map(f =>
+      `<button onclick="ftInsertFlag('${f}')" title="${f}">${f}</button>`
+    ).join('');
+    _ftFlagPickerBuilt = true;
+  }
+  picker.style.display = 'flex';
+  setTimeout(() => document.addEventListener('click', _ftClosePicker, { once: true }), 0);
+}
+function ftInsertFlag(flag) {
+  const inp = document.getElementById('ft-nome-artistico');
+  if (!inp) return;
+  inp.value = inp.value ? inp.value.trimEnd() + ' ' + flag : flag;
+  inp.dispatchEvent(new Event('input'));
+  document.getElementById('ft-flag-picker').style.display = 'none';
+  inp.focus();
+}
+function _ftClosePicker(e) {
+  const picker = document.getElementById('ft-flag-picker');
+  const btn    = document.querySelector('.ft-flag-btn');
+  if (picker && !picker.contains(e.target) && e.target !== btn) {
+    picker.style.display = 'none';
   }
 }
 
@@ -20392,7 +20464,11 @@ function closeArticleViewer() {
             <div class="ft-avatar-hint">foto via URL</div>
           </div>
           <div class="ft-profile-fields">
-            <input class="ft-input-nome" id="ft-nome-artistico" placeholder="Nome artístico" oninput="ftUpdateInitials()">
+            <div class="ft-nome-row">
+              <input class="ft-input-nome" id="ft-nome-artistico" placeholder="Nome artístico" oninput="ftUpdateInitials()">
+              <button class="ft-flag-btn" onclick="ftToggleFlagPicker(event)" title="Inserir bandeira do país">🏳</button>
+              <div id="ft-flag-picker" style="display:none"></div>
+            </div>
             <input class="ft-input-sub"  id="ft-nome-real"      placeholder="Nome completo">
           </div>
         </div>
