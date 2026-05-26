@@ -17911,6 +17911,14 @@ function smGalleryAddPhoto() {
   toast('Foto adicionada');
 }
 
+function smExtractGdriveId(url) {
+  return (
+    url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+    url.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1] ||
+    null
+  );
+}
+
 function smGalleryAddVideo() {
   const inp = document.getElementById('sm-videos-url-input');
   if (!inp) return;
@@ -17918,7 +17926,7 @@ function smGalleryAddVideo() {
   if (!url) { toast('Cole uma URL de vídeo ou link do YouTube'); return; }
   if (!smCurrentNode) return;
   if (!smCurrentNode.richMedia) smCurrentNode.richMedia = [];
-  let type = 'video', ytId = null;
+  let type = 'video', ytId = null, gdriveId = null;
   if (/youtube\.com|youtu\.be|youtube-nocookie\.com/.test(url)) {
     type = 'youtube';
     ytId = (
@@ -17926,8 +17934,12 @@ function smGalleryAddVideo() {
       url.match(/youtu\.be\/([^?&#]+)/)?.[1] ||
       url.match(/\/embed\/([^?&#]+)/)?.[1] || ''
     );
+  } else if (/drive\.google\.com/.test(url)) {
+    type = 'gdrive';
+    gdriveId = smExtractGdriveId(url);
+    if (!gdriveId) { toast('Não foi possível extrair o ID do Google Drive. Verifique o link.'); return; }
   }
-  smCurrentNode.richMedia.push({ url, type, ytId: ytId || null, caption: '' });
+  smCurrentNode.richMedia.push({ url, type, ytId: ytId || null, gdriveId: gdriveId || null, caption: '' });
   smMarkDirty();
   smRenderGallery();
   smRenderVideoList();
@@ -18054,6 +18066,24 @@ function smOpenVideoPanel(gi) {
     extBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Abrir no YouTube`;
     body.appendChild(extBtn);
 
+  } else if (m.type === 'gdrive') {
+    const embedUrl = `https://drive.google.com/file/d/${m.gdriveId}/preview`;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'width:100%;aspect-ratio:16/9;position:relative;border-radius:10px;overflow:hidden;background:#000';
+    const ifr = document.createElement('iframe');
+    ifr.src = embedUrl;
+    ifr.style.cssText = 'width:100%;height:100%;border:none;display:block;';
+    ifr.setAttribute('allowfullscreen', '');
+    ifr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+    wrap.appendChild(ifr);
+    body.appendChild(wrap);
+    const extBtn = document.createElement('a');
+    extBtn.href = m.url; extBtn.target = '_blank'; extBtn.rel = 'noopener';
+    extBtn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:12px;color:rgba(255,255,255,0.38);text-decoration:none;font-family:Inter,sans-serif;transition:color 0.15s;';
+    extBtn.onmouseenter = () => extBtn.style.color = 'rgba(255,255,255,0.75)';
+    extBtn.onmouseleave = () => extBtn.style.color = 'rgba(255,255,255,0.38)';
+    extBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Abrir no Google Drive`;
+    body.appendChild(extBtn);
   } else {
     const vid = document.createElement('video');
     vid.src = m.url; vid.controls = true; vid.autoplay = true; vid.playsinline = true;
@@ -18128,11 +18158,15 @@ function smRenderGallery() {
   } else {
     videoWrap.innerHTML = videos.map(m => {
       const gi = media.indexOf(m);
-      const typeLabel = m.type === 'youtube' ? 'YouTube' : m.type === 'vimeo' ? 'Vimeo' : 'Vídeo';
+      const typeLabel = m.type === 'youtube' ? 'YouTube' : m.type === 'gdrive' ? 'Google Drive' : m.type === 'vimeo' ? 'Vimeo' : 'Vídeo';
       const thumbInner = m.type === 'youtube'
         ? `<img src="https://img.youtube.com/vi/${m.ytId}/hqdefault.jpg"
             style="width:100%;height:100%;object-fit:cover;display:block"
             onerror="this.src='https://img.youtube.com/vi/${m.ytId}/mqdefault.jpg'"/>`
+        : m.type === 'gdrive'
+        ? `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(30,40,60,0.7)">
+            <svg viewBox="0 0 87.3 78" style="width:44px;height:44px;opacity:0.7" xmlns="http://www.w3.org/2000/svg"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 49.5C.4 50.9 0 52.45 0 54h27.5z" fill="#00ac47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 11.5z" fill="#ea4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="M59.8 54H27.5L13.75 77.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="M73.4 27.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.8 54h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+           </div>`
         : `<video src="${m.url}" style="width:100%;height:100%;object-fit:cover;display:block"
             muted preload="metadata"></video>`;
       const displayTitle = m.caption || (m.type==='youtube' ? 'YouTube' : m.url);
