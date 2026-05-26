@@ -18109,7 +18109,7 @@ function smRenderGallery() {
   if (!smCurrentNode) return;
   const media = smCurrentNode.richMedia || [];
   const photos = media.filter(m => m.type === 'image');
-  const videos = media.filter(m => m.type === 'video' || m.type === 'youtube');
+  const videos = media.filter(m => m.type === 'video' || m.type === 'youtube' || m.type === 'gdrive');
 
   document.getElementById('sm-photo-count').textContent = photos.length;
   document.getElementById('sm-video-count').textContent = videos.length;
@@ -18238,7 +18238,7 @@ function smRenderImageList() {
 function smRenderVideoList() {
   if (!smCurrentNode) return;
   const media = smCurrentNode.richMedia || [];
-  const videos = media.filter(m => m.type === 'video' || m.type === 'youtube');
+  const videos = media.filter(m => m.type === 'video' || m.type === 'youtube' || m.type === 'gdrive');
   const list = document.getElementById('sm-video-list');
   if (!list) return;
   if (!videos.length) {
@@ -18247,9 +18247,13 @@ function smRenderVideoList() {
   }
   list.innerHTML = videos.map(m => {
     const i = media.indexOf(m);
-    const typeLabel = m.type === 'youtube' ? 'YouTube' : 'Vídeo';
+    const typeLabel = m.type === 'youtube' ? 'YouTube' : m.type === 'gdrive' ? 'Google Drive' : 'Vídeo';
     let thumbHtml;
-    if (m.type === 'video') {
+    if (m.type === 'gdrive') {
+      thumbHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(30,40,60,0.7)">
+        <svg viewBox="0 0 87.3 78" style="width:28px;height:28px;opacity:0.8" xmlns="http://www.w3.org/2000/svg"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 49.5C.4 50.9 0 52.45 0 54h27.5z" fill="#00ac47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 11.5z" fill="#ea4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="M59.8 54H27.5L13.75 77.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="M73.4 27.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.8 54h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+      </div>`;
+    } else if (m.type === 'video') {
       thumbHtml = `<video src="${m.url}" style="width:100%;height:100%;object-fit:cover;display:block" muted preload="metadata"></video>`;
     } else {
       thumbHtml = `<div style="position:relative;width:100%;height:100%">
