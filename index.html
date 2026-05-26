@@ -3455,6 +3455,13 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #ft-flag-picker button img { width: 28px; height: 21px; object-fit: cover; border-radius: 3px; display: block; }
   #ft-flag-picker button:hover { background: rgba(255,255,255,0.1); }
   html.light #ft-flag-picker button:hover { background: rgba(18,28,55,0.1); }
+  #ft-flag-preview {
+    width: 30px; height: 22px; object-fit: cover; border-radius: 5px; flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.22); cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s; display: none;
+  }
+  #ft-flag-preview:hover { opacity: 0.65; transform: scale(0.92); }
+  html.light #ft-flag-preview { border-color: rgba(18,28,55,0.22); }
   .ft-profile-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
   .ft-input-nome {
     font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 700;
@@ -18456,8 +18463,23 @@ function smSave() {
 // FICHA TÉCNICA — estado e funções
 // ══════════════════════════════════════════════════════
 let ftFotoDataUrl = null;
+let _ftCurrentFlagCode = null;   // código ISO 2 letras da bandeira selecionada (ex: 'br', 'de')
 
 function ftV(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function ftSetFlagPreview(code) {
+  _ftCurrentFlagCode = code || null;
+  const img = document.getElementById('ft-flag-preview');
+  if (!img) return;
+  if (code) {
+    img.src = 'https://flagcdn.com/w40/' + code + '.png';
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+    img.src = '';
+  }
+}
+function ftClearFlag() { ftSetFlagPreview(null); }
 
 function ftUpdateInitials() {
   const nome = document.getElementById('ft-nome-artistico').value.trim();
@@ -18521,12 +18543,11 @@ function ftToggleFlagPicker(e) {
   setTimeout(function(){ document.addEventListener('click', _ftClosePicker, { once: true }); }, 0);
 }
 function ftInsertFlag(flag) {
-  const inp = document.getElementById('ft-nome-artistico');
-  if (!inp) return;
-  inp.value = inp.value ? inp.value.trimEnd() + ' ' + flag : flag;
-  inp.dispatchEvent(new Event('input'));
+  // Exibe como imagem (não insere emoji no campo de texto — texto não renderiza bandeiras no Windows)
+  ftSetFlagPreview(_ftFlagCode(flag));
   document.getElementById('ft-flag-picker').style.display = 'none';
-  inp.focus();
+  const inp = document.getElementById('ft-nome-artistico');
+  if (inp) inp.focus();
 }
 function _ftClosePicker(e) {
   const picker = document.getElementById('ft-flag-picker');
@@ -18604,10 +18625,28 @@ function ftLoad() {
   const urlField = document.getElementById('ft-foto-url');
   if (urlField) urlField.value = (ftFotoDataUrl && !ftFotoDataUrl.startsWith('data:')) ? ftFotoDataUrl : '';
 
+  // Migração + restauração de bandeira
+  // Se o nome tinha emoji de bandeira inserido (versão antiga), extrai e limpa
+  let _migratedName = f.nomeArtistico || '';
+  let _loadFlagCode = f.flagCode || null;
+  if (!_loadFlagCode && _migratedName) {
+    var _mChars = [..._migratedName];
+    if (_mChars.length >= 2) {
+      var _isRI = function(cp){ return cp >= 0x1F1E6 && cp <= 0x1F1FF; };
+      var _mLast = _mChars[_mChars.length - 1];
+      var _mPrev = _mChars[_mChars.length - 2];
+      if (_isRI(_mLast.codePointAt(0)) && _isRI(_mPrev.codePointAt(0))) {
+        _loadFlagCode = _ftFlagCode(_mPrev + _mLast);
+        _migratedName = _mChars.slice(0, -2).join('').trimEnd();
+      }
+    }
+  }
+  ftSetFlagPreview(_loadFlagCode);   // mostra imagem (ou oculta se não houver)
+
   // Campos de texto — novos + retrocompatibilidade com campos antigos
   const map = {
     // Identificação
-    'ft-nome-artistico': f.nomeArtistico,
+    'ft-nome-artistico': _migratedName,
     'ft-nome-real':      f.nomeReal,
     'ft-nascimento':     f.nascimento,
     'ft-falecimento':    f.falecimento,
@@ -18650,6 +18689,7 @@ function ftAutoSave() {
   if (_urlFldAuto && _urlFldAuto.value.trim()) ftFotoDataUrl = _urlFldAuto.value.trim();
   smCurrentNode.ficha = {
     foto:          ftFotoDataUrl,
+    flagCode:      _ftCurrentFlagCode,
     nomeArtistico: ftV('ft-nome-artistico'),
     nomeReal:      ftV('ft-nome-real'),
     nascimento:    ftV('ft-nascimento'),
@@ -18712,6 +18752,7 @@ function ftSave() {
 
   smCurrentNode.ficha = {
     foto:          ftFotoDataUrl,
+    flagCode:      _ftCurrentFlagCode,
     // Identificação
     nomeArtistico: ftV('ft-nome-artistico'),
     nomeReal:      ftV('ft-nome-real'),
@@ -20488,6 +20529,7 @@ function closeArticleViewer() {
           <div class="ft-profile-fields">
             <div class="ft-nome-row">
               <input class="ft-input-nome" id="ft-nome-artistico" placeholder="Nome artístico" oninput="ftUpdateInitials()">
+              <img id="ft-flag-preview" title="Clique para remover a bandeira" onclick="ftClearFlag()" style="display:none">
               <button class="ft-flag-btn" onclick="ftToggleFlagPicker(event)" title="Inserir bandeira do país">🏳</button>
               <div id="ft-flag-picker" style="display:none"></div>
             </div>
