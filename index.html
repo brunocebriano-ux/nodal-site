@@ -38284,7 +38284,16 @@ function _restoreMeshes() {
   if (typeof nodes === 'undefined') return;
   nodes.forEach(function(nd) {
     if (nd.mesh) nd.mesh.visible = true;
-    if (nd.labelEl) createNodeLabel(nd);
+    if (nd.labelEl) {
+      if (nd.mesh && typeof THREE !== 'undefined') {
+        nd.labelPos = new THREE.Vector3(
+          nd.mesh.position.x,
+          nd.mesh.position.y + 1.7 * (nd.size || 1) + 0.4,
+          nd.mesh.position.z
+        );
+      }
+      nd.labelEl.style.display = '';
+    }
   });
   if (typeof connections !== 'undefined') {
     connections.forEach(function(c) { if (c.line) c.line.visible = true; });
@@ -38308,12 +38317,17 @@ function _removeSvgPZ(svg) {
 function _addSvgPanZoom(svg, g) {
   _svgPZ = {x:0, y:0, z:1};
   _svgPanning = false;
+  svg.setAttribute('pointer-events', 'all');
+  svg.setAttribute('overflow', 'visible');
   svg.style.cursor = 'grab';
+
   function applyT() {
     g.setAttribute('transform','translate('+_svgPZ.x+','+_svgPZ.y+') scale('+_svgPZ.z+')');
   }
+
   function onDown(e) {
     if (e.button !== 0) return;
+    e.preventDefault();
     _svgPanning = true;
     _svgPanStart.x = e.clientX; _svgPanStart.y = e.clientY;
     _svgPanOrigin.x = _svgPZ.x; _svgPanOrigin.y = _svgPZ.y;
@@ -38321,12 +38335,15 @@ function _addSvgPanZoom(svg, g) {
   }
   function onMove(e) {
     if (!_svgPanning) return;
+    if (!e.buttons) { _svgPanning = false; svg.style.cursor = 'grab'; return; }
     _svgPZ.x = _svgPanOrigin.x + (e.clientX - _svgPanStart.x);
     _svgPZ.y = _svgPanOrigin.y + (e.clientY - _svgPanStart.y);
     applyT();
   }
-  function onUp() { _svgPanning = false; svg.style.cursor = 'grab'; }
-  function onLeave() { _svgPanning = false; svg.style.cursor = 'grab'; }
+  function onUp() {
+    _svgPanning = false;
+    svg.style.cursor = 'grab';
+  }
   function onWheel(e) {
     e.preventDefault();
     var factor = e.deltaY < 0 ? 1.1 : 0.91;
@@ -38337,17 +38354,18 @@ function _addSvgPanZoom(svg, g) {
     _svgPZ.z = Math.min(Math.max(_svgPZ.z * factor, 0.1), 5);
     applyT();
   }
+
   svg.addEventListener('mousedown', onDown);
   svg.addEventListener('mousemove', onMove);
   svg.addEventListener('mouseup', onUp);
-  svg.addEventListener('mouseleave', onLeave);
   svg.addEventListener('wheel', onWheel, {passive:false});
   _svgPZCleanup = function(s) {
     s.removeEventListener('mousedown', onDown);
     s.removeEventListener('mousemove', onMove);
     s.removeEventListener('mouseup', onUp);
-    s.removeEventListener('mouseleave', onLeave);
     s.removeEventListener('wheel', onWheel);
+    s.removeAttribute('pointer-events');
+    s.removeAttribute('overflow');
   };
 }
 
