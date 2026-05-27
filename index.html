@@ -17289,7 +17289,7 @@ function updateLabels() {
     const px = (pos.x * 0.5 + 0.5) * rect.width + rect.left;
     const py = (-pos.y * 0.5 + 0.5) * rect.height + rect.top;
     // Só transform (GPU) e opacity — sem left/top para evitar reflow
-    nd.labelEl.style.display = 'block';
+    nd.labelEl.style.display = window._labelsHidden ? 'none' : 'block';
     nd.labelEl.style.transform = `translate3d(${px.toFixed(1)}px,${py.toFixed(1)}px,0) translateX(-50%)`;
     if (typeof _focusMode !== 'undefined' && _focusMode) {
       const _focusNeighbors = new Set([_focusNodeId]);
@@ -19768,6 +19768,8 @@ function _renderTutorial() {
         ['C','Modo conectar','#5ddcaa'],
         ['D','Modo mover','#5ddcaa'],
         ['P','Path Finder','#a99cff'],
+        ['V','Resetar câmera','#6aafff'],
+        ['O','Ocultar/mostrar nomes','#6aafff'],
         ['L','Tema claro/escuro','#ff8c61'],
         ['M','Ligar/desligar música','#ff8c61'],
         ['I','Captura Rápida','#6aafff'],
@@ -20026,6 +20028,12 @@ document.addEventListener('keydown', function(e) {
     case 'V':
       resetCamera();
       toast('Vista resetada');
+      break;
+
+    case 'o':
+    case 'O':
+      window._labelsHidden = !window._labelsHidden;
+      toast(window._labelsHidden ? 'Nomes ocultos' : 'Nomes visíveis');
       break;
   }
 }, true);
