@@ -15212,6 +15212,20 @@ function applyBloomForBackground(hex) {
 }
 window.applyBloomForBackground = applyBloomForBackground;
 
+// Monkey-patch: qualquer chamada a renderer.setClearColor (preset, toggle HUD,
+// custom color, tema de apresentação, etc.) agora atualiza o bloom automaticamente.
+// Evita ter que caçar todos os pontos de troca de tema espalhados pelo arquivo.
+try {
+  const _origSetClearColor = renderer.setClearColor.bind(renderer);
+  renderer.setClearColor = function(color, alpha) {
+    _origSetClearColor(color, alpha);
+    try {
+      const c = (color && color.isColor) ? color : new THREE.Color(color);
+      applyBloomForBackground('#' + c.getHexString());
+    } catch(e) {}
+  };
+} catch(e) {}
+
 (function(){
   try {
     var _s = JSON.parse(localStorage.getItem('neural-v5-settings') || '{}');
