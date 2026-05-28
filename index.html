@@ -15171,10 +15171,19 @@ function resetCamera() {
   updateCamera();
 }
 
-// ── Post-processing: bloom real (UnrealBloomPass) ──
+// ── Post-processing: bloom real (UnrealBloomPass) com MSAA ──
 let composer = null, bloomPass = null;
 if (typeof THREE.EffectComposer === 'function' && typeof THREE.UnrealBloomPass === 'function' && typeof THREE.RenderPass === 'function') {
-  composer = new THREE.EffectComposer(renderer);
+  // MSAA no framebuffer do composer — sem isso as linhas ficam serrilhadas pois
+  // o antialias do WebGLRenderer só vale pro canvas final, não pra buffers internos.
+  let composerRT = null;
+  try {
+    if (renderer.capabilities && renderer.capabilities.isWebGL2 && typeof THREE.WebGLMultisampleRenderTarget === 'function') {
+      composerRT = new THREE.WebGLMultisampleRenderTarget(W(), H(), { format: THREE.RGBAFormat, stencilBuffer: false });
+      composerRT.samples = 4;
+    }
+  } catch(e) { composerRT = null; }
+  composer = composerRT ? new THREE.EffectComposer(renderer, composerRT) : new THREE.EffectComposer(renderer);
   composer.setPixelRatio(Math.min(devicePixelRatio, 2));
   composer.setSize(W(), H());
   composer.addPass(new THREE.RenderPass(scene, camera));
@@ -15190,12 +15199,11 @@ function applyBloomForBackground(hex) {
     const c = new THREE.Color(hex);
     const lum = 0.2126*c.r + 0.7152*c.g + 0.0722*c.b;
     if (lum > 0.5) {
-      // tema claro — só pixels muito brilhantes brilham (evita bloom no próprio fundo)
-      window.bloomPass.threshold = Math.max(0.92, lum + 0.05);
-      window.bloomPass.strength  = 0.45;
-      window.bloomPass.radius    = 0.40;
+      // tema claro — bloom desligado por completo (preserva visibilidade total dos nós)
+      window.bloomPass.enabled = false;
     } else {
       // tema escuro — nós emissivos ganham halo cinematográfico
+      window.bloomPass.enabled = true;
       window.bloomPass.threshold = 0.05;
       window.bloomPass.strength  = 0.85;
       window.bloomPass.radius    = 0.55;
