@@ -15297,17 +15297,12 @@ const dragIntersect = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
 
 // ── Camera inertia ─────────────────────────────────
-// Os valores de damping/lerp abaixo são "por frame @60Hz". O loop de animação
-// os escala por dt (delta-time) para que a sensação seja idêntica em 60/120/144Hz.
 let orbitVelX = 0, orbitVelY = 0;
-const ORBIT_DAMPING = 0.88;          // decaimento da inércia de rotação
+const ORBIT_DAMPING = 0.88;
 let zoomTarget = 90;
-let zoomVel = 0;                     // velocidade do spring de zoom (critically-damped)
-const ZOOM_SMOOTH_TIME = 0.18;       // seg — menor = mais snappy; maior = mais cinematográfico
+const ZOOM_LERP = 0.10;
 const panVel = new THREE.Vector3();
 const PAN_DAMPING = 0.85;
-const SLERP_RATE      = 0.12;        // suavização do quaternion fora de drag
-const SLERP_RATE_DRAG = 0.22;        // suavização do quaternion durante drag (mais responsivo)
 
 // ── Quaternion arcball (sem gimbal lock) ───────────
 const camQuat = new THREE.Quaternion();       // quaternion atual da câmera (suavizado)
@@ -15327,37 +15322,11 @@ function setSpherical(theta, phi) {
 }
 
 function applyOrbitDelta(dx, dy) {
-  // Sensibilidade adaptativa ao zoom: longe roda mais rápido, perto vira preciso.
-  // Em radius=90 (inicial) → sens=0.0032 (sem mudança). Em 500 → ~0.0075. Em 8 → ~0.00095.
-  const sens = 0.0032 * Math.sqrt(spherical.radius / 90);
+  const sens = 0.0032; // ligeiramente menos sensível → sensação de peso/profundidade
   const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camTargetQuat);
   const qH = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -dx * sens);
   const qV = new THREE.Quaternion().setFromAxisAngle(right, -dy * sens);
   camTargetQuat.premultiply(qH).premultiply(qV).normalize();
-}
-
-// SmoothDamp — mola criticamente amortecida (Game Programming Gems 4 / Unity's Mathf.SmoothDamp).
-// Aproxima o valor do alvo o mais rápido possível SEM overshoot. Usa velocidade explícita.
-function smoothDamp(current, target, velocity, smoothTime, dt, maxSpeed) {
-  smoothTime = Math.max(0.0001, smoothTime);
-  if (maxSpeed === undefined) maxSpeed = Infinity;
-  const omega = 2 / smoothTime;
-  const x = omega * dt;
-  const exp = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
-  let change = current - target;
-  const originalTo = target;
-  const maxChange = maxSpeed * smoothTime;
-  change = Math.max(-maxChange, Math.min(maxChange, change));
-  const adjustedTarget = current - change;
-  const temp = (velocity + omega * change) * dt;
-  let newVel = (velocity - omega * temp) * exp;
-  let output = adjustedTarget + (change + temp) * exp;
-  // Evita overshoot por erro de ponto flutuante
-  if ((originalTo - current > 0) === (output > originalTo)) {
-    output = originalTo;
-    newVel = (output - originalTo) / dt;
-  }
-  return { value: output, velocity: newVel };
 }
 
 // ── Cluster Orbit — gira satélites em torno do nó hub ─────────────────────────
@@ -17421,39 +17390,27 @@ const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
-  // dt: tempo em segundos desde o último frame. Cap em 0.1s evita "pulos" gigantes
-  // quando a aba fica em background e o navegador pausa o RAF.
-  const dt = Math.min(0.1, clock.getDelta());
-  const t  = clock.elapsedTime; // getDelta() já atualizou esse valor internamente
-  // k=1 a 60Hz; k=0.5 a 120Hz; k=0.417 a 144Hz — usado pra normalizar damping/lerp por frame
-  const k = dt * 60;
+  const t = clock.getElapsedTime();
 
   // ── Camera inertia & smooth zoom ──────────────────
   let needCamUpdate = false;
   if (!isDragging && (Math.abs(orbitVelX) > 0.05 || Math.abs(orbitVelY) > 0.05)) {
-    // Aplica delta proporcional ao tempo passado (não ao número de frames)
-    applyOrbitDelta(orbitVelX * k, orbitVelY * k);
-    // Damping frame-rate independent: equivalente a (0.88)^k
-    const damp = Math.pow(ORBIT_DAMPING, k);
-    orbitVelX *= damp;
-    orbitVelY *= damp;
+    applyOrbitDelta(orbitVelX, orbitVelY);
+    orbitVelX *= ORBIT_DAMPING;
+    orbitVelY *= ORBIT_DAMPING;
     needCamUpdate = true;
   }
-  if (Math.abs(spherical.radius - zoomTarget) > 0.01 || Math.abs(zoomVel) > 0.01) {
+  if (Math.abs(spherical.radius - zoomTarget) > 0.01) {
     if (_flyRaf) {
       zoomTarget = spherical.radius;
-      zoomVel = 0;
     } else {
-      // Spring criticamente amortecida — chega rápido, encaixa sem overshoot
-      const r = smoothDamp(spherical.radius, zoomTarget, zoomVel, ZOOM_SMOOTH_TIME, dt);
-      spherical.radius = r.value;
-      zoomVel = r.velocity;
+      spherical.radius += (zoomTarget - spherical.radius) * ZOOM_LERP;
       needCamUpdate = true;
     }
   }
   if (!isPanning && panVel.lengthSq() > 0.000001) {
-    cameraTarget.addScaledVector(panVel, k);
-    panVel.multiplyScalar(Math.pow(PAN_DAMPING, k));
+    cameraTarget.add(panVel);
+    panVel.multiplyScalar(PAN_DAMPING);
     needCamUpdate = true;
   }
   // Slerp suave entre camQuat e camTargetQuat:
@@ -17462,10 +17419,7 @@ function animate() {
   if (_flyRaf || window._flat2DAnimating) {
     camTargetQuat.copy(camQuat);
   } else if (camQuat.dot(camTargetQuat) < 0.9999998) {
-    // Slerp frame-rate independent: 1 - (1 - rate)^k preserva a sensação @60Hz
-    const baseRate = isDragging ? SLERP_RATE_DRAG : SLERP_RATE;
-    const factor = 1 - Math.pow(1 - baseRate, k);
-    camQuat.slerp(camTargetQuat, factor);
+    camQuat.slerp(camTargetQuat, isDragging ? 0.22 : 0.12);
     needCamUpdate = true;
   }
   if (needCamUpdate) updateCamera();
