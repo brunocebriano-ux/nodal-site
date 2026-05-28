@@ -17070,12 +17070,20 @@ function exportJSON() {
 function exportFullBackup() {
   try {
     // 1. Nós completos (incluindo richContent, richMedia, tags, artigos)
+    // Fonte da verdade: n.articles (memória). Fallback: localStorage (compat).
     const articlesData = {};
     nodes.forEach(n => {
-      try {
-        const raw = localStorage.getItem('neural-articles-' + n.id);
-        if (raw) articlesData[n.id] = JSON.parse(raw);
-      } catch(e) {}
+      if (Array.isArray(n.articles) && n.articles.length) {
+        articlesData[n.id] = n.articles;
+      } else {
+        try {
+          const raw = localStorage.getItem('neural-articles-' + n.id);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (arr && arr.length) articlesData[n.id] = arr;
+          }
+        } catch(e) {}
+      }
     });
 
     const nodesData = nodes.map(n => ({
@@ -17085,7 +17093,8 @@ function exportFullBackup() {
       media: n.media || '', tags: n.tags || [], notes: n.notes || '',
       richNotes: n.richNotes || '', richContent: n.richContent || '',
       richMedia: n.richMedia || [], date: n.date || '',
-      shape: n.shape || 'sphere', x: n.x, y: n.y, z: n.z
+      shape: n.shape || 'sphere', x: n.x, y: n.y, z: n.z,
+      articles: Array.isArray(n.articles) ? n.articles : []  // ← redundância: artigos também dentro do nó
     }));
 
     // 2. Conexões
@@ -17168,8 +17177,13 @@ function exportSite() {
   // Embed font selection into the graph JSON
   const exportedFontSel = (typeof currentFonts !== 'undefined') ? Object.assign({}, currentFonts) : {};
   // Embed articles into the graph JSON
+  // Fonte da verdade: n.articles (memória). Fallback: localStorage (compat).
   const exportedArticles = {};
   nodes.forEach(n => {
+    if (Array.isArray(n.articles) && n.articles.length) {
+      exportedArticles[n.id] = n.articles;
+      return;
+    }
     try {
       const raw = localStorage.getItem('neural-articles-' + n.id);
       if (raw) exportedArticles[n.id] = JSON.parse(raw);
@@ -36147,30 +36161,76 @@ _syncEl.id = 'sync-indicator';
 document.body.appendChild(_syncEl);
 let _syncTimer = null;
 
-function _syncShow(state, msg) {
+function _syncShow(state, msg, action) {
   if (typeof window._favShowSync === 'function') {
-    window._favShowSync(state, msg);
+    window._favShowSync(state, msg, action);
     return;
   }
   _syncEl.className = 'show ' + state;
   _syncEl.textContent = msg;
   clearTimeout(_syncTimer);
-  if (state !== 'saving') {
+  // saving e error ficam visíveis; só 'ok' some sozinho.
+  if (state === 'ok') {
     _syncTimer = setTimeout(() => { _syncEl.classList.remove('show'); }, 3000);
   }
 }
 
 // ── Patch projSaveData para mostrar status e reduzir debounce ─
+// Classifica o erro pra dar uma mensagem útil + ação quando aplicável.
+// Erro fica visível até o próximo save bem-sucedido (não some em 2,5s).
+function _classifySaveError(e) {
+  const raw = (e && (e.message || e.error_description || e.code)) || String(e || '');
+  const msg = raw.toLowerCase();
+  // Sessão / autenticação
+  if (msg.includes('sessão expirada') || msg.includes('jwt') ||
+      msg.includes('unauthorized') || msg.includes('not authenticated') ||
+      msg.includes('invalid token') || msg.includes('401')) {
+    return {
+      type: 'auth',
+      text: '🔒 Sessão expirou — clique para recarregar',
+      action: function() { window.location.reload(); }
+    };
+  }
+  // Rede / offline
+  if (msg.includes('failed to fetch') || msg.includes('networkerror') ||
+      msg.includes('network request failed') || !navigator.onLine) {
+    return {
+      type: 'network',
+      text: '📡 Sem internet — vai tentar de novo quando voltar',
+      action: null
+    };
+  }
+  // RLS / permissão
+  if (msg.includes('row-level security') || msg.includes('row level') ||
+      msg.includes('permission denied') || msg.includes('403')) {
+    return {
+      type: 'rls',
+      text: '🚫 Permissão negada — clique para recarregar',
+      action: function() { window.location.reload(); }
+    };
+  }
+  // Genérico
+  const shortMsg = raw.length > 60 ? raw.slice(0, 60) + '…' : raw;
+  return {
+    type: 'unknown',
+    text: '⚠ Erro ao salvar: ' + shortMsg,
+    action: null
+  };
+}
+
 const _origProjSaveDataSync = projSaveData;
 window.projSaveData = projSaveData = async function(id, data) {
   // Injeta connType (de _ctOrigProjSaveData que já está no chain)
   _syncShow('saving', '↑ Salvando na nuvem…');
   try {
     const result = await _origProjSaveDataSync.apply(this, arguments);
-    _syncShow('ok', '☁ Sincronizado');
+    _syncShow('ok', '☁ Sincronizado');  // limpa qualquer erro anterior
     return result;
   } catch(e) {
-    _syncShow('error', '⚠ Erro ao salvar');
+    const info = _classifySaveError(e);
+    _syncShow('error', info.text, info.action);
+    // Loga detalhe completo no console pra debugging
+    console.error('[NODAL] Save falhou (' + info.type + '):', e);
     throw e;
   }
 };
@@ -37466,7 +37526,7 @@ setTimeout(() => {
 
   /* ── Indicador de sync ──────────────────────────── */
   var _favSyncTimer = null;
-  function _favShowSync(state, msg) {
+  function _favShowSync(state, msg, action) {
     var pill = document.getElementById('fav-sync-pill');
     if (!pill) {
       pill = document.createElement('div');
@@ -37484,6 +37544,10 @@ setTimeout(() => {
     }
     clearTimeout(_favSyncTimer);
     pill.textContent = msg;
+    // limpa handler anterior (caso passemos de erro pra ok)
+    pill.onclick = null;
+    pill.style.cursor = '';
+    pill.style.pointerEvents = 'none';
     if (state === 'saving') {
       pill.style.background = 'rgba(96,165,250,0.18)';
       pill.style.borderColor = 'rgba(96,165,250,0.5)';
@@ -37496,9 +37560,16 @@ setTimeout(() => {
       pill.style.background = 'rgba(248,113,113,0.18)';
       pill.style.borderColor = 'rgba(248,113,113,0.5)';
       pill.style.color = '#fca5a5';
+      // erro com ação → vira clicável
+      if (typeof action === 'function') {
+        pill.style.cursor = 'pointer';
+        pill.style.pointerEvents = 'auto';
+        pill.onclick = action;
+      }
     }
     pill.style.opacity = '1';
-    if (state !== 'saving') {
+    // saving e error ficam fixos; só 'ok' some sozinho.
+    if (state === 'ok') {
       _favSyncTimer = setTimeout(function() { pill.style.opacity = '0'; }, 2500);
     }
   }
