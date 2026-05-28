@@ -15638,6 +15638,15 @@ function handleHover(e) {
     if (nd) { setNodeHoverState(nd, true); showHoverPreview(nd); }
     else hideHoverPreview();
   }
+  // Cursor pointer no hover de qualquer nó — preserva estados de drag/pan/orbit.
+  // Não toca no cursor se _corUpdate (cluster orbit ring) já assumiu o controle.
+  if (!isDragging && !isPanning && !isClusterOrbit && !dragMode && !connectMode && !draggingNode) {
+    if (nd) {
+      canvas.style.cursor = 'pointer';
+    } else if (typeof _corLastZoneNode === 'undefined' || !_corLastZoneNode) {
+      canvas.style.cursor = 'grab';
+    }
+  }
 }
 function setNodeHoverState(nd, on) {
   nd.hoverTarget = on ? 1.38 : 1.0;
@@ -17477,8 +17486,13 @@ function animate() {
         }
       } else {
         const _bl = (typeof _backlinkIds !== 'undefined' && _backlinkIds.size > 0);
-        const _targetEI = (_bl && !_backlinkIds.has(nd.id)) ? 0.03 : 0.2;
-        coreMat.emissiveIntensity += (_targetEI - coreMat.emissiveIntensity) * 0.08;
+        const _isHov = hoveredNode && hoveredNode.id === nd.id;
+        const _targetEI = (_bl && !_backlinkIds.has(nd.id)) ? 0.03
+                        : _isHov ? 0.48
+                        : 0.2;
+        // Easing rápido na entrada do hover (sensação de "acender") + saída suave
+        const _easeSpd = _isHov ? 0.18 : 0.08;
+        coreMat.emissiveIntensity += (_targetEI - coreMat.emissiveIntensity) * _easeSpd;
       }
     }
   });
