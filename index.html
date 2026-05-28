@@ -13348,6 +13348,13 @@ html.light .cmp-conn-arrow { color: rgba(255,255,255,0.5); }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Post-processing (r128 globals): habilita bloom real via EffectComposer -->
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════
@@ -14401,7 +14408,7 @@ function applyTheme(themeId) {
   } else {
     root.style.setProperty('--text3','rgba(255,255,255,0.22)'); root.style.setProperty('--border','rgba(255,255,255,0.10)'); root.style.setProperty('--border2','rgba(255,255,255,0.20)'); root.style.setProperty('--border-glow','rgba(167,139,250,0.25)'); root.style.setProperty('--panel-bg',th.panel+'f8'); root.style.setProperty('--glass','rgba(8,8,20,0.55)'); root.style.setProperty('--glass-heavy','rgba(6,6,16,0.78)'); root.style.setProperty('--glass-light','rgba(255,255,255,0.04)'); root.style.setProperty('--input-bg','rgba(255,255,255,0.04)'); root.style.setProperty('--cell-bg','rgba(255,255,255,0.03)'); root.style.setProperty('--btn-hover-bg','rgba(255,255,255,0.06)'); root.style.setProperty('--dropdown-bg','rgba(6,6,18,0.22)'); root.style.setProperty('--hud-btn-bg','rgba(107,107,154,0.45)'); root.style.setProperty('--hud-btn-border','rgba(107,107,154,0.35)'); root.style.setProperty('--hud-btn-color','rgba(107,107,154,0.90)');
   }
-  if (typeof renderer !== 'undefined' && renderer) { renderer.setClearColor(th.fog, 1); scene.fog = new THREE.FogExp2(th.fog, 0.003); if (window._starFieldMesh) window._starFieldMesh.material.color.set(th.stars); }
+  if (typeof renderer !== 'undefined' && renderer) { renderer.setClearColor(th.fog, 1); scene.fog = new THREE.FogExp2(th.fog, 0.003); if (window._starFieldMesh) window._starFieldMesh.material.color.set(th.stars); if (window.applyBloomForBackground) window.applyBloomForBackground(th.fog); }
   const ms = document.getElementById('music-preset'); if(ms){ms.style.color=isLightTheme?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.4)';ms.style.borderColor=isLightTheme?'rgba(0,0,0,0.15)':'rgba(255,255,255,0.1)';}
   saveSettings(); toast('Tema: '+th.name);
   if (typeof applyThemeToLockScreen==='function') applyThemeToLockScreen(th.bg, isLightTheme);
@@ -14462,6 +14469,7 @@ function applyCustomColor() {
   renderer.setClearColor(fogHex, 1);
   scene.fog = new THREE.FogExp2(fogHex, 0.003);
   if (window._starFieldMesh) window._starFieldMesh.material.color.set(stars);
+  if (window.applyBloomForBackground) window.applyBloomForBackground(fog);
 
   // ── Typography ──
   root.style.setProperty('--text',  text);
@@ -15163,10 +15171,53 @@ function resetCamera() {
   updateCamera();
 }
 
+// ── Post-processing: bloom real (UnrealBloomPass) ──
+let composer = null, bloomPass = null;
+if (typeof THREE.EffectComposer === 'function' && typeof THREE.UnrealBloomPass === 'function' && typeof THREE.RenderPass === 'function') {
+  composer = new THREE.EffectComposer(renderer);
+  composer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  composer.setSize(W(), H());
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W(), H()), 0.85, 0.55, 0.05);
+  composer.addPass(bloomPass);
+  window.composer = composer;
+  window.bloomPass = bloomPass;
+}
+
+function applyBloomForBackground(hex) {
+  if (!window.bloomPass) return;
+  try {
+    const c = new THREE.Color(hex);
+    const lum = 0.2126*c.r + 0.7152*c.g + 0.0722*c.b;
+    if (lum > 0.5) {
+      // tema claro — só pixels muito brilhantes brilham (evita bloom no próprio fundo)
+      window.bloomPass.threshold = Math.max(0.92, lum + 0.05);
+      window.bloomPass.strength  = 0.45;
+      window.bloomPass.radius    = 0.40;
+    } else {
+      // tema escuro — nós emissivos ganham halo cinematográfico
+      window.bloomPass.threshold = 0.05;
+      window.bloomPass.strength  = 0.85;
+      window.bloomPass.radius    = 0.55;
+    }
+  } catch(e) {}
+}
+window.applyBloomForBackground = applyBloomForBackground;
+
+(function(){
+  try {
+    var _s = JSON.parse(localStorage.getItem('neural-v5-settings') || '{}');
+    var _tid = _s.currentThemeId || 'classic';
+    var _thMap = { cosmos:'#0C1F41', classic:'#0A0A0A', green:'#2F472F', aero:'#414141', blue:'#f4f6ff', papel:'#f5f0e0' };
+    applyBloomForBackground(_thMap[_tid] || '#0A0A0A');
+  } catch(e) { applyBloomForBackground('#0A0A0A'); }
+})();
+
 function resizeRenderer() {
   renderer.setSize(W(), H());
   camera.aspect = W() / H();
   camera.updateProjectionMatrix();
+  if (window.composer && window.bloomPass) { window.composer.setSize(W(), H()); window.bloomPass.setSize(W(), H()); }
   canvas.style.left = '0px';
   canvas.style.top = '0px';
   canvas.style.width = '100%';
@@ -17524,7 +17575,7 @@ function animate() {
   pl3.position.y = Math.sin(t * 0.07) * 60 - 40;
 
   updateLabels();
-  renderer.render(scene, camera);
+  if (window.composer) window.composer.render(); else renderer.render(scene, camera);
 }
 
 // ── Music ──────────────────────────────────────────
