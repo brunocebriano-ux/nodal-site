@@ -15870,6 +15870,18 @@ function addNode(data) {
     date: data.date || '',
     shape: data.shape || 'sphere',
     ficha: data.ficha || null,
+    // Articles vivem no nó (igual notes/richContent) — sobrevivem à limpeza de localStorage
+    articles: (function() {
+      if (Array.isArray(data.articles)) {
+        // Espelha no localStorage para busca/AI/export continuarem em sincronia
+        try { localStorage.setItem('neural-articles-' + (data.id || ''), JSON.stringify(data.articles)); } catch(e) {}
+        return data.articles;
+      }
+      try {
+        const raw = localStorage.getItem('neural-articles-' + (data.id || ''));
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) { return []; }
+    })(),
     x: data.x !== undefined ? data.x : (typeof cameraTarget!=='undefined'?cameraTarget.x:0)+(Math.random()-0.5)*18,
     y: data.y !== undefined ? data.y : (typeof cameraTarget!=='undefined'?cameraTarget.y:0)+(Math.random()-0.5)*18,
     z: data.z !== undefined ? data.z : (typeof cameraTarget!=='undefined'?cameraTarget.z:0)+(Math.random()-0.5)*18,
@@ -20175,21 +20187,42 @@ let editingArticleId = null;
 let currentArticleThumb = null;
 
 // Articles are stored per-node: node.articles = [{id, title, url, desc, source, date, thumb}]
+// Fonte da verdade: node.articles em memória (sobrevive à limpeza de localStorage)
 function getNodeArticles(nodeId) {
+  if (typeof nodes !== 'undefined') {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+      if (!Array.isArray(node.articles)) {
+        // Migração: copia de localStorage se ainda não foi para o nó
+        try {
+          const raw = localStorage.getItem('neural-articles-' + nodeId);
+          node.articles = raw ? JSON.parse(raw) : [];
+        } catch(e) { node.articles = []; }
+      }
+      return node.articles;
+    }
+  }
   try {
     const raw = localStorage.getItem('neural-articles-' + nodeId);
     return raw ? JSON.parse(raw) : [];
   } catch(e) { return []; }
 }
 function saveNodeArticles(nodeId, articles) {
+  // 1. Grava no nó (fonte da verdade — entra no próximo save() para o Supabase)
+  if (typeof nodes !== 'undefined') {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) node.articles = articles;
+  }
+  // 2. Mirror no localStorage (cache local + thumbs)
   try {
-    // Store thumb separately to avoid quota issues
     const light = articles.map(a => { const {thumb, ...rest} = a; return rest; });
     localStorage.setItem('neural-articles-' + nodeId, JSON.stringify(light));
     articles.forEach(a => {
       if (a.thumb) localStorage.setItem('neural-art-thumb-' + a.id, a.thumb);
     });
   } catch(e) { toast('Artigo salvo (sem capa por limite de armazenamento)'); }
+  // 3. Aciona o pipeline normal de save (debounce + Supabase) — igual nota/tag/conexão
+  if (typeof save === 'function') save();
 }
 function getArticleThumb(id) {
   try { return localStorage.getItem('neural-art-thumb-' + id) || null; } catch(e) { return null; }
@@ -32688,6 +32721,10 @@ async function projOpen(id) {
       if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds();
     }
     if (data.articlesData) Object.keys(data.articlesData).forEach(nid => {
+      // Sobe os artigos do cloud para o nó em memória (fonte da verdade)
+      const node = nodes.find(n => n.id === nid);
+      if (node) node.articles = data.articlesData[nid];
+      // Mirror em localStorage (cache)
       try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(data.articlesData[nid])); } catch(e) {}
     });
     if (data.panoramaData && Object.keys(data.panoramaData).length) {
@@ -32730,7 +32767,12 @@ async function projSaveCurrentState() {
 
   const _articlesData = {};
   nodes.forEach(n => {
-    try { const r = localStorage.getItem('neural-articles-' + n.id); if (r) _articlesData[n.id] = JSON.parse(r); } catch(e) {}
+    // Prioridade: n.articles (fonte da verdade). Fallback: localStorage (compat).
+    if (Array.isArray(n.articles) && n.articles.length) {
+      _articlesData[n.id] = n.articles;
+    } else {
+      try { const r = localStorage.getItem('neural-articles-' + n.id); if (r) { const arr = JSON.parse(r); if (arr && arr.length) _articlesData[n.id] = arr; } } catch(e) {}
+    }
   });
   const data = {
     nodes: nodes.map(n => ({
@@ -32741,7 +32783,8 @@ async function projSaveCurrentState() {
       richNotes:n.richNotes||'', richContent:n.richContent||'',
       richMedia:n.richMedia||[], date:n.date||'',
       shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
-      ficha:n.ficha||null
+      ficha:n.ficha||null,
+      articles: Array.isArray(n.articles) ? n.articles : []  // ← redundância: artigos também viajam DENTRO do nó
     })),
     connections: connections.map(c => ({id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'})),
     globalTags: globalTags || [],
@@ -32790,10 +32833,17 @@ save = function() {
 // não tenha disparado. projLoadData vai preferir este local se for mais novo.
 function _projFlushToLocal() {
   if (!activeProjectId || typeof nodes === 'undefined') return;
+  // Guard: nunca grava snapshot vazio em cima de dados bons durante boot/race.
+  // Se nodes ainda está vazio (load assíncrono não terminou), simplesmente não flush.
+  if (nodes.length === 0) return;
   try {
     const _arts = {};
     nodes.forEach(n => {
-      try { const r = localStorage.getItem('neural-articles-' + n.id); if (r) _arts[n.id] = JSON.parse(r); } catch(e) {}
+      if (Array.isArray(n.articles) && n.articles.length) {
+        _arts[n.id] = n.articles;
+      } else {
+        try { const r = localStorage.getItem('neural-articles-' + n.id); if (r) { const arr = JSON.parse(r); if (arr && arr.length) _arts[n.id] = arr; } } catch(e) {}
+      }
     });
     const _snap = {
       _ts: Date.now(),
@@ -32805,7 +32855,8 @@ function _projFlushToLocal() {
         richNotes:n.richNotes||'', richContent:n.richContent||'',
         richMedia:n.richMedia||[], date:n.date||'',
         shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z,
-        ficha:n.ficha||null
+        ficha:n.ficha||null,
+        articles: Array.isArray(n.articles) ? n.articles : []
       })),
       connections: connections.map(c => ({id:c.id, from:c.from, to:c.to, connType:c.connType||'neutro'})),
       globalTags: globalTags || [],
@@ -33354,6 +33405,10 @@ async function projBoot() {
         if (typeof repairGlobalTagIds === 'function') repairGlobalTagIds();
       }
       if (_pd.articlesData) Object.keys(_pd.articlesData).forEach(nid => {
+        // Sobe os artigos do cloud para o nó em memória (fonte da verdade)
+        const node = nodes.find(n => n.id === nid);
+        if (node) node.articles = _pd.articlesData[nid];
+        // Mirror em localStorage (cache)
         try { localStorage.setItem('neural-articles-' + nid, JSON.stringify(_pd.articlesData[nid])); } catch(e) {}
       });
       if (_pd.panoramaData && Object.keys(_pd.panoramaData).length) {
