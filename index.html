@@ -32743,7 +32743,8 @@ async function projSaveCurrentState() {
     articlesData: _articlesData,
     panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
     notepad: (function(){ try { return localStorage.getItem('notepad_' + activeProjectId) || ''; } catch(e){ return ''; } })(),
-    notepadNotes: (function(){ try { const r = localStorage.getItem('notepad_notes_' + activeProjectId); return r ? JSON.parse(r) : null; } catch(e){ return null; } })()
+    notepadNotes: (function(){ try { const r = localStorage.getItem('notepad_notes_' + activeProjectId); return r ? JSON.parse(r) : null; } catch(e){ return null; } })(),
+    glassSettings: (function(){ try { return Object.assign({}, glassSettings); } catch(e){ return null; } })()
   };
 
   if (proj) {
@@ -32815,7 +32816,8 @@ function _projFlushToLocal() {
       articlesData: _arts,
       panoramaData: (function(){ try { return JSON.parse(localStorage.getItem('neural-panorama-data')||'{}'); } catch(e){ return {}; } })(),
       notepad: (function(){ try { return localStorage.getItem('notepad_' + activeProjectId)||''; } catch(e){ return ''; } })(),
-      notepadNotes: (function(){ try { const r=localStorage.getItem('notepad_notes_'+activeProjectId); return r?JSON.parse(r):null; } catch(e){ return null; } })()
+      notepadNotes: (function(){ try { const r=localStorage.getItem('notepad_notes_'+activeProjectId); return r?JSON.parse(r):null; } catch(e){ return null; } })(),
+      glassSettings: (function(){ try { return Object.assign({}, glassSettings); } catch(e){ return null; } })()
     };
     localStorage.setItem(PROJ_DATA_KEY(activeProjectId), JSON.stringify(_snap));
   } catch(e) {}
@@ -33076,6 +33078,18 @@ async function loadSharedProject(identifier) {
       // ── Restaurar artigos dos nós (cache em memória — não depende de localStorage) ──
       window._sharedArticlesCache = (pd.articlesData && typeof pd.articlesData === 'object')
         ? pd.articlesData : {};
+      // ── Restaurar glassSettings do projeto (visitante herda estilo do editor) ──
+      if (pd.glassSettings && typeof pd.glassSettings === 'object') {
+        try {
+          Object.assign(glassSettings, pd.glassSettings);
+          if (typeof applyGlassSettingsToDOM === 'function') {
+            applyGlassSettingsToDOM(Object.assign({}, glassSettings, {
+              panelOp: glassSettings.panelOpacity || 0.55,
+              borderGl: glassSettings.borderGlow || 0.10
+            }));
+          }
+        } catch(e) { console.warn('[NODAL] falha ao aplicar glassSettings do share:', e); }
+      }
     }
     updateStats();
     toast('Visualizando: ' + (data.proj_name || 'Projeto'));
