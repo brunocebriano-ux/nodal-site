@@ -16008,6 +16008,12 @@ const PAN_DAMPING = 0.85;
 const camQuat = new THREE.Quaternion();       // quaternion atual da câmera (suavizado)
 let camTargetQuat = new THREE.Quaternion();   // alvo para o slerp — mouse/inércia atualizam aqui
 
+// ── Modo Órbita Focada (Space toggle + scroll = gira em torno de um nó) ──
+let orbitFocusMode = false;
+let orbitFocusNode = null;
+let orbitFocusTargetPos = null;   // posição alvo para lerp suave do cameraTarget
+const ORBIT_FOCUS_LERP = 0.18;    // 0..1 — maior = mais rápido pra encaixar no nó
+
 function sphericalToQuat(theta, phi) {
   const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
   const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), phi - Math.PI / 2);
@@ -16203,6 +16209,29 @@ window.addEventListener('mousemove', e => {
 });
 
 canvas.addEventListener('wheel', e => {
+  // ── Modo Órbita Focada: scroll gira a câmera em torno do nó-pivô ──
+  if (orbitFocusMode) {
+    e.preventDefault();
+    // Se há nó sob o cursor, troca/atualiza o pivô
+    const hovered = getIntersectedNode(e);
+    if (hovered) {
+      if (hovered !== orbitFocusNode) {
+        orbitFocusNode = hovered;
+        showOrbitFocusToast(hovered);
+      }
+      orbitFocusTargetPos = new THREE.Vector3(hovered.x, hovered.y, hovered.z);
+    }
+    // Sem nó nunca selecionado → nada a orbitar
+    if (!orbitFocusNode) return;
+    // Mantém pivô sincronizado caso o nó se mova
+    orbitFocusTargetPos = new THREE.Vector3(orbitFocusNode.x, orbitFocusNode.y, orbitFocusNode.z);
+    // Shift = pitch vertical, padrão = yaw horizontal
+    const delta = e.deltaY * 0.6;
+    if (e.shiftKey) applyOrbitDelta(0, delta);
+    else            applyOrbitDelta(delta, 0);
+    return;
+  }
+
   // Zoom proporcional: rápido longe, preciso perto
   const factor = 1 + e.deltaY * 0.001;
   const newZoom = Math.max(8, Math.min(500, zoomTarget * factor));
@@ -16221,7 +16250,68 @@ canvas.addEventListener('wheel', e => {
   }
 
   zoomTarget = newZoom;
-}, {passive:true});
+}, {passive:false});
+
+// ── Modo Órbita Focada: keyboard toggle (Space) + Esc para sair ──
+let _orbitFocusLastMouse = {x: window.innerWidth/2, y: window.innerHeight/2};
+window.addEventListener('mousemove', e => { _orbitFocusLastMouse = {x: e.clientX, y: e.clientY}; }, {passive:true});
+
+function showOrbitFocusToast(node) {
+  let t = document.getElementById('orbit-focus-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'orbit-focus-toast';
+    t.style.cssText = 'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99999;padding:8px 16px;background:rgba(20,20,28,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0.02em;pointer-events:none;opacity:0;transition:opacity 0.22s ease;box-shadow:0 8px 24px rgba(0,0,0,0.35)';
+    document.body.appendChild(t);
+  }
+  if (node === false) { t.style.opacity = '0'; return; }
+  const dot = (node && node.color) ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${node.color};margin-right:8px;vertical-align:middle"></span>` : '';
+  const titleTxt = node ? (node.title || 'nó') : 'mire um nó e use o scroll';
+  const hint = '<span style="opacity:0.55;margin-left:10px">scroll = girar · shift+scroll = inclinar · esc = sair</span>';
+  t.innerHTML = `${dot}Órbita focada: <b style="font-weight:600">${titleTxt}</b>${hint}`;
+  t.style.opacity = '1';
+}
+
+window.addEventListener('keydown', e => {
+  // Ignora se digitando em campo de texto
+  const ae = document.activeElement;
+  const tag = ae && ae.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (ae && ae.isContentEditable)) return;
+  // Não conflita com apresentação/tour
+  if (window.presentActive || window.tourActive) return;
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    orbitFocusMode = !orbitFocusMode;
+    if (orbitFocusMode) {
+      // Tenta pegar nó sob cursor agora
+      const fakeEv = {clientX: _orbitFocusLastMouse.x, clientY: _orbitFocusLastMouse.y};
+      const nd = getIntersectedNode(fakeEv);
+      if (nd) {
+        orbitFocusNode = nd;
+        orbitFocusTargetPos = new THREE.Vector3(nd.x, nd.y, nd.z);
+      } else {
+        orbitFocusNode = null;
+        orbitFocusTargetPos = null;
+      }
+      canvas.style.cursor = 'crosshair';
+      showOrbitFocusToast(orbitFocusNode);
+    } else {
+      orbitFocusNode = null;
+      orbitFocusTargetPos = null;
+      canvas.style.cursor = dragMode ? 'crosshair' : 'grab';
+      showOrbitFocusToast(false);
+    }
+    return;
+  }
+  if (e.code === 'Escape' && orbitFocusMode) {
+    orbitFocusMode = false;
+    orbitFocusNode = null;
+    orbitFocusTargetPos = null;
+    canvas.style.cursor = dragMode ? 'crosshair' : 'grab';
+    showOrbitFocusToast(false);
+  }
+});
 
 // Touch support
 let lastTouches = [];
@@ -18139,6 +18229,18 @@ function animate() {
     cameraTarget.add(panVel);
     panVel.multiplyScalar(PAN_DAMPING);
     needCamUpdate = true;
+  }
+  // Órbita focada: lerp suave do cameraTarget pra posição do nó-pivô
+  if (orbitFocusMode && orbitFocusTargetPos && !_flyRaf && !isPanning) {
+    const dx = orbitFocusTargetPos.x - cameraTarget.x;
+    const dy = orbitFocusTargetPos.y - cameraTarget.y;
+    const dz = orbitFocusTargetPos.z - cameraTarget.z;
+    if (dx*dx + dy*dy + dz*dz > 0.0004) {
+      cameraTarget.x += dx * ORBIT_FOCUS_LERP;
+      cameraTarget.y += dy * ORBIT_FOCUS_LERP;
+      cameraTarget.z += dz * ORBIT_FOCUS_LERP;
+      needCamUpdate = true;
+    }
   }
   // Slerp suave entre camQuat e camTargetQuat:
   // quando uma animação fly/2D está no controle direto de camQuat, o target
@@ -20259,6 +20361,36 @@ function _renderTutorial() {
             if(on&&n.main)c.style.animation='float 2.5s ease-in-out infinite';
             svg.appendChild(c);
           });
+        }
+      },
+      {name:'Órbita focada', tag:'Navegação', tBg:'rgba(55,138,221,.2)', tCl:'#7ec8ff', desc:'Câmera gira 360° em torno do nó-alvo', kbd:'Espaço',
+        draw(svg,on){
+          svg.innerHTML='';
+          const cx=80, cy=44;
+          // Órbita elíptica (trajetória da câmera)
+          const orbit=_mkSVG('ellipse',{cx,cy,rx:'52',ry:'20',fill:'none',stroke:on?'#378ADD':'rgba(255,255,255,1)','stroke-width':on?'1.8':'1.5','stroke-dasharray':'5 3',opacity:on?'0.75':'0.5'});
+          if(on) orbit.style.animation='dash-move 1.4s linear infinite';
+          svg.appendChild(orbit);
+          // Pulso ao redor do nó-alvo
+          if(on){
+            const ring=_mkSVG('circle',{cx,cy,r:14,fill:'none',stroke:'#378ADD','stroke-width':'2',opacity:'.6'});
+            ring.style.animation='pulse-ring 1.6s ease-out infinite';
+            svg.appendChild(ring);
+          }
+          // Nó-alvo central
+          const main=_mkSVG('circle',{cx,cy,r:11,fill:'#378ADD',opacity:'0.95'});
+          if(on) main.style.animation='float 2.4s ease-in-out infinite';
+          svg.appendChild(main);
+          // Câmera orbitando — grupo com animateTransform SVG nativo
+          if(on){
+            const cam=_mkSVG('g',{});
+            // ponto câmera + "lente" apontando pro centro
+            cam.appendChild(_mkSVG('line',{x1:cx+44,y1:cy,x2:cx+50,y2:cy,stroke:'#7ec8ff','stroke-width':'1.6',opacity:'0.7'}));
+            cam.appendChild(_mkSVG('circle',{cx:cx+52,cy:cy,r:5,fill:'#7ec8ff',opacity:'0.95'}));
+            cam.appendChild(_mkSVG('circle',{cx:cx+52,cy:cy,r:8,fill:'none',stroke:'#7ec8ff','stroke-width':'1',opacity:'0.5'}));
+            cam.appendChild(_mkSVG('animateTransform',{attributeName:'transform',type:'rotate',from:`0 ${cx} ${cy}`,to:`360 ${cx} ${cy}`,dur:'2.6s',repeatCount:'indefinite'}));
+            svg.appendChild(cam);
+          }
         }
       },
       {name:'Path Finder', tag:'Análise', tBg:'rgba(29,158,117,.18)', tCl:'#5ddcaa', desc:'Caminho mínimo entre dois nós', kbd:'P',
