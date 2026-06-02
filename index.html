@@ -11940,19 +11940,13 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   /* Base: blur e saturação máximos em painéis glass */
   /* #timeline-v2-panel + #quick-capture-panel removidos da regra — migrados via --ds-glass + --ds-blur-panel */
-  /* #lp-glass saturate(3.2) movido pro bloco html:not(.light) abaixo — em light mode amplificava
-     matizes esverdeadas do tema, tingindo o painel. */
 
   /* #quick-capture-panel dark override removido — migrado via --ds-* */
   /* #glass-settings-modal dark override (Shell Fase 1) removido — agora usa
      var(--ds-glass) + var(--ds-blur-panel) direto no bloco V2 (single-glass). */
-  html:not(.light) #lp-glass {
-    background: rgba(26,26,38,0.78) !important;
-    border: 1px solid rgba(255,255,255,0.18) !important;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.22) inset !important;
-    backdrop-filter: blur(80px) saturate(3.2) brightness(1.05) !important;
-    -webkit-backdrop-filter: blur(80px) saturate(3.2) brightness(1.05) !important;
-  }
+  /* REMOVIDO: regra html:not(.light) #lp-glass com !important que sobrescrevia inline styles
+     do JS (bg rgba(26,26,38,0.78), saturate 3.2) — deixava o painel esquerdo azulado e
+     dessincronizado com o #panel direito. Agora o JS aplica os mesmos valores nos dois. */
   /* html:not(.light) #panel overrides cleared — see primary CSS block */
 
   /* #quick-capture-panel light override removido — migrado via --ds-* */
