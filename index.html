@@ -277,6 +277,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   html:has(#community-overlay.open) #scanlines,
   html:has(#semantic-overlay.open) #scanlines,
   html:has(#txt2graph-overlay.open) #scanlines,
+  html:has(.share-overlay.open) #scanlines,
   html:has(#panorama-overlay.open) #grain-overlay,
   html:has(#timeline-overlay.open) #grain-overlay,
   html:has(#timeline-v2-overlay.open) #grain-overlay,
@@ -306,7 +307,8 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   html:has(#ai-suggest-overlay.open) #grain-overlay,
   html:has(#community-overlay.open) #grain-overlay,
   html:has(#semantic-overlay.open) #grain-overlay,
-  html:has(#txt2graph-overlay.open) #grain-overlay {
+  html:has(#txt2graph-overlay.open) #grain-overlay,
+  html:has(.share-overlay.open) #grain-overlay {
     opacity: 0 !important;
   }
   #grain-overlay { transition: opacity 0.18s ease; }
@@ -1772,6 +1774,196 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     object-fit: contain; opacity: 0; pointer-events: none; display: block;
   }
 
+
+  /* ══════════════════════════════════════════
+     SHARE MODAL — "Projeto no ar" / Compartilhar (Design System)
+     Criado dinamicamente via JS (projGenerateShareLink).
+     Classes .share-* substituem inline styles hardcoded.
+  ══════════════════════════════════════════ */
+  .share-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,10,0.08);
+    backdrop-filter: blur(10px) saturate(1.15);
+    -webkit-backdrop-filter: blur(10px) saturate(1.15);
+    visibility: hidden; opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0.18s ease;
+    isolation: isolate;
+    font-family: var(--ds-font);
+  }
+  html.light .share-overlay { background: rgba(255,255,255,0.02); }
+  .share-overlay.open { visibility: visible; opacity: 1; pointer-events: auto; }
+
+  .share-modal {
+    width: min(420px, 92vw); padding: 28px;
+    border-radius: var(--ds-r-xl);
+    background: rgba(28,28,30,0.72);
+    border: 1px solid var(--ds-border-strong);
+    box-shadow: var(--ds-shadow-panel-lg);
+    backdrop-filter: var(--ds-blur-panel);
+    -webkit-backdrop-filter: var(--ds-blur-panel);
+    color: var(--ds-t1); font-family: var(--ds-font);
+    isolation: isolate;
+    will-change: opacity, transform;
+    animation: share-modal-in 0.22s cubic-bezier(0.2,0,0,1) both;
+  }
+  html.light .share-modal { background: rgba(255,255,255,0.78); }
+  @keyframes share-modal-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Estado: já no ar ── */
+  .share-status {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 22px;
+  }
+  .share-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4ade80; flex-shrink: 0;
+    box-shadow: 0 0 8px #4ade80;
+    animation: share-pulse 2s infinite;
+  }
+  @keyframes share-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+  .share-status-text {
+    font-family: var(--ds-font);
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ds-t2);
+  }
+
+  .share-label {
+    font-family: var(--ds-font);
+    font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ds-t4);
+    margin-bottom: 8px;
+  }
+
+  .share-input-row {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 22px;
+  }
+  .share-url-input {
+    flex: 1; box-sizing: border-box;
+    height: 36px; padding: 0 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-r-md);
+    color: var(--ds-t2);
+    font-family: var(--ds-font-mono); font-size: 11px;
+    outline: none; cursor: default;
+    transition: border-color var(--ds-tr-fast);
+  }
+  html.light .share-url-input { background: rgba(255,255,255,0.45); }
+  .share-url-input:focus { border-color: var(--ds-accent); }
+
+  .share-btn-copy {
+    padding: 0 16px; height: 36px;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-r-md);
+    background: rgba(255,255,255,0.05); color: var(--ds-t1);
+    font-family: var(--ds-font); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer; flex-shrink: 0;
+    transition: background var(--ds-tr-fast), border-color var(--ds-tr-fast);
+  }
+  html.light .share-btn-copy { background: rgba(255,255,255,0.45); }
+  .share-btn-copy:hover { background: rgba(255,255,255,0.10); border-color: var(--ds-accent); }
+  html.light .share-btn-copy:hover { background: rgba(255,255,255,0.75); }
+
+  .share-actions {
+    border-top: 1px solid var(--ds-border-soft);
+    padding-top: 18px;
+    display: flex; gap: 10px; justify-content: space-between;
+  }
+  .share-btn-revoke {
+    padding: 9px 16px;
+    border: 1px solid rgba(239,68,68,0.42);
+    border-radius: var(--ds-r-md);
+    background: rgba(239,68,68,0.08);
+    color: var(--ds-danger);
+    font-family: var(--ds-font); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--ds-tr-fast), border-color var(--ds-tr-fast);
+  }
+  .share-btn-revoke:hover { background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.55); }
+
+  .share-btn-close {
+    padding: 9px 16px;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-r-md);
+    background: rgba(255,255,255,0.05);
+    color: var(--ds-t2);
+    font-family: var(--ds-font); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--ds-tr-fast), color var(--ds-tr-fast);
+  }
+  html.light .share-btn-close { background: rgba(255,255,255,0.45); }
+  .share-btn-close:hover { background: rgba(255,255,255,0.10); color: var(--ds-t1); }
+  html.light .share-btn-close:hover { background: rgba(255,255,255,0.75); }
+
+  /* ── Estado: formulário de criação ── */
+  .share-form-title {
+    font-family: var(--ds-font);
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ds-t2);
+    margin-bottom: 20px;
+  }
+  .share-slug-input {
+    width: 100%; box-sizing: border-box;
+    height: 38px; padding: 0 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-r-md);
+    color: var(--ds-t1);
+    font-family: var(--ds-font-mono); font-size: 12px;
+    outline: none; letter-spacing: 0.02em;
+    transition: border-color var(--ds-tr-fast), box-shadow var(--ds-tr-fast);
+  }
+  html.light .share-slug-input { background: rgba(255,255,255,0.45); }
+  .share-slug-input:focus { border-color: var(--ds-accent); box-shadow: 0 0 0 3px var(--ds-accent-glow); }
+  .share-slug-input:disabled { opacity: 0.55; }
+
+  .share-error {
+    font-family: var(--ds-font);
+    font-size: 10px; color: var(--ds-danger);
+    margin-top: 6px; min-height: 14px; letter-spacing: 0.02em;
+  }
+
+  .share-form-actions {
+    display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;
+  }
+  .share-btn-cancel {
+    padding: 9px 18px;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-r-md);
+    background: rgba(255,255,255,0.05);
+    color: var(--ds-t2);
+    font-family: var(--ds-font); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--ds-tr-fast), color var(--ds-tr-fast);
+  }
+  html.light .share-btn-cancel { background: rgba(255,255,255,0.45); }
+  .share-btn-cancel:hover { background: rgba(255,255,255,0.10); color: var(--ds-t1); }
+  html.light .share-btn-cancel:hover { background: rgba(255,255,255,0.75); }
+
+  .share-btn-confirm {
+    padding: 9px 18px;
+    border: 1px solid rgba(59,130,246,0.50);
+    border-radius: var(--ds-r-md);
+    background: var(--ds-accent); color: #fff;
+    font-family: var(--ds-font); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 3px 12px var(--ds-accent-glow);
+    transition: background var(--ds-tr-fast), transform var(--ds-tr-fast), box-shadow var(--ds-tr-fast);
+  }
+  .share-btn-confirm:hover { background: var(--ds-accent-hover); transform: translateY(-1px); box-shadow: 0 5px 18px var(--ds-accent-glow); }
 
   /* ── Template / Theme Picker ── */
   /* ── THEME MODAL — Design System ── */
@@ -32947,42 +33139,48 @@ async function projGenerateShareLink(projId) {
     } catch(e) {}
 
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    overlay.className = 'share-overlay';
+    // Close helper: animação de saída antes de remover
+    const _shareClose = () => {
+      overlay.classList.remove('open');
+      setTimeout(() => overlay.remove(), 200);
+    };
+    overlay.addEventListener('click', e => { if (e.target === overlay) _shareClose(); });
     document.body.appendChild(overlay);
+    // Fade-in suave (próximo frame)
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')));
 
     if (existingLink) {
       // ── Estado: projeto JÁ está no ar ──
       const identifier = existingLink.slug || existingLink.token;
       const url = window.location.origin + window.location.pathname + '?share=' + identifier;
       overlay.innerHTML = `
-        <div style="background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px;width:380px;font-family:var(--mono);color:#eee;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;box-shadow:0 0 8px #4ade80;animation:_pulse-share 2s infinite;"></span>
-            <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.55;">Projeto no ar</span>
+        <div class="share-modal">
+          <div class="share-status">
+            <span class="share-status-dot"></span>
+            <span class="share-status-text">Projeto no ar</span>
           </div>
-          <div style="font-size:9px;opacity:0.45;margin-bottom:6px;letter-spacing:0.06em;text-transform:uppercase;">Link público</div>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:22px;">
-            <input readonly value="${url}" style="flex:1;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:5px;padding:8px 10px;color:rgba(255,255,255,0.65);font-family:var(--mono);font-size:10px;outline:none;cursor:default;" />
-            <button id="_sh-copy" style="padding:8px 14px;border:1px solid rgba(255,255,255,0.25);border-radius:5px;background:rgba(255,255,255,0.08);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;flex-shrink:0;">Copiar</button>
+          <div class="share-label">Link público</div>
+          <div class="share-input-row">
+            <input class="share-url-input" readonly value="${url}" />
+            <button id="_sh-copy" class="share-btn-copy">Copiar</button>
           </div>
-          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;display:flex;gap:10px;justify-content:space-between;">
-            <button id="_sh-revoke" style="padding:7px 14px;border:1px solid rgba(255,80,80,0.35);border-radius:5px;background:transparent;color:rgba(255,100,100,0.75);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">✕ Tirar do ar</button>
-            <button id="_sh-close" style="padding:7px 14px;border:1px solid rgba(255,255,255,0.18);border-radius:5px;background:transparent;color:rgba(255,255,255,0.6);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Fechar</button>
+          <div class="share-actions">
+            <button id="_sh-revoke" class="share-btn-revoke">✕ Tirar do ar</button>
+            <button id="_sh-close" class="share-btn-close">Fechar</button>
           </div>
-        </div>
-        <style>@keyframes _pulse-share{0%,100%{opacity:1}50%{opacity:0.4}}</style>`;
+        </div>`;
 
       overlay.querySelector('#_sh-copy').onclick = async () => {
         try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
       };
-      overlay.querySelector('#_sh-close').onclick = () => overlay.remove();
+      overlay.querySelector('#_sh-close').onclick = _shareClose;
       overlay.querySelector('#_sh-revoke').onclick = async () => {
         if (!confirm('Tirar o projeto do ar? Visitantes perderão o acesso.')) return;
         try {
           const { error } = await _sb.from('public_shares').delete().eq('proj_id', projId).eq('user_id', session.user.id);
           if (error) throw error;
-          overlay.remove();
+          _shareClose();
           toast('Projeto tirado do ar');
           projUpdateShareBtn(projId);
         } catch(e) { toast('Erro: ' + (e.message || '')); }
@@ -32992,15 +33190,14 @@ async function projGenerateShareLink(projId) {
       // ── Estado: sem link — formulário de criação ──
       const autoSlug = _generateSlug(proj.sub || proj.name);
       overlay.innerHTML = `
-        <div style="background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px 28px 22px;width:360px;font-family:var(--mono);color:#eee;">
-          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.5;margin-bottom:18px;">Compartilhar projeto</div>
-          <div style="font-size:10px;opacity:0.6;margin-bottom:7px;letter-spacing:0.06em;">Link personalizado</div>
-          <input id="_sh-slug" type="text" value="${autoSlug}"
-            style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:5px;padding:8px 10px;color:#fff;font-family:var(--mono);font-size:11px;outline:none;letter-spacing:0.04em;" />
-          <div id="_sh-err" style="font-size:9px;color:#ff6b6b;margin-top:5px;min-height:13px;letter-spacing:0.04em;"></div>
-          <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
-            <button id="_sh-cancel" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:transparent;color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Cancelar</button>
-            <button id="_sh-confirm" style="padding:7px 16px;border:1px solid rgba(255,255,255,0.5);border-radius:4px;background:rgba(255,255,255,0.1);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Gerar link</button>
+        <div class="share-modal">
+          <div class="share-form-title">Compartilhar projeto</div>
+          <div class="share-label">Link personalizado</div>
+          <input id="_sh-slug" class="share-slug-input" type="text" value="${autoSlug}" />
+          <div id="_sh-err" class="share-error"></div>
+          <div class="share-form-actions">
+            <button id="_sh-cancel" class="share-btn-cancel">Cancelar</button>
+            <button id="_sh-confirm" class="share-btn-confirm">Gerar link</button>
           </div>
         </div>`;
 
@@ -33008,7 +33205,7 @@ async function projGenerateShareLink(projId) {
       const errEl    = overlay.querySelector('#_sh-err');
       slugInput.focus(); slugInput.select();
 
-      overlay.querySelector('#_sh-cancel').onclick = () => overlay.remove();
+      overlay.querySelector('#_sh-cancel').onclick = _shareClose;
       overlay.querySelector('#_sh-confirm').onclick = async () => {
         const slug = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
         if (!slug || slug.length < 3) { errEl.textContent = 'Slug muito curto (mín. 3 caracteres)'; return; }
@@ -33030,7 +33227,7 @@ async function projGenerateShareLink(projId) {
           const { error } = await _sb.from('public_shares').insert({ token, slug, proj_id: projId, user_id: session.user.id, proj_name: proj.name || 'Projeto', proj_data: pd, created_at: Date.now() });
           if (error) throw error;
 
-          overlay.remove();
+          _shareClose();
           projUpdateShareBtn(projId);
           const url = window.location.origin + window.location.pathname + '?share=' + slug;
           try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
