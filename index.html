@@ -32934,6 +32934,32 @@ async function projSaveList() {
 }
 
 async function projSaveData(id, data) {
+  // ── GUARDA ANTI-WIPE ─────────────────────────────────────────
+  // Se o estado em memória tem 0 nós mas o cache local tem N>0, exige
+  // confirmação via dsConfirm. Bloqueia o bug "login falha → carrega
+  // vazio → auto-save sobrescreve tudo". Cobre TANTO localStorage
+  // quanto cloud porque é o primeiro check do save.
+  if (Array.isArray(data.nodes) && data.nodes.length === 0) {
+    let prevNodesCount = 0;
+    try {
+      const raw = localStorage.getItem(PROJ_DATA_KEY(id));
+      const prev = raw ? JSON.parse(raw) : null;
+      prevNodesCount = (prev && Array.isArray(prev.nodes)) ? prev.nodes.length : 0;
+    } catch(e) {}
+    if (prevNodesCount > 0 && !window._dsAntiWipeShowing) {
+      window._dsAntiWipeShowing = true;
+      const ok = await dsConfirm({
+        title: 'Salvar projeto vazio?',
+        message: 'Você está prestes a salvar 0 nós sobre ' + prevNodesCount + ' nós existentes neste projeto. Isso geralmente é bug (login falhou e carregou estado vazio). Cancele e recarregue a página se foi sem querer.',
+        confirmLabel: 'Sim, apagar tudo',
+        cancelLabel: 'Cancelar',
+        destructive: true
+      });
+      window._dsAntiWipeShowing = false;
+      if (!ok) { console.warn('[NODAL] save bloqueado: usuário cancelou sobrescrita vazia'); return; }
+    }
+  }
+  // ── FIM GUARDA ───────────────────────────────────────────────
   data._ts = Date.now(); // ── carimbo de tempo para resolver conflitos local × nuvem
   try { localStorage.setItem(PROJ_DATA_KEY(id), JSON.stringify(data)); } catch(e) {}
   try {
