@@ -4911,6 +4911,173 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     -webkit-backdrop-filter: blur(20px);
   }
 
+  /* ── DS Confirm/Prompt Modal ─────────────────────────
+     Substitui alert()/confirm()/prompt() nativos por
+     diálogo visionOS-aware. Usa tokens --ds-*. */
+  .ds-confirm-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(8px) saturate(1.2);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+    /* 100000 pra ficar acima de overlays z-index:10000 (mídia, dropdowns)
+       e abaixo do toast (99999 inline) — toast é apenas notificação */
+    z-index: 100000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+  .ds-confirm-overlay.is-open { opacity: 1; pointer-events: auto; }
+  html.light .ds-confirm-overlay { background: rgba(0, 0, 0, 0.22); }
+  .ds-confirm-modal {
+    width: min(420px, calc(100vw - 32px));
+    border-radius: var(--ds-r-lg);
+    border: 1px solid var(--ds-border-strong);
+    background: var(--ds-glass);
+    backdrop-filter: var(--ds-blur-panel);
+    -webkit-backdrop-filter: var(--ds-blur-panel);
+    box-shadow: var(--ds-shadow-panel-lg);
+    overflow: hidden; isolation: isolate;
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.18s ease;
+    font-family: var(--ds-font);
+  }
+  .ds-confirm-overlay.is-open .ds-confirm-modal { transform: translateY(0) scale(1); }
+  .ds-confirm__header { padding: 20px 22px 4px; }
+  .ds-confirm__title {
+    font-size: 16px; font-weight: 600; color: var(--ds-t1);
+    letter-spacing: -0.01em; line-height: 1.3;
+  }
+  .ds-confirm__body { padding: 8px 22px 4px; }
+  .ds-confirm__msg {
+    font-size: 13px; color: var(--ds-t2);
+    line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;
+  }
+  .ds-confirm__msg:empty { display: none; }
+  .ds-confirm__input {
+    width: 100%; box-sizing: border-box;
+    margin-top: 12px; padding: 10px 12px;
+    border-radius: var(--ds-r-sm);
+    border: 1px solid var(--ds-border-strong);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ds-t1);
+    font-size: 13px; font-family: var(--ds-font);
+    outline: none;
+    transition: border-color var(--ds-tr-fast), box-shadow var(--ds-tr-fast);
+  }
+  html.light .ds-confirm__input { background: rgba(0, 0, 0, 0.03); }
+  .ds-confirm__input:focus {
+    border-color: var(--ds-accent);
+    box-shadow: 0 0 0 3px var(--ds-accent-glow);
+  }
+  .ds-confirm__footer {
+    display: flex; gap: 8px; justify-content: flex-end;
+    padding: 18px 22px 20px; margin-top: 8px;
+  }
+  .ds-confirm__btn {
+    min-width: 86px; padding: 9px 16px;
+    border-radius: var(--ds-r-sm);
+    border: 1px solid transparent;
+    font-size: 13px; font-weight: 500;
+    font-family: var(--ds-font); cursor: pointer; outline: none;
+    transition: background var(--ds-tr-fast), border-color var(--ds-tr-fast), color var(--ds-tr-fast), filter var(--ds-tr-fast);
+  }
+  .ds-confirm__btn:focus-visible { box-shadow: 0 0 0 3px var(--ds-accent-glow); }
+  .ds-confirm__btn--ghost {
+    background: transparent;
+    border-color: var(--ds-border-strong);
+    color: var(--ds-t2);
+  }
+  .ds-confirm__btn--ghost:hover { background: rgba(255, 255, 255, 0.06); color: var(--ds-t1); }
+  html.light .ds-confirm__btn--ghost:hover { background: rgba(0, 0, 0, 0.04); }
+  .ds-confirm__btn--primary { background: var(--ds-accent); color: #fff; }
+  .ds-confirm__btn--primary:hover { background: var(--ds-accent-hover); }
+  .ds-confirm__btn--danger { background: var(--ds-danger); color: #fff; border-color: var(--ds-danger); }
+  .ds-confirm__btn--danger:hover { filter: brightness(0.92); }
+
+  /* ── DS Empty State ──────────────────────────────────
+     Componente reutilizável pra listas/painéis vazios. */
+  .ds-empty {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px; padding: 28px 20px;
+    text-align: center; user-select: none;
+  }
+  .ds-empty__icon {
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--ds-r-md);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--ds-border-soft);
+    color: var(--ds-t3);
+    margin-bottom: 4px;
+  }
+  html.light .ds-empty__icon { background: rgba(0, 0, 0, 0.03); }
+  .ds-empty__icon svg { width: 20px; height: 20px; }
+  .ds-empty__title {
+    font-family: var(--ds-font);
+    font-size: 13px; font-weight: 600;
+    color: var(--ds-t2);
+    letter-spacing: -0.01em;
+  }
+  .ds-empty__msg {
+    font-family: var(--ds-font);
+    font-size: 11.5px; line-height: 1.5;
+    color: var(--ds-t3);
+    max-width: 240px;
+  }
+  .ds-empty__msg b { color: var(--ds-t2); font-weight: 600; }
+  .ds-empty__cta {
+    margin-top: 10px;
+    padding: 7px 14px;
+    border-radius: var(--ds-r-sm);
+    background: var(--ds-accent); color: #fff;
+    font-size: 12px; font-weight: 500;
+    border: none; cursor: pointer;
+    font-family: var(--ds-font);
+    transition: background var(--ds-tr-fast);
+  }
+  .ds-empty__cta:hover { background: var(--ds-accent-hover); }
+
+  /* ── DS Skeleton ─────────────────────────────────────
+     Placeholder animado pra estados de loading.
+     Uso: <div class="ds-skeleton ds-skeleton--text"></div> */
+  .ds-skeleton {
+    display: block;
+    background: linear-gradient(90deg,
+      rgba(255,255,255,0.04) 0%,
+      rgba(255,255,255,0.10) 50%,
+      rgba(255,255,255,0.04) 100%);
+    background-size: 200% 100%;
+    border-radius: var(--ds-r-sm);
+    animation: dsSkeletonShimmer 1.6s ease-in-out infinite;
+  }
+  html.light .ds-skeleton {
+    background: linear-gradient(90deg,
+      rgba(0,0,0,0.04) 0%,
+      rgba(0,0,0,0.08) 50%,
+      rgba(0,0,0,0.04) 100%);
+    background-size: 200% 100%;
+  }
+  .ds-skeleton--text { height: 12px; width: 100%; border-radius: var(--ds-r-xs); }
+  .ds-skeleton--text-sm { height: 10px; width: 60%; border-radius: var(--ds-r-xs); }
+  .ds-skeleton--title { height: 16px; width: 70%; border-radius: var(--ds-r-xs); }
+  .ds-skeleton--card { height: 80px; width: 100%; border-radius: var(--ds-r-md); }
+  .ds-skeleton--avatar { height: 32px; width: 32px; border-radius: var(--ds-r-full); }
+  .ds-skeleton-stack { display: flex; flex-direction: column; gap: 8px; }
+  @keyframes dsSkeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── DS Layout Utilities ─────────────────────────────
+     Patterns repetidos de layout viram classes utilitárias.
+     Reduz inline styles e mantém consistência. */
+  .ds-stack { display: flex; flex-direction: column; }
+  .ds-row   { display: flex; flex-direction: row; align-items: center; }
+  .ds-fill  { flex: 1; overflow: hidden; }
+  /* Atalho mais comum: container que preenche e empilha filhos */
+  .ds-stack-fill { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
   /* Light mode glass overrides */
   html.light .btn { border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.45); background: rgba(0,0,0,0.02); }
   html.light .btn:hover { border-color: rgba(0,0,0,0.45); color: #111; background: rgba(0,0,0,0.06); }
@@ -13230,11 +13397,10 @@ html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20, 30, 5
     </div>
     <div id="fav-tags-bar"></div>
     <div id="fav-list">
-      <div id="fav-empty">
-        <div style="font-size:22px;margin-bottom:8px">&#9733;</div>
-        Nenhum favorito ainda.<br>
-        Clique em <b>+ Adicionar favorito</b> ou<br>
-        bot&#227;o direito em um n&#243;.
+      <div class="ds-empty">
+        <div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"/></svg></div>
+        <div class="ds-empty__title">Nenhum favorito ainda</div>
+        <div class="ds-empty__msg">Clique em <b>+ Adicionar favorito</b> ou clique com o bot&#227;o direito em um n&#243;.</div>
       </div>
     </div>
     <div id="fav-list-footer"><span id="fav-panel-count">0</span> favoritos</div>
@@ -13693,12 +13859,12 @@ html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20, 30, 5
   <div id="panel-body">
 
     <!-- ═══ TAB: EDITOR ═══ -->
-    <div id="tab-editor" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div id="tab-editor" class="ds-stack-fill">
       <div id="editor-empty">
         <span class="icon">◈</span>
         Clique em um nó para<br>ver detalhes ou editar
       </div>
-      <div id="editor-form" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div id="editor-form" class="ds-stack-fill" style="display:none">
         <div class="p-scroll">
 
           <!-- IDENTIDADE -->
@@ -13845,7 +14011,7 @@ html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20, 30, 5
     </div><!-- /tab-editor -->
 
     <!-- ═══ TAB: CRIAR ═══ -->
-    <div id="tab-create" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div id="tab-create" class="ds-stack-fill" style="display:none">
       <div class="p-scroll">
 
         <!-- NOVO NÓ -->
@@ -13959,7 +14125,7 @@ html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20, 30, 5
     </div><!-- /tab-create -->
 
     <!-- ═══ TAB: SINAPSES ═══ -->
-    <div id="tab-connections" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div id="tab-connections" class="ds-stack-fill" style="display:none">
       <div class="p-scroll">
         <div class="p-section">
           <div class="section-title">Sinapses Ativas</div>
@@ -13972,7 +14138,7 @@ html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20, 30, 5
     </div><!-- /tab-connections -->
 
     <!-- ═══ TAB: EXPORT ═══ -->
-    <div id="tab-export" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div id="tab-export" class="ds-stack-fill" style="display:none">
       <div class="p-scroll">
         <div class="p-section">
           <div class="section-title">Exportar / Importar</div>
@@ -14014,7 +14180,7 @@ html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20, 30, 5
 
 <div id="connect-banner">Modo Conexão — Clique em dois nós para criar uma sinapse</div>
 <div id="drag-banner">Modo Mover — Arraste qualquer nó para reposicioná-lo</div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Tag Manager Modal -->
 <div id="tag-manager-overlay" onclick="if(event.target===this)closeTagManager()"></div>
@@ -14253,8 +14419,8 @@ function enterViewerMode() {
   toast('Modo visitante — apenas visualização');
 }
 
-function lockEditor() {
-  if (!confirm('Sair da conta? Você precisará fazer login novamente.')) return;
+async function lockEditor() {
+  if (!(await dsConfirm({title:'Sair da conta?', message:'Você precisará fazer login novamente.', confirmLabel:'Sair'}))) return;
   _sb.auth.signOut();
   isEditorUnlocked = false;
   document.documentElement.classList.remove('editor-mode');
@@ -14491,7 +14657,11 @@ function renderCatManager() {
   const cEl = document.getElementById('custom-cat-list');
   const entries = Object.entries(customCats);
   if (!entries.length) {
-    cEl.innerHTML = '<div class="cmp-cat-empty">Nenhuma categoria personalizada</div>';
+    cEl.innerHTML = `<div class="ds-empty">
+      <div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9" opacity="0.35"/></svg></div>
+      <div class="ds-empty__title">Nenhuma categoria personalizada</div>
+      <div class="ds-empty__msg">Crie categorias acima pra organizar seus nós com cores próprias.</div>
+    </div>`;
   } else {
     cEl.innerHTML = entries.map(([k, c]) => `
       <div class="cmp-cat-item cmp-cat-custom" data-key="${k}">
@@ -14522,7 +14692,7 @@ function addCustomCat() {
   renderCatManager();
   rebuildAllCatSelects();
   saveSettings();
-  toast('Categoria criada: ' + key);
+  toast('✦ Categoria criada: ' + key);
 }
 
 function updateBuiltinCatColor(key, color, input) {
@@ -14558,10 +14728,10 @@ function updateCustomCatColor(key, color, input) {
   toast('Cor atualizada: ' + key);
 }
 
-function removeCustomCat(key) {
+async function removeCustomCat(key) {
   // Check if any nodes use it
   const count = nodes.filter(n => n.cat === key).length;
-  if (count && !confirm(`Remover categoria "${key}"? ${count} nó(s) serão movidos para "ideia".`)) return;
+  if (count && !(await dsConfirm({title:`Remover categoria "${key}"?`, message:`${count} nó(s) serão movidos para "ideia".`, destructive:true, confirmLabel:'Remover'}))) return;
   nodes.forEach(nd => { if (nd.cat === key) { nd.cat = 'ideia'; rebuildNodeMesh(nd); } });
   delete customCats[key];
   renderCatManager();
@@ -14679,7 +14849,7 @@ function handleLogoUpload(input) {
       if (data.length > 500000) data = canvas.toDataURL('image/jpeg', 0.9);
       applyLogo(data);
       saveLogo(data);
-      toast('Logo atualizada! ✦');
+      toast('✦ Logo atualizada');
     };
     img.src = e.target.result;
   };
@@ -15221,7 +15391,7 @@ function applyCustomColor() {
   }
 }
 
-function saveTheme() { saveSettings(); toast('Tema salvo'); }
+function saveTheme() { saveSettings(); toast('✓ Tema salvo'); }
 function resetTheme() {
   const card = document.querySelector('.tm-card[data-theme="papel"]');
   if (card) tmSelectTheme(card, true);
@@ -15327,7 +15497,14 @@ document.addEventListener('keydown', e => {
 
 function renderSearchAll() {
   const results = document.getElementById('search-results');
-  if (!nodes.length) { results.innerHTML = '<div id="search-empty">Nenhum nó encontrado no mapa</div>'; return; }
+  if (!nodes.length) {
+    results.innerHTML = `<div class="ds-empty">
+      <div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" opacity="0.35"/></svg></div>
+      <div class="ds-empty__title">Mapa vazio</div>
+      <div class="ds-empty__msg">Crie seu primeiro nó pra começar a explorar.</div>
+    </div>`;
+    return;
+  }
   results.innerHTML = nodes.map((nd,i) => buildSearchItem(nd, '', i)).join('');
   addSearchListeners();
 }
@@ -15380,7 +15557,12 @@ function doSearch(q) {
   });
 
   if (!nodeHits.length && !articleHits.length && !mediaHits.length) {
-    results.innerHTML = `<div id="search-empty">Nenhum resultado para "<b>${q}</b>"<br><span style="font-size:9px;opacity:.6">Pesquisado em nós, artigos e mídias</span></div>`;
+    const qEsc = String(q).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    results.innerHTML = `<div class="ds-empty">
+      <div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <div class="ds-empty__title">Nenhum resultado</div>
+      <div class="ds-empty__msg">Não encontramos nada pra "<b>${qEsc}</b>".<br/>Pesquisado em nós, artigos e mídias.</div>
+    </div>`;
     return;
   }
 
@@ -15909,6 +16091,8 @@ function applyBloomForBackground(hex) {
       window.bloomPass.radius    = 0.55;
     }
   } catch(e) {}
+  // Refresh dos nós conforme tema (A + C). No dark restaura ao original.
+  try { if (typeof _refreshAllNodesForTheme === 'function') _refreshAllNodesForTheme(); } catch(e) {}
 }
 window.applyBloomForBackground = applyBloomForBackground;
 
@@ -16000,9 +16184,12 @@ const raycaster = new THREE.Raycaster();
 let orbitVelX = 0, orbitVelY = 0;
 const ORBIT_DAMPING = 0.88;
 let zoomTarget = 90;
-const ZOOM_LERP = 0.10;
+const ZOOM_LERP = 0.15;
 const panVel = new THREE.Vector3();
 const PAN_DAMPING = 0.85;
+// Anchor de zoom-to-cursor: ponto pra onde cameraTarget deve convergir
+// junto com o lerp do raio. Mantém o ponto sob o cursor visualmente preso.
+let zoomAnchorGoal = null;
 
 // ── Quaternion arcball (sem gimbal lock) ───────────
 const camQuat = new THREE.Quaternion();       // quaternion atual da câmera (suavizado)
@@ -16012,6 +16199,10 @@ let camTargetQuat = new THREE.Quaternion();   // alvo para o slerp — mouse/in�
 let orbitFocusMode = false;
 let orbitFocusNode = null;
 let orbitFocusTargetPos = null;   // posição alvo para lerp suave do cameraTarget
+// Trava de gesto: enquanto o scroll está ativo, outros nós passando sob o
+// cursor não roubam o pivô. A trava libera após uma pausa breve no scroll.
+let _orbitFocusLastWheelTs = 0;
+const ORBIT_FOCUS_LOCK_MS = 280;
 const ORBIT_FOCUS_LERP = 0.18;    // 0..1 — maior = mais rápido pra encaixar no nó
 
 function sphericalToQuat(theta, phi) {
@@ -16212,14 +16403,18 @@ canvas.addEventListener('wheel', e => {
   // ── Modo Órbita Focada: scroll gira a câmera em torno do nó-pivô ──
   if (orbitFocusMode) {
     e.preventDefault();
-    // Se há nó sob o cursor, troca/atualiza o pivô
-    const hovered = getIntersectedNode(e);
-    if (hovered) {
-      if (hovered !== orbitFocusNode) {
+    // Trava de gesto: só re-mira um nó quando o usuário pausou o scroll
+    // (gesto encerrado). Durante uma rotação contínua, outros nós cruzando
+    // o cursor são ignorados — o foco fica preso no nó original.
+    const now = performance.now();
+    const gestureActive = (now - _orbitFocusLastWheelTs) < ORBIT_FOCUS_LOCK_MS;
+    _orbitFocusLastWheelTs = now;
+    if (!gestureActive) {
+      const hovered = getIntersectedNode(e);
+      if (hovered && hovered !== orbitFocusNode) {
         orbitFocusNode = hovered;
         showOrbitFocusToast(hovered);
       }
-      orbitFocusTargetPos = new THREE.Vector3(hovered.x, hovered.y, hovered.z);
     }
     // Sem nó nunca selecionado → nada a orbitar
     if (!orbitFocusNode) return;
@@ -16232,9 +16427,19 @@ canvas.addEventListener('wheel', e => {
     return;
   }
 
-  // Zoom proporcional: rápido longe, preciso perto
-  const factor = 1 + e.deltaY * 0.001;
+  // Normaliza deltaY entre mouse-wheel, trackpad e modos line/page
+  let dy = e.deltaY;
+  if (e.deltaMode === 1)      dy *= 16;   // linhas → px aproximados
+  else if (e.deltaMode === 2) dy *= 100;  // páginas → px aproximados
+  // Clamp por evento pra evitar saltos enormes de alguns drivers/trackpads
+  if (dy >  240) dy =  240;
+  if (dy < -240) dy = -240;
+
+  // Curva exponencial: simétrica (zoom-in + zoom-out = identidade)
+  // e dá sensação uniforme em qualquer raio
+  const factor  = Math.pow(1.0012, dy);
   const newZoom = Math.max(8, Math.min(500, zoomTarget * factor));
+  if (newZoom === zoomTarget) return;
 
   // Zoom em direção ao cursor (só fora de fly e modo 2D)
   if (!_flyRaf && !window.flat2DActive) {
@@ -16244,8 +16449,17 @@ canvas.addEventListener('wheel', e => {
     const focalPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(camDir, cameraTarget);
     const fp = new THREE.Vector3();
     if (raycaster.ray.intersectPlane(focalPlane, fp)) {
-      const shift = (1 - newZoom / zoomTarget) * 0.35;
-      cameraTarget.addScaledVector(fp.sub(cameraTarget), shift);
+      // Matemática exata: pra preservar o ponto fp sob o cursor após
+      // o raio mudar de R para R*r (r = newZoom/zoomTarget), o cameraTarget
+      // precisa convergir para  (1-r)*fp + r*cameraTarget.
+      // Em vez de aplicar isso instantaneamente (causa "drift"), guardamos
+      // o destino e deixamos o animate() lerpar junto com o raio.
+      const r = newZoom / zoomTarget;
+      const base = zoomAnchorGoal || cameraTarget;
+      const goalX = base.x + (1 - r) * (fp.x - base.x);
+      const goalY = base.y + (1 - r) * (fp.y - base.y);
+      const goalZ = base.z + (1 - r) * (fp.z - base.z);
+      zoomAnchorGoal = new THREE.Vector3(goalX, goalY, goalZ);
     }
   }
 
@@ -16990,10 +17204,8 @@ function _corUpdate(e) {
       _corLastZoneNode = nd;
       canvas.style.cursor = 'pointer';
     }
-    const ring = _corGetRing();
-    ring.style.display = 'block';
-    ring.style.left = e.clientX + 'px';
-    ring.style.top  = e.clientY + 'px';
+    // Ring visual desabilitado — confundia usuários com spinner de loading.
+    // A mudança de cursor pra 'pointer' (acima) já é dica suficiente.
   } else {
     _corHide();
   }
@@ -17137,7 +17349,7 @@ function toggleDragMode() {
 function handleConnectClick(nd) {
   if (!connectFirst) { connectFirst = nd; pulseNode(nd); toast('Primeiro: ' + nd.title + ' — clique no segundo'); }
   else {
-    if (connectFirst.id !== nd.id) { createConnection(connectFirst.id, nd.id); toast('Sinapse criada!'); }
+    if (connectFirst.id !== nd.id) { createConnection(connectFirst.id, nd.id); toast('✦ Sinapse criada'); }
     connectFirst = null; toggleConnectMode();
   }
 }
@@ -17372,9 +17584,9 @@ function rebuildNodeMesh(nd) {
   });
 }
 
-function deleteSelectedNode() {
+async function deleteSelectedNode() {
   if (!selectedNode) return;
-  if (!confirm('Remover nó "'+selectedNode.title+'"?')) return;
+  if (!(await dsConfirm({title:'Remover nó "'+selectedNode.title+'"?', destructive:true, confirmLabel:'Remover'}))) return;
   removeNode(selectedNode);
 }
 
@@ -17415,7 +17627,7 @@ function createNode() {
   document.getElementById('c-desc').value  = '';
   document.getElementById('c-date').value  = '';
   renderTagPicker('c', []);
-  toast('Nó criado!');
+  toast('✦ Nó criado');
 }
 function addNodeDialog() { switchTab('create'); if(!panelVisible) togglePanel(); rebuildAllCatSelects(); document.getElementById('c-title').focus(); }
 
@@ -17748,7 +17960,7 @@ function addGlobalTag() {
   renderGlobalTagList();
   saveGlobalTags();
   saveSettings(); // salva tagIdCounter atualizado
-  toast('Tag criada: ' + name);
+  toast('✦ Tag criada: ' + name);
 }
 function removeGlobalTag(tid) {
   globalTags = globalTags.filter(t => t.id !== tid);
@@ -17848,7 +18060,7 @@ function updateNotesCount() {
 function saveNotes() {
   if (!leftPanelNode) return;
   leftPanelNode.notes = document.getElementById('lp-notes-area').value;
-  save(); toast('Notas salvas');
+  save(); toast('✓ Notas salvas');
 }
 function exportJSON() {
   generateExport();
@@ -18108,7 +18320,7 @@ function exportSite() {
   const fontMsg = customFonts && customFonts.length
     ? ` + ${customFonts.length} fonte(s) embutida(s)`
     : '';
-  toast(`Site exportado${fontMsg} — pronto para GitHub Pages ✦`);
+  toast(`✦ Site exportado${fontMsg} — pronto para GitHub Pages`);
 }
 
 // ── Grau dos nós — tamanho visual reflete conexões ─
@@ -18179,6 +18391,146 @@ function toast(msg) {
   clearTimeout(toastT); toastT = setTimeout(()=>el.style.opacity=0, 2400);
 }
 
+// ── A11y: title → aria-label automático ─────────────
+// Copia title pra aria-label em botões e elementos com role="button"
+// que ainda não têm aria-label. Cobre os 140+ botões só-ícone do app
+// e novos elementos criados dinamicamente via innerHTML/appendChild.
+(function() {
+  const SEL = 'button[title]:not([aria-label]), [role="button"][title]:not([aria-label])';
+  const tag = (b) => {
+    const t = b.getAttribute('title');
+    if (t) b.setAttribute('aria-label', t);
+  };
+  const apply = (root) => {
+    try {
+      root = root || document;
+      // querySelectorAll busca só descendentes — checa o próprio nó também
+      if (root.nodeType === 1 && root.matches && root.matches(SEL)) tag(root);
+      root.querySelectorAll(SEL).forEach(tag);
+    } catch(e) {}
+  };
+  const init = () => {
+    apply();
+    const obs = new MutationObserver(muts => {
+      for (const m of muts) {
+        for (const n of m.addedNodes) {
+          if (n.nodeType === 1) apply(n);
+        }
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+// ── DS Confirm/Prompt ───────────────────────────────
+// Substitui confirm()/prompt()/alert() nativos por modal visionOS.
+//   if (!await dsConfirm({title:'Excluir?', message:'...', destructive:true})) return;
+//   const val = await dsPrompt({title:'Renomear', defaultValue:'foo'});
+// dsConfirm → Promise<boolean>;  dsPrompt → Promise<string|null>
+let _dsModalPrevFocus = null;
+function _dsOpenModal(opts) {
+  const isPrompt = !!opts.isPrompt;
+  return new Promise(resolve => {
+    const overlay = document.getElementById('ds-confirm-overlay');
+    const titleEl = document.getElementById('ds-confirm-title');
+    const msgEl = document.getElementById('ds-confirm-msg');
+    const inputEl = document.getElementById('ds-confirm-input');
+    const okBtn = document.getElementById('ds-confirm-ok');
+    const cancelBtn = document.getElementById('ds-confirm-cancel');
+    if (!overlay) { resolve(isPrompt ? null : false); return; }
+
+    titleEl.textContent = opts.title || (isPrompt ? 'Entrada' : 'Confirmar');
+    msgEl.textContent = opts.message || '';
+    okBtn.textContent = opts.confirmLabel || (isPrompt ? 'OK' : (opts.destructive ? 'Excluir' : 'Confirmar'));
+    cancelBtn.textContent = opts.cancelLabel || 'Cancelar';
+    okBtn.classList.toggle('ds-confirm__btn--danger', !!opts.destructive);
+    okBtn.classList.toggle('ds-confirm__btn--primary', !opts.destructive);
+
+    if (isPrompt) {
+      inputEl.hidden = false;
+      inputEl.value = opts.defaultValue == null ? '' : String(opts.defaultValue);
+      inputEl.placeholder = opts.placeholder || '';
+    } else {
+      inputEl.hidden = true; inputEl.value = '';
+    }
+
+    _dsModalPrevFocus = document.activeElement;
+    overlay.hidden = false;
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    void overlay.offsetHeight; // reflow
+    // 2 caminhos: classe pra transitionar suavemente, e inline pra garantir
+    // valor final mesmo em contextos sem transition (headless, prefers-reduced-motion).
+    setTimeout(() => {
+      overlay.classList.add('is-open');
+      overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
+      // Cancela qualquer transition pendente que possa congelar (ex.: aba oculta).
+      // Em browsers reais a transition já rodou; finish() é no-op visual.
+      if (overlay.getAnimations) {
+        setTimeout(() => {
+          [overlay, okBtn, cancelBtn].forEach(el => {
+            try { el.getAnimations({subtree:true}).forEach(a => { try { a.finish(); } catch(e) {} }); } catch(e) {}
+          });
+        }, 250);
+      }
+    }, 0);
+
+    let closed = false;
+    const close = (result) => {
+      if (closed) return; closed = true;
+      overlay.classList.remove('is-open');
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => {
+        overlay.hidden = true;
+        overlay.style.opacity = '';
+        overlay.style.pointerEvents = '';
+      }, 220);
+      document.removeEventListener('keydown', onKey, true);
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('mousedown', onBackdrop);
+      inputEl.removeEventListener('keydown', onInputKey);
+      try { if (_dsModalPrevFocus && _dsModalPrevFocus.focus) _dsModalPrevFocus.focus(); } catch(e) {}
+      _dsModalPrevFocus = null;
+      resolve(result);
+    };
+    const onOk = () => close(isPrompt ? inputEl.value : true);
+    const onCancel = () => close(isPrompt ? null : false);
+    const onBackdrop = (e) => { if (e.target === overlay) onCancel(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onCancel(); }
+      else if (e.key === 'Enter' && !isPrompt) { e.preventDefault(); e.stopPropagation(); onOk(); }
+    };
+    const onInputKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); onOk(); } };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('mousedown', onBackdrop);
+    document.addEventListener('keydown', onKey, true);
+    if (isPrompt) inputEl.addEventListener('keydown', onInputKey);
+
+    setTimeout(() => {
+      if (isPrompt) { try { inputEl.focus(); inputEl.select(); } catch(e) {} }
+      else { try { okBtn.focus(); } catch(e) {} }
+    }, 30);
+  });
+}
+function dsConfirm(opts) {
+  if (typeof opts === 'string') opts = { message: opts };
+  return _dsOpenModal(Object.assign({}, opts, { isPrompt: false }));
+}
+function dsPrompt(opts) {
+  if (typeof opts === 'string') opts = { message: opts };
+  return _dsOpenModal(Object.assign({}, opts, { isPrompt: true }));
+}
+
 // ── Labels ─────────────────────────────────────────
 function updateLabels() {
   const rect = canvas.getBoundingClientRect();
@@ -18220,10 +18572,23 @@ function animate() {
   if (Math.abs(spherical.radius - zoomTarget) > 0.01) {
     if (_flyRaf) {
       zoomTarget = spherical.radius;
+      zoomAnchorGoal = null;
     } else {
       spherical.radius += (zoomTarget - spherical.radius) * ZOOM_LERP;
+      // Lerp paralelo do cameraTarget rumo ao anchor: mesmo fator do raio,
+      // o que mantém o ponto sob o cursor exatamente preso durante a animação.
+      if (zoomAnchorGoal && !isPanning) {
+        cameraTarget.x += (zoomAnchorGoal.x - cameraTarget.x) * ZOOM_LERP;
+        cameraTarget.y += (zoomAnchorGoal.y - cameraTarget.y) * ZOOM_LERP;
+        cameraTarget.z += (zoomAnchorGoal.z - cameraTarget.z) * ZOOM_LERP;
+      }
       needCamUpdate = true;
     }
+  } else if (zoomAnchorGoal) {
+    // Zoom convergiu — snap final no anchor e libera
+    cameraTarget.copy(zoomAnchorGoal);
+    zoomAnchorGoal = null;
+    needCamUpdate = true;
   }
   if (!isPanning && panVel.lengthSq() > 0.000001) {
     cameraTarget.add(panVel);
@@ -18677,7 +19042,7 @@ function openSaibaMais() {
   document.body.style.overflow = 'hidden';
 }
 
-function closeSaibaMais() {
+async function closeSaibaMais() {
   // Auto-salva ficha ao fechar o modal sem precisar trocar de aba
   if (smCurrentTab === 'ficha' && smCurrentNode) {
     // Aplica URL da foto se foi digitada mas o botão não foi clicado
@@ -18687,7 +19052,7 @@ function closeSaibaMais() {
     }
     ftAutoSave();
   }
-  if (smDirty && !confirm('Há alterações não salvas. Sair sem salvar?')) return;
+  if (smDirty && !(await dsConfirm({title:'Alterações não salvas', message:'Sair sem salvar?', destructive:true, confirmLabel:'Sair sem salvar'}))) return;
   document.getElementById('sm-overlay').classList.remove('open');
   document.body.classList.remove('sm-open');
   document.body.style.overflow = '';
@@ -18825,7 +19190,7 @@ function smGalleryAddPhoto() {
   smRenderImageList();
   inp.value = '';
   smToggleGalleryBar('fotos');
-  toast('Foto adicionada');
+  toast('✦ Foto adicionada');
 }
 
 function smExtractGdriveId(url) {
@@ -18862,12 +19227,12 @@ function smGalleryAddVideo() {
   smRenderVideoList();
   inp.value = '';
   smToggleGalleryBar('videos');
-  toast('Vídeo adicionado');
+  toast('✦ Vídeo adicionado');
 }
 
-function smRemoveMediaAt(gi) {
+async function smRemoveMediaAt(gi) {
   if (!smCurrentNode || !smCurrentNode.richMedia) return;
-  if (!confirm('Remover esta mídia?')) return;
+  if (!(await dsConfirm({title:'Remover esta mídia?', destructive:true, confirmLabel:'Remover'}))) return;
   smCurrentNode.richMedia.splice(gi, 1);
   smMarkDirty();
   smRenderGallery();
@@ -18876,11 +19241,11 @@ function smRemoveMediaAt(gi) {
   toast('Mídia removida');
 }
 
-function smPhotoEditCaption(gi) {
+async function smPhotoEditCaption(gi) {
   if (!smCurrentNode || !smCurrentNode.richMedia) return;
   const m = smCurrentNode.richMedia[gi];
   if (!m) return;
-  const cap = prompt('Legenda da foto:', m.caption || '');
+  const cap = await dsPrompt({title:'Legenda da foto', defaultValue: m.caption || '', placeholder:'Descreva a imagem…'});
   if (cap === null) return;
   m.caption = cap;
   smMarkDirty();
@@ -18888,11 +19253,11 @@ function smPhotoEditCaption(gi) {
   toast('Legenda atualizada');
 }
 
-function smVideoEditCaption(gi) {
+async function smVideoEditCaption(gi) {
   if (!smCurrentNode || !smCurrentNode.richMedia) return;
   const m = smCurrentNode.richMedia[gi];
   if (!m) return;
-  const cap = prompt('Título/legenda do vídeo:', m.caption || '');
+  const cap = await dsPrompt({title:'Título/legenda do vídeo', defaultValue: m.caption || '', placeholder:'Descreva o vídeo…'});
   if (cap === null) return;
   m.caption = cap;
   smMarkDirty();
@@ -19038,9 +19403,10 @@ function smRenderGallery() {
   // ── Photo Grid ──────────────────────────────────
   const photoWrap = document.getElementById('sm-photo-grid-wrap');
   if (!photos.length) {
-    photoWrap.innerHTML = `<div class="sm-gallery-empty">
-      <div class="sm-gallery-empty-icon" style="font-size:28px;opacity:0.15;margin-bottom:14px">◻</div>
-      Nenhuma foto adicionada ainda.<br>Clique em <b>+ Inserir Foto</b> para adicionar.
+    photoWrap.innerHTML = `<div class="ds-empty">
+      <div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+      <div class="ds-empty__title">Nenhuma foto adicionada</div>
+      <div class="ds-empty__msg">Clique em <b>+ Inserir Foto</b> pra adicionar imagens à galeria.</div>
     </div>`;
   } else {
     photoWrap.innerHTML = photos.map((m, pi) => {
@@ -19068,9 +19434,10 @@ function smRenderGallery() {
   // ── Video Grid ────────────────────────────────
   const videoWrap = document.getElementById('sm-video-grid-wrap');
   if (!videos.length) {
-    videoWrap.innerHTML = `<div class="sm-gallery-empty">
-      <div class="sm-gallery-empty-icon" style="font-size:28px;opacity:0.15;margin-bottom:14px">▷</div>
-      Nenhum vídeo adicionado ainda.<br>Clique em <b>+ Inserir Vídeo</b> para adicionar.
+    videoWrap.innerHTML = `<div class="ds-empty">
+      <div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+      <div class="ds-empty__title">Nenhum vídeo adicionado</div>
+      <div class="ds-empty__msg">Clique em <b>+ Inserir Vídeo</b> pra adicionar vídeos do YouTube ou Drive.</div>
     </div>`;
   } else {
     videoWrap.innerHTML = videos.map(m => {
@@ -19398,8 +19765,8 @@ function smApplyFont(fontVal) {
   // Reset select visual
   setTimeout(() => { const s = document.getElementById('sm-font-select'); if(s) s.value = ''; }, 100);
 }
-function smInsertLink() {
-  const url = prompt('URL do link:'); if (!url) return;
+async function smInsertLink() {
+  const url = await dsPrompt({title:'Inserir link', placeholder:'https://…'}); if (!url) return;
   smExec('createLink', url);
 }
 function smEditorKeydown(e) {
@@ -19811,8 +20178,8 @@ function ftDiscard() {
   toast('Alterações descartadas');
 }
 
-function smClearContent() {
-  if (!confirm('Limpar todo o conteúdo rico deste nó?')) return;
+async function smClearContent() {
+  if (!(await dsConfirm({title:'Limpar conteúdo?', message:'Todo o conteúdo rico deste nó será removido.', destructive:true, confirmLabel:'Limpar'}))) return;
   document.getElementById('sm-editor').innerHTML = '';
   if (smCurrentNode) { smCurrentNode.richContent = ''; smCurrentNode.richMedia = []; }
   smRenderMediaList();
@@ -20363,7 +20730,7 @@ function _renderTutorial() {
           });
         }
       },
-      {name:'Órbita focada', tag:'Navegação', tBg:'rgba(55,138,221,.2)', tCl:'#7ec8ff', desc:'Câmera gira 360° em torno do nó-alvo', kbd:'Espaço',
+      {name:'Órbita focada', tag:'Navegação', tBg:'rgba(55,138,221,.2)', tCl:'#7ec8ff', desc:'Câmera gira 360° em torno do nó-alvo', kbd:['Espaço','Scroll','⇧Scroll','Esc'],
         draw(svg,on){
           svg.innerHTML='';
           const cx=80, cy=44;
@@ -20782,11 +21149,25 @@ function _renderTutorial() {
     if (card.kbd) {
       const ckbd = document.createElement('p');
       ckbd.className = 'ckbd';
-      const parts = card.kbd.split('+').map(k => k.trim());
-      parts.forEach((k, i) => {
-        const kk = document.createElement('span');
-        kk.className = 'kk'; kk.textContent = k; ckbd.appendChild(kk);
-        if (i < parts.length - 1) { const plus = document.createTextNode(' + '); ckbd.appendChild(plus); }
+      // Renderiza uma única combinação "Ctrl+F" → [Ctrl] + [F]
+      const renderCombo = (combo) => {
+        const parts = String(combo).split('+').map(k => k.trim());
+        parts.forEach((k, i) => {
+          const kk = document.createElement('span');
+          kk.className = 'kk'; kk.textContent = k; ckbd.appendChild(kk);
+          if (i < parts.length - 1) { ckbd.appendChild(document.createTextNode(' + ')); }
+        });
+      };
+      // Aceita string ("Ctrl+F") OU array (["Espaço","Scroll","Shift+Scroll","Esc"])
+      const combos = Array.isArray(card.kbd) ? card.kbd : [card.kbd];
+      combos.forEach((combo, idx) => {
+        renderCombo(combo);
+        if (idx < combos.length - 1) {
+          const sep = document.createElement('span');
+          sep.style.cssText = 'margin: 0 6px; opacity: 0.4;';
+          sep.textContent = '·';
+          ckbd.appendChild(sep);
+        }
       });
       cbody.appendChild(ckbd);
     }
@@ -21102,9 +21483,10 @@ function renderArticles() {
 
   if (!articles.length) {
     if (grid) grid.innerHTML = `
-      <div class="art-empty" style="grid-column:1/-1">
-        <div class="art-empty-icon">◫</div>
-        <p>Nenhum artigo ou referência ainda.<br>${isEditorUnlocked ? 'Clique em ⊕ Adicionar para incluir links, PDFs ou textos.' : 'Apenas editores podem adicionar artigos.'}</p>
+      <div class="ds-empty" style="grid-column:1/-1">
+        <div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="ds-empty__title">Nenhum artigo ou referência</div>
+        <div class="ds-empty__msg">${isEditorUnlocked ? 'Clique em <b>⊕ Adicionar</b> pra incluir links, PDFs ou textos.' : 'Apenas editores podem adicionar artigos.'}</div>
       </div>`;
     return;
   }
@@ -21269,11 +21651,11 @@ function saveArticle() {
   saveNodeArticles(nodeId, arts);
   closeArticleEditor();
   renderArticles();
-  toast(editingArticleId ? 'Artigo atualizado ✦' : 'Artigo adicionado ✦');
+  toast(editingArticleId ? '✓ Artigo atualizado' : '✦ Artigo adicionado');
 }
 
-function deleteArticle(articleId) {
-  if (!confirm('Remover este artigo?')) return;
+async function deleteArticle(articleId) {
+  if (!(await dsConfirm({title:'Remover este artigo?', destructive:true, confirmLabel:'Remover'}))) return;
   const nodeId = smCurrentNode.id;
   let arts = getNodeArticles(nodeId);
   arts = arts.filter(a => a.id !== articleId);
@@ -23194,7 +23576,7 @@ function saveGlassSettings() {
     if (glassSettings.bgVideo) localStorage.setItem('neural-glass-bg-video', glassSettings.bgVideo); else localStorage.removeItem('neural-glass-bg-video');
     if (glassSettings.loginBgVideo) localStorage.setItem('neural-glass-login-bg-video', glassSettings.loginBgVideo); else localStorage.removeItem('neural-glass-login-bg-video');
   } catch(e) {}
-  toast('Configurações de design salvas ✦');
+  toast('✦ Configurações de design salvas');
   closeGlassSettings();
 }
 
@@ -23553,12 +23935,59 @@ function makeGlowTexture(hexColor, innerAlpha, outerStops) {
   return tex;
 }
 
+// ── Tema-aware: A (blending) + C (cor escurecida) só no modo claro ──
+// O modo dark é INTOCADO. Todo o branch só age quando html.light está ativa.
+function _isLightTheme() {
+  return document.documentElement.classList.contains('light');
+}
+// Escurece 12% a cor base no claro pra ganhar contraste contra branco (C)
+function _themedNodeColor(hex) {
+  const c = new THREE.Color(hex);
+  if (_isLightTheme()) c.multiplyScalar(0.88);
+  return c;
+}
+// Patch in-place de sprites + cor do core de todos os nós (A + C).
+// No dark restaura blending/opacity/color originais — comportamento idêntico ao anterior.
+function _refreshAllNodesForTheme() {
+  if (typeof nodes === 'undefined' || !Array.isArray(nodes)) return;
+  const light = _isLightTheme();
+  const blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+  const _emissByShape = {sphere:0.18, glow:0.70, aura:0.55, corona:0.35, nova:0.90, halo:0.20, torus:0.35};
+  nodes.forEach(nd => {
+    if (!nd || !nd.mesh || !nd.mesh.userData) return;
+    // (A) Glow sprites
+    const sprites = nd.mesh.userData.glowSprites;
+    if (sprites && sprites.length) {
+      sprites.forEach(sp => {
+        if (!sp.material) return;
+        sp.material.blending = blending;
+        sp.material.opacity = light ? 0.55 : 1.0;
+        sp.material.needsUpdate = true;
+      });
+    }
+    // (C) Core mesh: re-aplica cor (escurecida no claro, original no escuro)
+    const core = nd.mesh.userData.coreMesh;
+    if (core && core.material && nd.color) {
+      const c = new THREE.Color(nd.color);
+      if (light) c.multiplyScalar(0.88);
+      core.material.color.copy(c);
+      const shape = nd.mesh.userData.shape || nd.shape || 'sphere';
+      const emissStr = _emissByShape[shape] || 0.18;
+      if (core.material.emissive) core.material.emissive.copy(c.clone().multiplyScalar(emissStr));
+      core.material.needsUpdate = true;
+    }
+  });
+}
+window._refreshAllNodesForTheme = _refreshAllNodesForTheme;
+
 function makeGlowSprite(hexColor, worldSize, innerAlpha, outerStops) {
   const tex = makeGlowTexture(hexColor, innerAlpha, outerStops);
+  const light = _isLightTheme();
   const mat = new THREE.SpriteMaterial({
     map: tex,
     transparent: true,
-    blending: THREE.AdditiveBlending,
+    blending: light ? THREE.NormalBlending : THREE.AdditiveBlending,
+    opacity: light ? 0.55 : 1.0,
     depthWrite: false,
   });
   const sprite = new THREE.Sprite(mat);
@@ -23570,7 +23999,8 @@ const _origCreateNodeMesh = createNodeMesh;
 createNodeMesh = function(nd) {
   const shape  = nd.shape || 'sphere';
   const hex    = nd.color;
-  const col    = new THREE.Color(hex);
+  // Cor tema-aware: dark = original, light = escurecida 12% pra contraste contra branco
+  const col    = _themedNodeColor(hex);
   const s      = nd.size;
 
   // Group holds core mesh + glow sprites
@@ -23979,7 +24409,7 @@ function saveFonts() {
   try {
     localStorage.setItem('neural-fonts', JSON.stringify(currentFonts));
   } catch(e) {}
-  toast('Fontes aplicadas ✦');
+  toast('✦ Fontes aplicadas');
   closeFontModal();
 }
 
@@ -24037,7 +24467,7 @@ function handleFontUpload(event) {
     if (label) label.textContent = 'Clique para enviar outra fonte';
     renderCustomFontsList();
     openCustomFontAssign(fontObj);
-    toast('Fonte "' + name + '" carregada ✦');
+    toast('✦ Fonte "' + name + '" carregada');
   };
   reader.readAsDataURL(file);
 }
@@ -29545,7 +29975,7 @@ document.addEventListener('keydown', function(e) {
 // groupParent: id of parent node (stored on child node as nd.groupParent)
 // When collapsed, children are hidden (mesh.visible=false)
 
-function groupSelectedNode() {
+async function groupSelectedNode() {
   if (!selectedNode) { toast('Selecione um nó primeiro'); return; }
   var nd = selectedNode;
   if (nd.isGroupParent) {
@@ -29558,7 +29988,7 @@ function groupSelectedNode() {
     .map(function(c){ return c.from===nd.id?c.to:c.from; });
   if (!connectedIds.length) { toast('Este nó não tem conexões para agrupar'); return; }
   // Ask confirmation
-  if (!confirm('Agrupar "'+nd.title+'" com seus '+connectedIds.length+' nó(s) conectado(s)? Os nós ficarão ocultos e podem ser expandidos clicando no nó pai.')) return;
+  if (!(await dsConfirm({title:'Agrupar "'+nd.title+'"?', message:'Com seus '+connectedIds.length+' nó(s) conectado(s). Os nós ficarão ocultos e podem ser expandidos clicando no nó pai.', confirmLabel:'Agrupar'}))) return;
   // Mark parent
   nd.isGroupParent = true;
   nd.groupChildren = connectedIds;
@@ -32031,7 +32461,7 @@ console.log('[v54] Onboarding loaded ✓  — resetOnboarding() para testar');
 
   <!-- Search row (search migrou pro topbar; só restou a contagem) -->
   <div id="ps-search-row">
-    <div id="ps-projects-count">Carregando...</div>
+    <div id="ps-projects-count" aria-label="Carregando contagem de projetos"><span class="ds-skeleton ds-skeleton--text-sm" style="display:inline-block;width:140px;vertical-align:middle"></span></div>
   </div>
 
   <!-- Tabs row -->
@@ -32060,7 +32490,7 @@ console.log('[v54] Onboarding loaded ✓  — resetOnboarding() para testar');
 
   <!-- Keep legacy hidden elements for compatibility -->
   <div id="projects-header" style="display:none"></div>
-  <div id="projects-title-wrap" style="display:none"><div id="projects-title"></div><div id="projects-title-right"><div id="projects-subtitle">Carregando...</div></div></div>
+  <div id="projects-title-wrap" style="display:none"><div id="projects-title"></div><div id="projects-title-right"><div id="projects-subtitle" aria-label="Carregando"><span class="ds-skeleton ds-skeleton--text-sm" style="display:inline-block;width:120px;vertical-align:middle"></span></div></div></div>
   <div id="projects-body" style="display:none">
     <div id="projects-grid"></div>
     <div id="proj-tab-content"><div id="proj-tab-name"></div><div id="proj-tab-meta"></div><div id="proj-tab-empty"></div></div>
@@ -32997,7 +33427,7 @@ function projHideCtxMenu() {
 async function projCtxRename() {
   const proj = allProjects.find(p => p.id === projCtxTargetId);
   if (!proj) return;
-  const newName = prompt('Novo nome:', proj.name);
+  const newName = await dsPrompt({title:'Renomear projeto', defaultValue: proj.name, placeholder:'Novo nome'});
   if (!newName || !newName.trim()) return;
   proj.name = newName.trim();
   proj.modified = Date.now();
@@ -33040,7 +33470,7 @@ async function projCtxExport() {
 async function projCtxDelete() {
   const proj = allProjects.find(p => p.id === projCtxTargetId);
   if (!proj) return;
-  if (!confirm('Excluir "' + proj.name + '"? Esta ação não pode ser desfeita.')) return;
+  if (!(await dsConfirm({title:'Excluir "' + proj.name + '"?', message:'Esta ação não pode ser desfeita.', destructive:true, confirmLabel:'Excluir'}))) return;
   const _delId = projCtxTargetId;
   allProjects = allProjects.filter(p => p.id !== _delId);
   await projSaveList();
@@ -33304,11 +33734,11 @@ async function projGenerateShareLink(projId) {
         </div>`;
 
       overlay.querySelector('#_sh-copy').onclick = async () => {
-        try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
+        try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { await dsPrompt({title:'Copie o link', message:'Selecione e copie:', defaultValue: url}); }
       };
       overlay.querySelector('#_sh-close').onclick = _shareClose;
       overlay.querySelector('#_sh-revoke').onclick = async () => {
-        if (!confirm('Tirar o projeto do ar? Visitantes perderão o acesso.')) return;
+        if (!(await dsConfirm({title:'Tirar do ar?', message:'Visitantes perderão o acesso ao projeto.', destructive:true, confirmLabel:'Tirar do ar'}))) return;
         try {
           const { error } = await _sb.from('public_shares').delete().eq('proj_id', projId).eq('user_id', session.user.id);
           if (error) throw error;
@@ -33362,7 +33792,7 @@ async function projGenerateShareLink(projId) {
           _shareClose();
           projUpdateShareBtn(projId);
           const url = window.location.origin + window.location.pathname + '?share=' + slug;
-          try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { prompt('Copie o link:', url); }
+          try { await navigator.clipboard.writeText(url); toast('✓ Link copiado!'); } catch(e) { await dsPrompt({title:'Copie o link', message:'Selecione e copie:', defaultValue: url}); }
         } catch(e) {
           console.error('[NODAL] projGenerateShareLink erro:', e);
           errEl.textContent = 'Erro: ' + (e.message || 'tente novamente');
@@ -34382,8 +34812,8 @@ function peLoadConfig() {
   } catch(e) { console.warn('peLoadConfig:', e); }
 }
 
-function peResetConfig() {
-  if (!confirm('Restaurar configurações padrão da tela de projetos?')) return;
+async function peResetConfig() {
+  if (!(await dsConfirm({title:'Restaurar padrões?', message:'As configurações da tela de projetos voltarão ao padrão.', confirmLabel:'Restaurar'}))) return;
   try { localStorage.removeItem(PE_CONFIG_KEY); } catch(e) {}
   const el = document.getElementById('pe-dynamic-style'); if (el) el.remove();
   const screen = document.getElementById('projects-screen');
@@ -35397,9 +35827,9 @@ function showIsolatedNodes() {
     qcDeleteItem(id);
   };
 
-  window.qcClearAll = function() {
+  window.qcClearAll = async function() {
     if (qcItems.length === 0) return;
-    if (confirm('Limpar todos os ' + qcItems.length + ' itens da inbox?')) {
+    if (await dsConfirm({title:'Limpar inbox?', message:'Todos os ' + qcItems.length + ' itens serão removidos.', destructive:true, confirmLabel:'Limpar'})) {
       qcItems = [];
       qcSelectedId = null;
       qcSave();
@@ -35834,7 +36264,7 @@ function notepadAddNote() {
   notepadUpdateCount();
 }
 
-function notepadDeleteNote() {
+async function notepadDeleteNote() {
   if (!_notepadActiveId) return;
   const idx = _notepadNotes.findIndex(n => n.id === _notepadActiveId);
   if (idx === -1) return;
@@ -35846,7 +36276,7 @@ function notepadDeleteNote() {
     _notepadSaveNotes();
     return;
   }
-  if (!confirm('Excluir esta nota?')) return;
+  if (!(await dsConfirm({title:'Excluir esta nota?', destructive:true, confirmLabel:'Excluir'}))) return;
   _notepadNotes.splice(idx, 1);
   const nextNote = _notepadNotes[Math.min(idx, _notepadNotes.length - 1)];
   _notepadActiveId = nextNote ? nextNote.id : null;
@@ -37740,8 +38170,8 @@ setTimeout(() => {
     if (typeof toast === 'function') toast('★ Favorito atualizado');
   }
 
-  window._favDelete = function(id) {
-    if (!confirm('Remover este favorito?')) return;
+  window._favDelete = async function(id) {
+    if (!(await dsConfirm({title:'Remover este favorito?', destructive:true, confirmLabel:'Remover'}))) return;
     _favs = _favs.filter(function(f){ return f.id !== id; });
     _favSaveLocal();
     _favDeleteRemote(id);
@@ -37821,11 +38251,17 @@ setTimeout(() => {
     var items = _favFiltered();
     if (!items.length) {
       var noFilter = _favActiveTags.length === 0 && !((document.getElementById('fav-search')||{}).value||'').trim();
-      list.innerHTML = '<div id="fav-empty">' +
-        '<div style="font-size:22px;margin-bottom:8px">★</div>' +
-        (noFilter ? 'Nenhum favorito ainda.<br>Clique em <b>+ Novo favorito</b> ou<br>botão direito em um nó.'
-                  : 'Nenhum resultado para os filtros atuais.') +
-        '</div>';
+      list.innerHTML = noFilter
+        ? '<div class="ds-empty">'
+        +   '<div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"/></svg></div>'
+        +   '<div class="ds-empty__title">Nenhum favorito ainda</div>'
+        +   '<div class="ds-empty__msg">Clique em <b>+ Adicionar favorito</b> ou clique com o botão direito em um nó.</div>'
+        + '</div>'
+        : '<div class="ds-empty">'
+        +   '<div class="ds-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>'
+        +   '<div class="ds-empty__title">Nada por aqui</div>'
+        +   '<div class="ds-empty__msg">Nenhum resultado para os filtros atuais.</div>'
+        + '</div>';
       return;
     }
     list.innerHTML = items.map(function(f) { return _favCardHTML(f); }).join('');
@@ -39332,8 +39768,8 @@ window._colPopulateSelect = function(current) {
     if (typeof window._favFilter === 'function') window._favFilter();
   };
 
-  window._favNewCol = function() {
-    var name = prompt('Nome da nova coleção:');
+  window._favNewCol = async function() {
+    var name = await dsPrompt({title:'Nova coleção', placeholder:'Nome da coleção'});
     if (!name) return;
     name = name.trim();
     if (!name) return;
@@ -39347,9 +39783,9 @@ window._colPopulateSelect = function(current) {
     if (typeof toast === 'function') toast('📁 Coleção "' + name + '" criada');
   };
 
-  window._favDelCol = function(name) {
+  window._favDelCol = async function(name) {
     if (name === 'Geral') return;
-    if (!confirm('Remover coleção "' + name + '"?\nOs favoritos dela voltam para Geral.')) return;
+    if (!(await dsConfirm({title:'Remover coleção "' + name + '"?', message:'Os favoritos dela voltam para Geral.', destructive:true, confirmLabel:'Remover'}))) return;
     var cols = _colGetAll().filter(function(c){ return c !== name && c !== 'Geral'; });
     _colSetAll(cols);
     // move favoritos desta coleção+projeto para Geral no Supabase
@@ -39531,5 +39967,22 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- DS Confirm/Prompt — substitui confirm/prompt/alert nativos -->
+<div id="ds-confirm-overlay" class="ds-confirm-overlay" hidden>
+  <div class="ds-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="ds-confirm-title" aria-describedby="ds-confirm-msg">
+    <div class="ds-confirm__header">
+      <div class="ds-confirm__title" id="ds-confirm-title"></div>
+    </div>
+    <div class="ds-confirm__body">
+      <div class="ds-confirm__msg" id="ds-confirm-msg"></div>
+      <input type="text" class="ds-confirm__input" id="ds-confirm-input" hidden/>
+    </div>
+    <div class="ds-confirm__footer">
+      <button type="button" class="ds-confirm__btn ds-confirm__btn--ghost" id="ds-confirm-cancel">Cancelar</button>
+      <button type="button" class="ds-confirm__btn ds-confirm__btn--primary" id="ds-confirm-ok">OK</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
