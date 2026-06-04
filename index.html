@@ -5495,7 +5495,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   ══════════════════════════════════════ */
   #minimap-panel {
     position: fixed;
-    right: 20px; bottom: 20px;
+    right: 20px; bottom: 56px;
     width: 260px;
     z-index: 55;
     border-radius: var(--ds-r-lg);
@@ -6165,7 +6165,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .ds-btn-close:hover { background: rgba(255, 255, 255, 0.16); }
   html.light .ds-btn-close:hover { background: rgba(255, 255, 255, 0.42); }
   .ds-btn-close i { font-size: 14px; color: var(--ds-t3); }
-  html.light .ds-btn-close i { color: rgba(255, 255, 255, 0.75); }
+  html.light .ds-btn-close i { color: var(--ds-t2); }
   .ds-footer-note {
     font-family: var(--ds-font);
     font-size: 11.5px; line-height: 1.55;
@@ -10490,14 +10490,14 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     position: relative; flex-shrink: 0;
     width: 40px; height: 40px;
     border-radius: 50%;
-    background: rgba(167,139,250,0.12);
+    background: rgba(37,99,235,0.12);
   }
   .sb-avatar-wrap::after {
     content: '◉';
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%,-50%);
     font-size: 17px;
-    color: rgba(167,139,250,0.35);
+    color: rgba(37,99,235,0.35);
     pointer-events: none;
     z-index: 0;
   }
@@ -10505,7 +10505,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     width: 40px; height: 40px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(167,139,250,0.3);
+    border: 2px solid rgba(37,99,235,0.3);
     display: block;
     position: relative; z-index: 1;
     transition: border-color 0.18s;
@@ -10524,7 +10524,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     z-index: 2;
   }
   .sb-avatar-wrap:hover .sb-avatar-edit { opacity: 1; }
-  .sb-avatar-wrap:hover .sb-avatar { border-color: var(--accent); }
+  .sb-avatar-wrap:hover .sb-avatar { border-color: var(--ds-accent); }
   .sb-profile-text {
     flex: 1; min-width: 0; overflow: hidden;
   }
@@ -16331,6 +16331,22 @@ let _orbitFocusLastWheelTs = 0;
 const ORBIT_FOCUS_LOCK_MS = 280;
 const ORBIT_FOCUS_LERP = 0.18;    // 0..1 — maior = mais rápido pra encaixar no nó
 
+// ── Modos imersivos: Voar (X, FPS pointer-lock) + Explorar (E, cursor livre) ──
+// Janela 1: só estado + toggles + toast. Câmera ainda não é afetada — entra nas
+// Janelas 2 e 3. Os dois modos são mutuamente exclusivos entre si e com orbitFocus.
+let _flyMode = false;          // X
+let _exploreMode = false;      // E
+// Orientação independente do orbit system (vai ser populada nas Janelas 2/3)
+let _immYaw = 0;               // rotação horizontal (radianos)
+let _immPitch = 0;             // rotação vertical (radianos), será clampada
+// Snapshot do orbit state para restaurar ao sair
+let _orbitSnapshot = null;
+// Teclas WASD do Modo Voar (Janela 2)
+const _flyKeys = {w:false, a:false, s:false, d:false, shift:false};
+// Posição do cursor pro edge-look do Modo Explorar (Janela 3)
+let _exploreCursor = {x: 0, y: 0};
+let _exploreWalking = false;   // segurar scroll-click → andar
+
 function sphericalToQuat(theta, phi) {
   const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
   const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), phi - Math.PI / 2);
@@ -16619,6 +16635,28 @@ function showOrbitFocusToast(node) {
   t.style.opacity = '1';
 }
 
+// Toast pros modos imersivos (Voar / Explorar) — mesmo estilo glass do orbit toast
+function showCameraModeToast(mode) {
+  let t = document.getElementById('camera-mode-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'camera-mode-toast';
+    t.style.cssText = 'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99999;padding:8px 16px;background:rgba(20,20,28,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0.02em;pointer-events:none;opacity:0;transition:opacity 0.22s ease;box-shadow:0 8px 24px rgba(0,0,0,0.35)';
+    document.body.appendChild(t);
+  }
+  if (!mode) { t.style.opacity = '0'; return; }
+  let label = '', hint = '';
+  if (mode === 'fly') {
+    label = 'Modo Voar';
+    hint = 'WASD = mover · mouse = olhar · shift = correr · clique = abrir nó · esc = sair';
+  } else if (mode === 'explore') {
+    label = 'Modo Explorar';
+    hint = 'mouse na borda = girar · scroll-click = andar · clique = abrir nó · esc = sair';
+  }
+  t.innerHTML = `<b style="font-weight:600">${label}</b><span style="opacity:0.55;margin-left:10px">${hint}</span>`;
+  t.style.opacity = '1';
+}
+
 window.addEventListener('keydown', e => {
   // Ignora se digitando em campo de texto
   const ae = document.activeElement;
@@ -16651,12 +16689,67 @@ window.addEventListener('keydown', e => {
     }
     return;
   }
-  if (e.code === 'Escape' && orbitFocusMode) {
-    orbitFocusMode = false;
-    orbitFocusNode = null;
-    orbitFocusTargetPos = null;
-    canvas.style.cursor = dragMode ? 'crosshair' : 'grab';
-    showOrbitFocusToast(false);
+  // ── Toggle Modo Voar (X) — FPS pointer-lock ──
+  // Janela 1: só estado + toast. Pointer-lock, mouse-look e WASD entram na Janela 2.
+  if (e.code === 'KeyX') {
+    e.preventDefault();
+    _flyMode = !_flyMode;
+    if (_flyMode) {
+      // Exclusivo: desliga os outros modos imersivos
+      if (_exploreMode) _exploreMode = false;
+      if (orbitFocusMode) {
+        orbitFocusMode = false;
+        orbitFocusNode = null;
+        orbitFocusTargetPos = null;
+        showOrbitFocusToast(false);
+      }
+      showCameraModeToast('fly');
+    } else {
+      showCameraModeToast(null);
+    }
+    return;
+  }
+  // ── Toggle Modo Explorar (E) — cursor livre + edge-look ──
+  // Janela 1: só estado + toast. Edge-look e scroll-click move entram na Janela 3.
+  if (e.code === 'KeyE') {
+    e.preventDefault();
+    _exploreMode = !_exploreMode;
+    if (_exploreMode) {
+      if (_flyMode) _flyMode = false;
+      if (orbitFocusMode) {
+        orbitFocusMode = false;
+        orbitFocusNode = null;
+        orbitFocusTargetPos = null;
+        showOrbitFocusToast(false);
+      }
+      showCameraModeToast('explore');
+    } else {
+      showCameraModeToast(null);
+    }
+    return;
+  }
+  // ── Escape: sai de qualquer modo (orbit focada, voar, explorar) ──
+  if (e.code === 'Escape') {
+    if (orbitFocusMode) {
+      orbitFocusMode = false;
+      orbitFocusNode = null;
+      orbitFocusTargetPos = null;
+      canvas.style.cursor = dragMode ? 'crosshair' : 'grab';
+      showOrbitFocusToast(false);
+      return;
+    }
+    if (_flyMode) {
+      _flyMode = false;
+      // Janela 2 vai adicionar aqui: document.exitPointerLock() + restaurar orbit state
+      showCameraModeToast(null);
+      return;
+    }
+    if (_exploreMode) {
+      _exploreMode = false;
+      // Janela 3 vai adicionar aqui: cleanup do edge-look + restaurar orbit state
+      showCameraModeToast(null);
+      return;
+    }
   }
 });
 
@@ -17894,7 +17987,7 @@ function generateExport() {
   const exportedFontSelection = (typeof currentFonts !== 'undefined') ? Object.assign({}, currentFonts) : {};
 
   document.getElementById('export-area').value = JSON.stringify({
-    nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||''})),
+    nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||'',ficha:n.ficha||null})),
     connections: connections.map(c=>({id:c.id,from:c.from,to:c.to})),
     customCats,
     projectName: 'NODAL',
@@ -18229,6 +18322,7 @@ function exportFullBackup() {
       richNotes: n.richNotes || '', richContent: n.richContent || '',
       richMedia: n.richMedia || [], date: n.date || '',
       shape: n.shape || 'sphere', x: n.x, y: n.y, z: n.z,
+      ficha: n.ficha || null,
       articles: Array.isArray(n.articles) ? n.articles : []  // ← redundância: artigos também dentro do nó
     }));
 
@@ -18306,7 +18400,8 @@ function exportSite() {
     bold:!!n.bold, italic:!!n.italic, media:n.media||'',
     tags:n.tags||[], notes:n.notes||'',
     richContent:n.richContent||'', richMedia:n.richMedia||[],
-    shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z, date:n.date||''
+    shape:n.shape||'sphere', x:n.x, y:n.y, z:n.z, date:n.date||'',
+    ficha:n.ficha||null
   }));
   const connsData = connections.map(c => ({id:c.id, from:c.from, to:c.to}));
   // Embed font selection into the graph JSON
