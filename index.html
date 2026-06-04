@@ -1447,28 +1447,78 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     letter-spacing: 0.03em;
   }
 
-  /* ── Banners ── */
-  #connect-banner {
-    position: fixed; bottom: 18px; left: 50%;
+  /* ── Banners (pill glass DS — alinhado com camera-mode-toast) ── */
+  #connect-banner, #drag-banner {
+    position: fixed; bottom: 22px; left: 50%;
     transform: translateX(-50%);
-    background: var(--panel-bg);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: rgba(255,255,255,0.6);
-    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
-    padding: 8px 20px; border-radius: 2px; z-index: 15; display: none;
-    backdrop-filter: blur(12px);
+    z-index: 99999;
+    padding: 8px 16px;
+    background: rgba(20,20,28,0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    color: #fff;
+    font: 500 12px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    pointer-events: none;
+    display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   }
   #connect-banner.visible { display: block; }
-  #drag-banner {
-    position: fixed; bottom: 18px; left: 50%;
-    transform: translateX(-50%);
-    background: var(--panel-bg);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: rgba(255,255,255,0.55);
-    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
-    font-family: var(--mono); font-weight: 400;
-    padding: 8px 20px; border-radius: 2px; z-index: 15; display: none;
-    backdrop-filter: blur(12px);
+  #connect-banner b, #drag-banner b { font-weight: 600; }
+  .banner-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .banner-hint {
+    opacity: 0.55;
+    margin-left: 10px;
+  }
+  /* Retículo central do Modo Voar (mira em pointer-lock) */
+  #fly-reticle {
+    position: fixed;
+    left: 50%; top: 50%;
+    width: 8px; height: 8px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.85);
+    box-shadow: 0 0 10px rgba(167,139,250,0.55), 0 0 2px rgba(0,0,0,0.7);
+    pointer-events: none;
+    z-index: 99998;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+  }
+  /* Hover tip do Modo Voar — mostra título do nó sob a mira (estilo HUD de jogo) */
+  #fly-hover-tip {
+    position: fixed;
+    left: 50%; top: 50%;
+    transform: translate(-50%, 22px);  /* logo abaixo do retículo */
+    padding: 5px 12px;
+    background: rgba(20,20,28,0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px;
+    color: #fff;
+    font-family: var(--ds-font);
+    font-weight: 500;
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    z-index: 99998;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    white-space: nowrap;
+    max-width: 60vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   #toast {
     position: fixed; bottom: 18px; right: 18px;
@@ -1539,7 +1589,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   html.light .toggle-btn.active { border-color: #111; color: #111; background: rgba(0,0,0,0.08); }
   html.light .lp-conn-item:hover { border-color: rgba(0,0,0,0.3); color: #111; }
   html.light .conn-item:hover { border-color: rgba(0,0,0,0.3); }
-  html.light #connect-banner, html.light #drag-banner { border-color: rgba(0,0,0,0.2); color: rgba(0,0,0,0.5); }
+  /* #connect-banner e #drag-banner agora usam glass escuro fixo (igual camera-mode-toast), sem override de light mode */
   /* ── Lock Screen: split-panel layout ── */
   #lock-screen {
     position: fixed; inset: 0; z-index: 200;
@@ -4899,12 +4949,8 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   #lock-screen.fading-in { opacity: 0; }
 
   /* Misc glass touches */
-  #connect-banner, #drag-banner {
-    backdrop-filter: blur(20px) saturate(1.5);
-    -webkit-backdrop-filter: blur(20px) saturate(1.5);
-    border-radius: 10px;
-    border-color: rgba(255,255,255,0.18);
-  }
+  /* (estilo de #connect-banner/#drag-banner movido pra regra unificada no
+     bloco "Banners (pill glass DS)" — agora alinhado com camera-mode-toast) */
   #toast {
     border-radius: 8px;
     backdrop-filter: blur(20px);
@@ -5131,7 +5177,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   html.light #lock-divider { background: rgba(0,0,0,0.08) !important; }
   html.light .lp-conn-item:hover { border-color: rgba(0,0,0,0.28); color: #111; }
   html.light .conn-item:hover { border-color: rgba(0,0,0,0.28); }
-  html.light #connect-banner, html.light #drag-banner { border-color: rgba(0,0,0,0.18); color: rgba(0,0,0,0.45); }
+  /* #connect-banner e #drag-banner: estilo glass escuro fixo, sem override */
 
   /* ── Focus Mode (Vizinhança) ── */
   .node-focus-dim {
@@ -14304,8 +14350,10 @@ html.light .cmp-glass-select option { background: #e0e8f0; color: rgba(20, 30, 5
   <img id="hp-media"/>
 </div>
 
-<div id="connect-banner">Modo Conexão — Clique em dois nós para criar uma sinapse</div>
-<div id="drag-banner">Modo Mover — Arraste qualquer nó para reposicioná-lo</div>
+<div id="connect-banner"><span class="banner-dot" style="background:#fbbf24;box-shadow:0 0 10px #fbbf2480"></span><b>Modo Conexão</b><span class="banner-hint">clique em dois nós para criar uma sinapse · esc = sair</span></div>
+<div id="drag-banner"><span class="banner-dot" style="background:#f97316;box-shadow:0 0 10px #f9731680"></span><b>Modo Mover</b><span class="banner-hint">arraste qualquer nó para reposicionar · D = sair</span></div>
+<div id="fly-reticle"></div>
+<div id="fly-hover-tip"></div>
 <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Tag Manager Modal -->
@@ -16331,21 +16379,16 @@ let _orbitFocusLastWheelTs = 0;
 const ORBIT_FOCUS_LOCK_MS = 280;
 const ORBIT_FOCUS_LERP = 0.18;    // 0..1 — maior = mais rápido pra encaixar no nó
 
-// ── Modos imersivos: Voar (X, FPS pointer-lock) + Explorar (E, cursor livre) ──
-// Janela 1: só estado + toggles + toast. Câmera ainda não é afetada — entra nas
-// Janelas 2 e 3. Os dois modos são mutuamente exclusivos entre si e com orbitFocus.
-let _flyMode = false;          // X
-let _exploreMode = false;      // E
-// Orientação independente do orbit system (vai ser populada nas Janelas 2/3)
-let _immYaw = 0;               // rotação horizontal (radianos)
-let _immPitch = 0;             // rotação vertical (radianos), será clampada
-// Snapshot do orbit state para restaurar ao sair
-let _orbitSnapshot = null;
-// Teclas WASD do Modo Voar (Janela 2)
+// ── Modo Voar (X, FPS pointer-lock) ──
+// Imersão em primeira pessoa, mutuamente exclusivo com orbitFocus.
+let _flyMode = false;
+// Orientação independente do orbit system (yaw global, pitch local — ordem FPS)
+let _immYaw = 0;               // rotação horizontal aplicada (radianos, suavizada)
+let _immPitch = 0;             // rotação vertical aplicada (radianos, suavizada e clampada)
+let _immYawTarget = 0;         // alvo do mouselook (mouse atualiza isso, _imm* lerpa rumo)
+let _immPitchTarget = 0;
+// Teclas WASD do Modo Voar
 const _flyKeys = {w:false, a:false, s:false, d:false, shift:false};
-// Posição do cursor pro edge-look do Modo Explorar (Janela 3)
-let _exploreCursor = {x: 0, y: 0};
-let _exploreWalking = false;   // segurar scroll-click → andar
 
 function sphericalToQuat(theta, phi) {
   const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
@@ -16540,6 +16583,9 @@ window.addEventListener('mousemove', e => {
     lastMouse = {x:e.clientX, y:e.clientY};
     updateCamera();
   }
+  // Modo Voar tem seu próprio hover tip (mira-central). Suprime o preview grande
+  // de Drone pra evitar dois glass na tela e raycast duplicado.
+  if (_flyMode) { _corHide(); hideHoverPreview(); return; }
   // Não fazer hover na área do painel lateral
   if (leftPanelNode && e.clientX < 302) { _corHide(); return; }
   _corUpdate(e);
@@ -16624,11 +16670,12 @@ function showOrbitFocusToast(node) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'orbit-focus-toast';
-    t.style.cssText = 'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99999;padding:8px 16px;background:rgba(20,20,28,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0.02em;pointer-events:none;opacity:0;transition:opacity 0.22s ease;box-shadow:0 8px 24px rgba(0,0,0,0.35)';
+    t.style.cssText = 'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99999;padding:8px 16px;background:rgba(20,20,28,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;font-family:var(--ds-font);font-weight:500;font-size:12px;line-height:1.2;letter-spacing:0.02em;pointer-events:none;opacity:0;transition:opacity 0.22s ease;box-shadow:0 8px 24px rgba(0,0,0,0.35)';
     document.body.appendChild(t);
   }
   if (node === false) { t.style.opacity = '0'; return; }
-  const dot = (node && node.color) ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${node.color};margin-right:8px;vertical-align:middle"></span>` : '';
+  const dotColor = (node && node.color) ? node.color : '#f0abfc';
+  const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotColor};margin-right:8px;vertical-align:middle;box-shadow:0 0 10px ${dotColor}80"></span>`;
   const titleTxt = node ? (node.title || 'nó') : 'mire um nó e use o scroll';
   const hint = '<span style="opacity:0.55;margin-left:10px">scroll = girar · shift+scroll = inclinar · esc = sair</span>';
   t.innerHTML = `${dot}Órbita focada: <b style="font-weight:600">${titleTxt}</b>${hint}`;
@@ -16641,19 +16688,18 @@ function showCameraModeToast(mode) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'camera-mode-toast';
-    t.style.cssText = 'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99999;padding:8px 16px;background:rgba(20,20,28,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;letter-spacing:0.02em;pointer-events:none;opacity:0;transition:opacity 0.22s ease;box-shadow:0 8px 24px rgba(0,0,0,0.35)';
+    t.style.cssText = 'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99999;padding:8px 16px;background:rgba(20,20,28,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;font-family:var(--ds-font);font-weight:500;font-size:12px;line-height:1.2;letter-spacing:0.02em;pointer-events:none;opacity:0;transition:opacity 0.22s ease;box-shadow:0 8px 24px rgba(0,0,0,0.35)';
     document.body.appendChild(t);
   }
   if (!mode) { t.style.opacity = '0'; return; }
-  let label = '', hint = '';
+  let label = '', hint = '', dotColor = '#fff';
   if (mode === 'fly') {
     label = 'Modo Voar';
-    hint = 'WASD = mover · mouse = olhar · shift = correr · clique = abrir nó · esc = sair';
-  } else if (mode === 'explore') {
-    label = 'Modo Explorar';
-    hint = 'mouse na borda = girar · scroll-click = andar · clique = abrir nó · esc = sair';
+    hint = 'WASD = mover · mouse = olhar · shift = correr · clique = abrir · E = editar · esc = sair';
+    dotColor = '#a78bfa';
   }
-  t.innerHTML = `<b style="font-weight:600">${label}</b><span style="opacity:0.55;margin-left:10px">${hint}</span>`;
+  const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotColor};margin-right:8px;vertical-align:middle;box-shadow:0 0 10px ${dotColor}80"></span>`;
+  t.innerHTML = `${dot}<b style="font-weight:600">${label}</b><span style="opacity:0.55;margin-left:10px">${hint}</span>`;
   t.style.opacity = '1';
 }
 
@@ -16689,47 +16735,65 @@ window.addEventListener('keydown', e => {
     }
     return;
   }
+  // ── Toggle do editor (E) — funciona fora do Voar (no Voar, capture-phase já tratou) ──
+  // Aberto fecha. Fechado abre pro nó atual (leftPanelNode ou selectedNode).
+  if (e.code === 'KeyE' && !_flyMode) {
+    if (typeof panelVisible !== 'undefined' && panelVisible) {
+      togglePanel(); // fecha editor
+      e.preventDefault();
+      return;
+    }
+    // Abre editor pro nó atualmente referenciado
+    // Ordem: togglePanel ANTES de selectNode, senão populateEditor não roda
+    const targetNd = (typeof leftPanelNode !== 'undefined' && leftPanelNode)
+                  || (typeof selectedNode   !== 'undefined' && selectedNode)
+                  || null;
+    if (targetNd) {
+      e.preventDefault();
+      if (!panelVisible) togglePanel();
+      if (typeof selectNode === 'function') selectNode(targetNd);
+      if (typeof switchTab === 'function') switchTab('editor');
+      return;
+    }
+    // Sem nó: E não faz nada (não disparar editor vazio)
+    return;
+  }
   // ── Toggle Modo Voar (X) — FPS pointer-lock ──
-  // Janela 1: só estado + toast. Pointer-lock, mouse-look e WASD entram na Janela 2.
   if (e.code === 'KeyX') {
     e.preventDefault();
+    _flyShouldRelock = false;  // ação manual cancela re-lock pendente
     _flyMode = !_flyMode;
     if (_flyMode) {
-      // Exclusivo: desliga os outros modos imersivos
-      if (_exploreMode) _exploreMode = false;
       if (orbitFocusMode) {
         orbitFocusMode = false;
         orbitFocusNode = null;
         orbitFocusTargetPos = null;
         showOrbitFocusToast(false);
       }
+      _enterFlyMode();
       showCameraModeToast('fly');
     } else {
+      _exitFlyMode();
       showCameraModeToast(null);
     }
     return;
   }
-  // ── Toggle Modo Explorar (E) — cursor livre + edge-look ──
-  // Janela 1: só estado + toast. Edge-look e scroll-click move entram na Janela 3.
-  if (e.code === 'KeyE') {
-    e.preventDefault();
-    _exploreMode = !_exploreMode;
-    if (_exploreMode) {
-      if (_flyMode) _flyMode = false;
-      if (orbitFocusMode) {
-        orbitFocusMode = false;
-        orbitFocusNode = null;
-        orbitFocusTargetPos = null;
-        showOrbitFocusToast(false);
-      }
-      showCameraModeToast('explore');
-    } else {
-      showCameraModeToast(null);
-    }
-    return;
-  }
-  // ── Escape: sai de qualquer modo (orbit focada, voar, explorar) ──
+  // ── Escape: prioridade = painéis abertos primeiro, depois modos ──
+  // Mesmo em Voar: se tem editor ou Saiba Mais aberto, Esc fecha um por vez.
+  // Sem nenhum painel: Esc sai de Foco Orbital ou Voar.
   if (e.code === 'Escape') {
+    _flyShouldRelock = false;  // Esc explícito sempre cancela re-lock pendente
+    // 1) Editor (#panel direito) — fecha primeiro pois é o mais recente normalmente
+    if (typeof panelVisible !== 'undefined' && panelVisible) {
+      togglePanel();
+      return;
+    }
+    // 2) Saiba Mais (#left-panel)
+    if (typeof leftPanelNode !== 'undefined' && leftPanelNode) {
+      closeLeftPanel();
+      return;
+    }
+    // 3) Modos (sem painéis abertos)
     if (orbitFocusMode) {
       orbitFocusMode = false;
       orbitFocusNode = null;
@@ -16740,13 +16804,7 @@ window.addEventListener('keydown', e => {
     }
     if (_flyMode) {
       _flyMode = false;
-      // Janela 2 vai adicionar aqui: document.exitPointerLock() + restaurar orbit state
-      showCameraModeToast(null);
-      return;
-    }
-    if (_exploreMode) {
-      _exploreMode = false;
-      // Janela 3 vai adicionar aqui: cleanup do edge-look + restaurar orbit state
+      _exitFlyMode();
       showCameraModeToast(null);
       return;
     }
@@ -16808,6 +16866,247 @@ function updateCamera() {
   camera.lookAt(cameraTarget);
 }
 
+// ── Modo Voar (FPS pointer-lock) ─────────────────────────────
+// Janela 2: enter/exit + mouse-look + WASD + raycast-no-clique.
+// Re-lock automático após fechar painel vem na Janela 4.
+const FLY_SENSITIVITY = 0.0022;            // rad por pixel de mouseMovement
+const FLY_BASE_SPEED  = 18;                // unidades/segundo (velocidade alvo)
+const FLY_RUN_MULT    = 2.4;               // multiplicador com Shift
+const FLY_PITCH_LIMIT = Math.PI/2 - 0.05;  // ~85° (evita gimbal flip)
+const FLY_SMOOTHNESS  = 7;                 // suavização da velocidade — maior = mais responsivo
+const FLY_LOOK_SMOOTH = 22;                // suavização do mouselook — maior = menos lag, menor = mais cinema
+const FLY_FOV_BASE    = 58;                // FOV em repouso (igual ao Drone)
+const FLY_FOV_RUN     = 70;                // FOV correndo (sensação de speed)
+const FLY_FOV_SMOOTH  = 6;                 // suavização da transição de FOV
+const FLY_HOVER_HZ    = 10;                // checks de hover por segundo
+const _flyEuler    = new THREE.Euler(0, 0, 0, 'YXZ');
+const _flyForward  = new THREE.Vector3();
+const _flyRight    = new THREE.Vector3();
+const _flyWorldUp  = new THREE.Vector3(0, 1, 0);
+const _flyVelocity = new THREE.Vector3();  // velocidade atual (suavizada)
+const _flyTargetV  = new THREE.Vector3();  // velocidade alvo (input do frame)
+let   _flyLastTime = 0;
+let   _flyShouldRelock = false;            // marca pra re-trancar depois de fechar painel
+let   _flyHoverNode = null;                // nó atualmente sob a mira (pra hover tip)
+let   _flyHoverCheckTime = 0;              // throttle pro raycast central
+
+function _enterFlyMode() {
+  // Sincroniza yaw/pitch (atual + alvo) a partir da orientação atual (entrada sem snap)
+  _flyEuler.setFromQuaternion(camera.quaternion, 'YXZ');
+  _immYaw   = _flyEuler.y;
+  _immPitch = _flyEuler.x;
+  _immYawTarget   = _immYaw;
+  _immPitchTarget = _immPitch;
+  Object.keys(_flyKeys).forEach(k => _flyKeys[k] = false);
+  _flyVelocity.set(0, 0, 0);
+  _flyTargetV.set(0, 0, 0);
+  _flyLastTime = performance.now();
+  // Retículo central ON
+  const r = document.getElementById('fly-reticle');
+  if (r) r.style.opacity = '1';
+  // Esconde cursor + pede pointer lock (browser concede de forma assíncrona)
+  canvas.style.cursor = 'none';
+  if (canvas.requestPointerLock) canvas.requestPointerLock();
+}
+
+function _exitFlyMode() {
+  // Retículo OFF
+  const r = document.getElementById('fly-reticle');
+  if (r) r.style.opacity = '0';
+  // Hover tip OFF + reset cache
+  const tip = document.getElementById('fly-hover-tip');
+  if (tip) tip.style.opacity = '0';
+  _flyHoverNode = null;
+  // FOV volta ao padrão (Drone usa 58, não pode herdar 70 do run)
+  if (Math.abs(camera.fov - FLY_FOV_BASE) > 0.01) {
+    camera.fov = FLY_FOV_BASE;
+    camera.updateProjectionMatrix();
+  }
+  // Libera lock se ainda travado
+  if (document.pointerLockElement === canvas && document.exitPointerLock) {
+    document.exitPointerLock();
+  }
+  // Restaura cursor
+  canvas.style.cursor = dragMode ? 'crosshair' : 'grab';
+  // Limpa teclas
+  Object.keys(_flyKeys).forEach(k => _flyKeys[k] = false);
+  // Recalcula orbit state pra Drone continuar sem snap:
+  // cameraTarget = posição atual + forward * raio anterior
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  cameraTarget.copy(camera.position).addScaledVector(dir, spherical.radius);
+  const offset = new THREE.Vector3().subVectors(camera.position, cameraTarget);
+  const newR = Math.max(8, offset.length());
+  spherical.radius = newR;
+  zoomTarget = newR;
+  spherical.theta = Math.atan2(offset.x, offset.z);
+  spherical.phi   = Math.acos(Math.max(-1, Math.min(1, offset.y / newR)));
+  setSpherical(spherical.theta, spherical.phi);
+  // Zera inércia residual pra não dar tranco no Drone
+  orbitVelX = 0; orbitVelY = 0;
+  panVel.set(0, 0, 0);
+  zoomAnchorGoal = null;
+}
+
+function _updateFlyCamera() {
+  // dt com clamp (proteção contra aba dormida) — calculado antes pra outros lerps
+  const now = performance.now();
+  let dt = (now - _flyLastTime) / 1000;
+  _flyLastTime = now;
+  if (dt > 0.05) dt = 0.05;
+  // Mouselook smoothing: lerp atual → alvo (mata jitter de mouse high-DPI)
+  const lookLerp = 1 - Math.exp(-FLY_LOOK_SMOOTH * dt);
+  _immYaw   += (_immYawTarget   - _immYaw)   * lookLerp;
+  _immPitch += (_immPitchTarget - _immPitch) * lookLerp;
+  // Clamp em AMBOS pitch (atual e alvo) — senão o alvo acumula além do limite
+  // e ao olhar pra baixo/cima a câmera "engata" sem responder
+  if (_immPitch >  FLY_PITCH_LIMIT) { _immPitch =  FLY_PITCH_LIMIT; _immPitchTarget =  FLY_PITCH_LIMIT; }
+  if (_immPitch < -FLY_PITCH_LIMIT) { _immPitch = -FLY_PITCH_LIMIT; _immPitchTarget = -FLY_PITCH_LIMIT; }
+  // Aplica yaw/pitch via Euler YXZ (yaw global, pitch local — ordem canônica FPS)
+  _flyEuler.set(_immPitch, _immYaw, 0, 'YXZ');
+  camera.quaternion.setFromEuler(_flyEuler);
+  camera.up.set(0, 1, 0);
+  // Forward + Right
+  camera.getWorldDirection(_flyForward);
+  _flyRight.crossVectors(_flyForward, _flyWorldUp).normalize();
+  // Velocidade alvo a partir das teclas (vetor unitário × velocidade máxima)
+  _flyTargetV.set(0, 0, 0);
+  if (_flyKeys.w) _flyTargetV.add(_flyForward);
+  if (_flyKeys.s) _flyTargetV.sub(_flyForward);
+  if (_flyKeys.d) _flyTargetV.add(_flyRight);
+  if (_flyKeys.a) _flyTargetV.sub(_flyRight);
+  if (_flyTargetV.lengthSq() > 0) {
+    const maxSpeed = (_flyKeys.shift ? FLY_BASE_SPEED * FLY_RUN_MULT : FLY_BASE_SPEED);
+    _flyTargetV.normalize().multiplyScalar(maxSpeed);
+  }
+  // Smoothing frame-rate-independent: lerp da velocidade atual rumo à alvo
+  // factor = 1 - exp(-k·dt) — k maior = chega mais rápido (mais responsivo)
+  const lerpFactor = 1 - Math.exp(-FLY_SMOOTHNESS * dt);
+  _flyVelocity.lerp(_flyTargetV, lerpFactor);
+  // Aplica deslocamento por dt (assim a velocidade é em unidades/segundo de verdade)
+  camera.position.addScaledVector(_flyVelocity, dt);
+
+  // ── Dynamic FOV: abre quando correndo, fecha quando para ──
+  // Só ativa quando shift segurado E de fato em movimento (não só parado segurando)
+  const isRunning = _flyKeys.shift && _flyVelocity.lengthSq() > 1;
+  const fovTarget = isRunning ? FLY_FOV_RUN : FLY_FOV_BASE;
+  const fovLerp = 1 - Math.exp(-FLY_FOV_SMOOTH * dt);
+  const newFov = camera.fov + (fovTarget - camera.fov) * fovLerp;
+  if (Math.abs(newFov - camera.fov) > 0.01) {
+    camera.fov = newFov;
+    camera.updateProjectionMatrix();
+  }
+
+  // ── Hover tip: raycast central throttled (10Hz é responsivo + barato) ──
+  const nowH = performance.now();
+  if (nowH - _flyHoverCheckTime > 1000 / FLY_HOVER_HZ) {
+    _flyHoverCheckTime = nowH;
+    const fakeEv = { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 };
+    const nd = getIntersectedNode(fakeEv);
+    if (nd !== _flyHoverNode) {
+      _flyHoverNode = nd;
+      _updateFlyHoverTip(nd);
+    }
+  }
+}
+
+function _updateFlyHoverTip(node) {
+  const tip = document.getElementById('fly-hover-tip');
+  if (!tip) return;
+  if (!node) { tip.style.opacity = '0'; return; }
+  const color = node.color || '#fff';
+  const dot = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;box-shadow:0 0 6px ${color}80"></span>`;
+  const title = node.title || 'nó';
+  const hint = `<span style="opacity:0.5;margin-left:10px;font-size:10px">clique = abrir · E = editar</span>`;
+  tip.innerHTML = dot + title + hint;
+  tip.style.opacity = '1';
+}
+
+// Mouse-look: alimenta o alvo. A suavização rola no _updateFlyCamera por frame.
+document.addEventListener('mousemove', e => {
+  if (!_flyMode || document.pointerLockElement !== canvas) return;
+  _immYawTarget   -= (e.movementX || 0) * FLY_SENSITIVITY;
+  _immPitchTarget -= (e.movementY || 0) * FLY_SENSITIVITY;
+}, { passive: true });
+
+// WASD em capture phase — intercepta antes do switch do editor (D vira strafe, não Modo Mover)
+window.addEventListener('keydown', e => {
+  if (!_flyMode) return;
+  const ae = document.activeElement;
+  const tag = ae && ae.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (ae && ae.isContentEditable)) return;
+  let handled = true;
+  switch (e.code) {
+    case 'KeyW': _flyKeys.w = true; break;
+    case 'KeyA': _flyKeys.a = true; break;
+    case 'KeyS': _flyKeys.s = true; break;
+    case 'KeyD': _flyKeys.d = true; break;
+    case 'ShiftLeft': case 'ShiftRight': _flyKeys.shift = true; break;
+    case 'KeyE':
+      // Editar o nó sob a mira mantendo Voar pra retomar quando fechar.
+      // Ordem crítica: panel PRIMEIRO, depois selectNode — porque selectNode só
+      // popula o editor se panelVisible já for true (ver linha do selectNode).
+      // Mesmo sem hover, consumimos a tecla (não vaza pro toggle global de Drone).
+      if (_flyHoverNode) {
+        const target = _flyHoverNode;
+        _flyShouldRelock = true;
+        _flyMode = false;
+        _exitFlyMode();
+        showCameraModeToast(null);
+        // 1) Abre o painel direito do editor (se fechado)
+        if (typeof togglePanel === 'function' && typeof panelVisible !== 'undefined' && !panelVisible) {
+          togglePanel();
+        }
+        // 2) Agora selectNode com panelVisible=true → populateEditor roda automático
+        if (typeof selectNode === 'function') selectNode(target);
+        // 3) Garante aba editor (selectNode já chama switchTab se panel visible, mas seguro)
+        if (typeof switchTab === 'function') switchTab('editor');
+      }
+      // Sem hover: E não faz nada, mas come a tecla pra não disparar toggle global
+      break;
+    default: handled = false;
+  }
+  if (handled) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+window.addEventListener('keyup', e => {
+  if (!_flyMode) return;
+  switch (e.code) {
+    case 'KeyW': _flyKeys.w = false; break;
+    case 'KeyA': _flyKeys.a = false; break;
+    case 'KeyS': _flyKeys.s = false; break;
+    case 'KeyD': _flyKeys.d = false; break;
+    case 'ShiftLeft': case 'ShiftRight': _flyKeys.shift = false; break;
+  }
+}, true);
+
+// Mira + clique no centro = raycast → abre painel + libera lock
+canvas.addEventListener('mousedown', e => {
+  if (!_flyMode || document.pointerLockElement !== canvas || e.button !== 0) return;
+  const fakeEv = { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 };
+  const nd = getIntersectedNode(fakeEv);
+  if (nd) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    // Marca pra re-trancar quando o painel fechar (closeLeftPanel detecta)
+    _flyShouldRelock = true;
+    _flyMode = false;
+    _exitFlyMode();
+    showCameraModeToast(null);
+    if (typeof selectNode === 'function')   selectNode(nd);
+    if (typeof openLeftPanel === 'function') openLeftPanel(nd);
+    // Nota: flyToNode(nd) propositalmente omitido — você está navegando você mesmo
+  }
+}, true);
+
+// Lock perdido externamente (Esc do browser, alt-tab) → cleanup limpo
+document.addEventListener('pointerlockchange', () => {
+  if (_flyMode && document.pointerLockElement !== canvas) {
+    _flyMode = false;
+    _exitFlyMode();
+    showCameraModeToast(null);
+  }
+});
+
 function getMouseNDC(e) {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -16855,7 +17154,12 @@ canvas.addEventListener('click', e => {
     if (connectMode) { handleConnectClick(nd); }
     else { selectNode(nd); openLeftPanel(nd); flyToNode(nd); }
   } else {
-    if (!connectMode) { deselectNode(); closeLeftPanel(); }
+    if (!connectMode) {
+      deselectNode();
+      closeLeftPanel();
+      // Click no vazio também fecha o editor (#panel direito) se estiver aberto
+      if (typeof panelVisible !== 'undefined' && panelVisible) togglePanel();
+    }
   }
 });
 
@@ -17017,6 +17321,19 @@ function closeLeftPanel() {
   leftPanelNode = null;
   document.getElementById('left-panel').classList.remove('open');
   setTimeout(resizeRenderer, 10);
+  // Re-lock automático no Modo Voar: se você veio do Voar (mira+clique abriu este painel),
+  // o Voar retoma sozinho assim que o painel fecha. Continuidade total da imersão.
+  if (typeof _flyShouldRelock !== 'undefined' && _flyShouldRelock) {
+    _flyShouldRelock = false;
+    // pequeno delay pra deixar o fade do painel terminar antes de pedir pointer-lock
+    setTimeout(() => {
+      if (!_flyMode) {
+        _flyMode = true;
+        _enterFlyMode();
+        showCameraModeToast('fly');
+      }
+    }, 80);
+  }
 }
 
 function focusNode(id) {
@@ -17871,9 +18188,22 @@ function switchTab(tab) {
   if (tab==='editor' && selectedNode) renderTagPicker('e', selectedNode.tags || []);
 }
 function togglePanel() {
+  const wasVisible = panelVisible;
   panelVisible = !panelVisible;
   document.getElementById('panel').classList.toggle('hidden', !panelVisible);
   resizeRenderer();
+  // Re-lock automático no Modo Voar: se você abriu o painel via E (editar),
+  // o Voar retoma sozinho quando o painel é fechado. Continuidade total.
+  if (wasVisible && !panelVisible && typeof _flyShouldRelock !== 'undefined' && _flyShouldRelock) {
+    _flyShouldRelock = false;
+    setTimeout(() => {
+      if (!_flyMode) {
+        _flyMode = true;
+        _enterFlyMode();
+        showCameraModeToast('fly');
+      }
+    }, 80);
+  }
 }
 
 // ── Connection list ────────────────────────────────
@@ -18789,6 +19119,10 @@ function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
 
+  // Modo Voar: bypass total do orbit system — câmera é controlada diretamente
+  if (_flyMode) {
+    _updateFlyCamera();
+  } else {
   // ── Camera inertia & smooth zoom ──────────────────
   let needCamUpdate = false;
   if (!isDragging && (Math.abs(orbitVelX) > 0.05 || Math.abs(orbitVelY) > 0.05)) {
@@ -18860,6 +19194,7 @@ function animate() {
     needCamUpdate = true;
   }
   if (needCamUpdate) updateCamera();
+  } // fim do else !_flyMode
 
   // Float particles
   const pp = pGeo.attributes.position.array;
@@ -21102,6 +21437,43 @@ function _renderTutorial() {
           nodes.forEach((n,i)=>{if(i>0)svg.appendChild(_mkSVG('line',{x1:80,y1:44,x2:n.x,y2:n.y,stroke:'rgba(255,255,255,1)','stroke-width':'2.5',opacity:'0.85'}));});
           nodes.forEach(n=>{svg.appendChild(_mkSVG('circle',{cx:n.x,cy:n.y,r:n.r,fill:n.c,opacity:'0.85'}));});
           if(on){const t=_mkSVG('text',{x:80,y:22,'text-anchor':'middle','font-size':'9',fill:'rgba(255,255,255,1)'});t.textContent='8 conexões';svg.appendChild(t);}
+        }
+      },
+      {name:'Modo Voar', tag:'Imersivo', tBg:'rgba(167,139,250,.20)', tCl:'#c4b5fd', desc:'Câmera em primeira pessoa · WASD anda · mouse olha · clique abre nó', kbd:'X',
+        draw(svg,on){
+          svg.innerHTML='';
+          const cx=80, cy=44;
+          // Linhas de perspectiva escapando do centro (sensação de profundidade)
+          const persp=[[10,8],[150,8],[10,80],[150,80]];
+          persp.forEach(p=>{
+            svg.appendChild(_mkSVG('line',{x1:cx,y1:cy,x2:p[0],y2:p[1],stroke:'#a78bfa','stroke-width':'1',opacity:on?'0.50':'0.22'}));
+          });
+          // Nós no campo de visão (5 distribuídos em profundidade)
+          const nds=[
+            {x:48, y:28, r:5,  c:'#7F77DD'},
+            {x:cx, y:36, r:on?10:8, c:'#a78bfa', main:true},
+            {x:118,y:30, r:5,  c:'#5DDCAA'},
+            {x:34, y:62, r:4,  c:'#FF9D7A'},
+            {x:126,y:64, r:4,  c:'#378ADD'},
+          ];
+          nds.forEach(n=>{
+            const c=_mkSVG('circle',{cx:n.x,cy:n.y,r:n.r,fill:n.c,opacity:n.main?'0.95':'0.75'});
+            if(on && n.main) c.style.animation='float 2.4s ease-in-out infinite';
+            svg.appendChild(c);
+          });
+          // Retículo central (mira)
+          if(on){
+            const ring=_mkSVG('circle',{cx:cx,cy:cy,r:9,fill:'none',stroke:'#a78bfa','stroke-width':'1.3',opacity:'0.85'});
+            ring.style.animation='pulse-ring 1.4s ease-out infinite';
+            svg.appendChild(ring);
+          }
+          svg.appendChild(_mkSVG('circle',{cx:cx,cy:cy,r:2.5,fill:'#ffffff',opacity:on?'1':'0.65'}));
+          // Legenda
+          if(on){
+            const t=_mkSVG('text',{x:cx,y:80,'text-anchor':'middle','font-size':'9',fill:'rgba(255,255,255,0.85)'});
+            t.textContent='mire e clique';
+            svg.appendChild(t);
+          }
         }
       },
     ]},
