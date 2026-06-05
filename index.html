@@ -18321,6 +18321,8 @@ function generateExport() {
     nodes: nodes.map(n=>({id:n.id,title:n.title,desc:n.desc,cat:n.cat,color:n.color,size:n.size,font:n.font,fontSize:n.fontSize,bold:n.bold,italic:n.italic,textShadow:n.textShadow!==false,media:n.media,tags:n.tags||[],notes:n.notes||'',x:n.x,y:n.y,z:n.z,richContent:n.richContent||'',richMedia:n.richMedia||[],date:n.date||'',ficha:n.ficha||null})),
     connections: connections.map(c=>({id:c.id,from:c.from,to:c.to})),
     customCats,
+    globalTags: (typeof globalTags !== 'undefined' ? globalTags : []),
+    tagIdCounter: (typeof tagIdCounter !== 'undefined' ? tagIdCounter : 0),
     projectName: 'NODAL',
     projectSub,
     currentThemeId,
